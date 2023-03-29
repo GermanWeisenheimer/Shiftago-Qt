@@ -1,5 +1,6 @@
 import sys
 import logging
+from pathlib import Path
 from datetime import datetime
 from typing import List
 from types import TracebackType
@@ -17,6 +18,7 @@ logger = logging.getLogger(__name__)
 
 class _LoggingConfigurer:
 
+    LOGS_DIR = './logs'
     class ThreadNameFilter(logging.Filter):
         '''Adds the name of the current QThread as custom field 'qthreadName'.'''
 
@@ -29,7 +31,8 @@ class _LoggingConfigurer:
         self._filename_prefix = filename_prefix
 
     def configure(self) -> str:
-        filename = f"{self._filename_prefix}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log"
+        Path(self.LOGS_DIR).mkdir(exist_ok=True)
+        filename = f"{self.LOGS_DIR}/{self._filename_prefix}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log"
         handlers = [logging.StreamHandler(), logging.FileHandler(filename, mode='w')]
         filter = self.ThreadNameFilter()
         for handler in handlers:
