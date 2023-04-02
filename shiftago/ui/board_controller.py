@@ -3,6 +3,7 @@ from typing import Optional
 import time
 import logging
 from PyQt5.QtCore import QObject, QThread, pyqtSlot
+from shiftago.core.express_ai import AlphaBetaPruning
 from shiftago.ui.hmvc import Controller, AppEventEmitter
 from shiftago.ui.app_events import AppEvent
 from shiftago.ui.game_model import ShiftagoExpressModel, PlayerNature
@@ -43,6 +44,10 @@ class BoardController(Controller):
         def enter(self):
             game_over_condition = self.controller.model.core_model.game_over_condition
             assert game_over_condition
+            if game_over_condition.winner:
+                logger.info(f"Game over: {game_over_condition._winner.name} has won!")
+            else:
+                logger.info("Game over: it has ended in a draw!")
             self.controller.view.show_game_over(game_over_condition)
 
         def handle_event(self, event: AppEvent) -> bool:
@@ -83,12 +88,13 @@ class BoardController(Controller):
             def __init__(self, model: ShiftagoExpressModel) -> None:
                 super().__init__()
                 self._model = model
+                self._ai_engine = AlphaBetaPruning()
 
             @pyqtSlot()
             def work(self) -> None:
                 logger.debug("Thinking...")
                 start_time: float = time.time()
-                move = self._model.ai_engine.select_move(self._model.core_model)
+                move = self._ai_engine.select_move(self._model.core_model)
                 duration: float = time.time() - start_time
                 if duration < self.DELAY:
                     time.sleep(self.DELAY - duration)
