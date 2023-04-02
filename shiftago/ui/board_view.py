@@ -45,6 +45,7 @@ class BoardView(AppEventEmitter, QGraphicsView):
         def __init__(self, app_event_emitter: AppEventEmitter, model: BoardViewModel) -> None:
             super().__init__()
             board_pixmap = load_image('shiftago_board.jpg').scaled(BoardView.IMAGE_SIZE)
+            model.model_changed_notifier.connect(self.update_from_model)  # type: ignore
             self._app_event_emitter = app_event_emitter
             self._model = model
             self._marble_pixmaps: Dict[Colour, QPixmap] = dict()
@@ -107,12 +108,9 @@ class BoardView(AppEventEmitter, QGraphicsView):
     def __init__(self, model: BoardViewModel) -> None:
         super().__init__()
 
+        self.setScene(self.BoardScene(self, model))
+
         self._model = model
-
-        self._board_scene = self.BoardScene(self, self._model)
-        self.setScene(self._board_scene)
-
-        model.model_changed_notifier.connect(self._board_scene.update_from_model)  # type: ignore
 
         self._neutral_cursor = QCursor(Qt.CursorShape.ArrowCursor)
 
