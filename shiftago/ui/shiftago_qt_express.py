@@ -5,10 +5,12 @@ from datetime import datetime
 from typing import List
 from types import TracebackType
 from PyQt5.QtCore import QSize, QThread
-from PyQt5.QtWidgets import QApplication, QMainWindow
-from shiftago.core import Colour
+from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox
+from shiftago.core import Colour, GameOverCondition
 from shiftago.core.express import ShiftagoExpress
+from shiftago.ui.hmvc import ViewMixin
 from shiftago.ui.game_model import ShiftagoExpressModel
+from shiftago.ui.main_window import MainWindow, MainWindowController
 from shiftago.ui.board_view import BoardView
 from shiftago.ui.board_view import BoardViewModel
 from shiftago.ui.board_controller import BoardController
@@ -19,6 +21,7 @@ logger = logging.getLogger(__name__)
 class _LoggingConfigurer:
 
     LOGS_DIR = './logs'
+
     class ThreadNameFilter(logging.Filter):
         '''Adds the name of the current QThread as custom field 'qthreadName'.'''
 
@@ -45,27 +48,13 @@ class _LoggingConfigurer:
 
 class ShiftagoQtExpress(QApplication):
 
-    class MainWindow(QMainWindow):
-
-        def __init__(self, model: BoardViewModel):
-            super().__init__()
-            self.setWindowTitle('Shiftago')
-            self.setStyleSheet("background-color: lightGray;")
-            self.setFixedSize(QSize(BoardView.TOTAL_SIZE.width() + 20, BoardView.TOTAL_SIZE.height() + 20))
-            self._board = BoardView(model)
-            self.setCentralWidget(self._board)
-            self.show()
-
-        @property
-        def board_view(self) -> BoardView:
-            return self._board
-
     def __init__(self, argv: List[str]) -> None:
         super().__init__(argv)
         shiftago = ShiftagoExpress((Colour.BLUE, Colour.ORANGE), current_player=Colour.BLUE)
         game_model = ShiftagoExpressModel(shiftago)
-        self._main_window = self.MainWindow(game_model)
-        self._board_controller = BoardController(game_model, self._main_window.board_view)
+        self._main_window = MainWindow(game_model)
+        self._main_window_controller = MainWindowController(self._main_window)
+        self._board_controller = BoardController(self._main_window_controller, game_model, self._main_window.board_view)
         self._board_controller.start_game()
 
 

@@ -3,8 +3,10 @@ from typing import Optional
 import time
 import logging
 from PyQt5.QtCore import QObject, QThread, pyqtSlot
+from shiftago.ui.hmvc import Controller
+from shiftago.ui.app_events import AppEvent
 from shiftago.ui.game_model import ShiftagoExpressModel, PlayerNature
-from shiftago.ui.board_view import BoardView, BoardViewEvent, MoveSelectedEvent, AnimationFinishedEvent
+from shiftago.ui.board_view import BoardView, MoveSelectedEvent, AnimationFinishedEvent
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +25,7 @@ class InteractionState(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def handle_event(self, event: BoardViewEvent) -> None:
+    def handle_event(self, event: AppEvent) -> bool:
         raise NotImplementedError
 
     @abstractmethod
@@ -31,7 +33,7 @@ class InteractionState(ABC):
         raise NotImplementedError
 
 
-class BoardController(QObject):
+class BoardController(Controller):
 
     class GameOverState(InteractionState):
 
@@ -43,8 +45,8 @@ class BoardController(QObject):
             assert game_over_condition
             self.controller.view.show_game_over(game_over_condition)
 
-        def handle_event(self, event: BoardViewEvent) -> None:
-            raise ValueError(f"Unsupported event type: {event.__class__.__name__}")
+        def handle_event(self, event: AppEvent) -> bool:
+            return False
 
         def leave(self):
             pass
@@ -57,11 +59,11 @@ class BoardController(QObject):
         def enter(self):
             self.controller.view.setMouseTracking(True)
 
-        def handle_event(self, event: BoardViewEvent) -> None:
+        def handle_event(self, event: AppEvent) -> bool:
             if event.__class__ == MoveSelectedEvent:
                 self._handle_move_selected(event)  # type: ignore
-            else:
-                raise ValueError(f"Unsupported event type: {event.__class__.__name__}")
+                return True
+            return False
 
         def _handle_move_selected(self, event: MoveSelectedEvent) -> None:
             logger.info(f"Human is making move: {event.move}")
@@ -106,8 +108,8 @@ class BoardController(QObject):
         def enter(self):
             self._thread.start()
 
-        def handle_event(self, event: BoardViewEvent) -> None:
-            raise ValueError(f"Unsupported event type: {event.__class__.__name__}")
+        def handle_event(self, event: AppEvent) -> bool:
+            return False
 
         def leave(self) -> None:
             self._thread.quit()
@@ -120,31 +122,30 @@ class BoardController(QObject):
         def enter(self):
             pass
 
-        def handle_event(self, event: BoardViewEvent) -> None:
+        def handle_event(self, event: AppEvent) -> bool:
             if event.__class__ == AnimationFinishedEvent:
                 current_player_nature = self.controller.model.current_player_nature
                 if current_player_nature:
                     if current_player_nature == PlayerNature.HUMAN:
-                        self._controller.interaction_state = self._controller.move_selection_state
+                        self.controller.interaction_state = self._controller.move_selection_state
                     else:
-                        self._controller.interaction_state = self._controller.computer_thinking_state
+                        self.controller.interaction_state = self._controller.computer_thinking_state
                 else:
-                    self._controller.interaction_state = self._controller.game_over_state
-            else:
-                raise ValueError(f"Unsupported event type: {event.__class__}")
+                    self.controller.interaction_state = self._controller.game_over_state
+                return True
+            return False
 
         def leave(self):
             logger.debug("Animation finished.")
 
-    def __init__(self, model: ShiftagoExpressModel, view: BoardView) -> None:
-        super().__init__()
+    def __init__(self, parent: Controller, model: ShiftagoExpressModel, view: BoardView) -> None:
+        super().__init__(parent, view)
         self._model = model
         self._view = view
         self._move_selection_state = self.MoveSelectionState(self)
         self._computer_thinking_state = self.ComputerThinkingState(self)
         self._performing_animation_state = self.PerformingAnimationState(self)
         self._game_over_state = self.GameOverState(self)
-        view.event_signal.connect(self._on_view_event)  # type: ignore
         self._interaction_state: Optional[InteractionState] = None
 
     @property
@@ -187,7 +188,6 @@ class BoardController(QObject):
         else:
             self.interaction_state = self._computer_thinking_state
 
-    @pyqtSlot(BoardViewEvent)
-    def _on_view_event(self, event: BoardViewEvent):
+    def handle_event(self, event: AppEvent) -> bool:
         assert self._interaction_state, f"No interaction_state set on BoardController {repr(self)}!"
-        self._interaction_state.handle_event(event)
+        return self._interaction_state.handle_event(event)
