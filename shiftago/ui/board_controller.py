@@ -51,7 +51,7 @@ class BoardController(Controller):
         def leave(self):
             pass
 
-    class MoveSelectionState(InteractionState):
+    class HumanThinkingState(InteractionState):
 
         def __init__(self, controller: 'BoardController') -> None:
             super().__init__(controller)
@@ -67,7 +67,7 @@ class BoardController(Controller):
 
         def _handle_move_selected(self, event: MoveSelectedEvent) -> None:
             logger.info(f"Human is making move: {event.move}")
-            self._controller.interaction_state = self._controller._performing_animation_state
+            self.controller.interaction_state = self._controller._performing_animation_state
             self.controller.model.core_model.apply_move(event.move)
 
         def leave(self):
@@ -114,7 +114,7 @@ class BoardController(Controller):
 
         def _handle_move_selected(self, event: MoveSelectedEvent) -> None:
             logger.info(f"Computer is making move: {event.move}")
-            self._controller.interaction_state = self._controller._performing_animation_state
+            self.controller.interaction_state = self._controller._performing_animation_state
             self.controller.model.core_model.apply_move(event.move)
 
         def leave(self) -> None:
@@ -133,7 +133,7 @@ class BoardController(Controller):
                 current_player_nature = self.controller.model.current_player_nature
                 if current_player_nature:
                     if current_player_nature == PlayerNature.HUMAN:
-                        self.controller.interaction_state = self._controller.move_selection_state
+                        self.controller.interaction_state = self._controller.human_thinking_state
                     else:
                         self.controller.interaction_state = self._controller.computer_thinking_state
                 else:
@@ -148,7 +148,7 @@ class BoardController(Controller):
         super().__init__(parent, view)
         self._model = model
         self._view = view
-        self._move_selection_state = self.MoveSelectionState(self)
+        self._human_thinking_state = self.HumanThinkingState(self)
         self._computer_thinking_state = self.ComputerThinkingState(self)
         self._performing_animation_state = self.PerformingAnimationState(self)
         self._game_over_state = self.GameOverState(self)
@@ -164,8 +164,8 @@ class BoardController(Controller):
         return self._view
 
     @property
-    def move_selection_state(self) -> MoveSelectionState:
-        return self._move_selection_state
+    def human_thinking_state(self) -> HumanThinkingState:
+        return self._human_thinking_state
 
     @property
     def computer_thinking_state(self) -> ComputerThinkingState:
@@ -191,7 +191,7 @@ class BoardController(Controller):
     def start_game(self) -> None:
         assert self.model.current_player, "No current player!"
         if self.model.current_player_nature == PlayerNature.HUMAN:
-            self.interaction_state = self._move_selection_state
+            self.interaction_state = self._human_thinking_state
         else:
             self.interaction_state = self._computer_thinking_state
 
