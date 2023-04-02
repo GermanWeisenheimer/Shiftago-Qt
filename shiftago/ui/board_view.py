@@ -70,21 +70,20 @@ class BoardView(ViewMixin, QGraphicsView):
                 animation = QPropertyAnimation(marble, b'opacity')
                 animation.setEndValue(1.0)
                 animation.setDuration(500)
-                self._run_animation(animation)
+                self.run_animation(animation)
             elif event.__class__ == MarbleShiftedEvent:
                 from_slot: Slot = event.slot  # type: ignore
                 to_slot = from_slot.neighbour(event.direction)  # type: ignore
                 marble = self._marbles.pop(from_slot)
                 self._marbles[to_slot] = marble
-
                 animation = QPropertyAnimation(marble, b'pos')
                 animation.setEndValue(self.position_of(to_slot))
                 animation.setDuration(500)
-                self._run_animation(animation)
+                self.run_animation(animation)
             else:
                 raise ValueError(f"Unknown event type: {event.__class__.__class__}")
 
-        def _run_animation(self, animation: QPropertyAnimation) -> None:
+        def run_animation(self, animation: QPropertyAnimation) -> None:
             animation.finished.connect(self.animation_finished)  # type: ignore
             if self._running_animation:
                 self._waiting_animations.append(animation)
@@ -110,7 +109,7 @@ class BoardView(ViewMixin, QGraphicsView):
 
         self._model = model
 
-        self._board_scene = self.BoardScene(self.event_signal, self._model)
+        self._board_scene = self.BoardScene(self.app_event_signal, self._model)
         self.setScene(self._board_scene)
 
         model.model_changed_notifier.connect(self._board_scene.update_from_model)  # type: ignore
@@ -162,7 +161,7 @@ class BoardView(ViewMixin, QGraphicsView):
         if ev.button() == Qt.MouseButton.LeftButton and self._model:
             move: Optional[Move] = self._determine_move(ev.pos())
             if move:
-                self.event_signal.emit(MoveSelectedEvent(move))
+                self.app_event_signal.emit(MoveSelectedEvent(move))
 
     def show_game_over(self, game_over_condition: GameOverCondition):
         msg_box = QMessageBox(self)
@@ -175,7 +174,7 @@ class BoardView(ViewMixin, QGraphicsView):
             msg_box.setInformativeText("It has ended in a draw.")
         msg_box.setStandardButtons(QMessageBox.Ok)
         msg_box.exec_()
-        self.event_signal.emit(ExitRequestedEvent())
+        self.app_event_signal.emit(ExitRequestedEvent())
 
     def _determine_move(self, cursor_pos: QPoint) -> Optional[Move]:
         side = self._determine_side(cursor_pos)

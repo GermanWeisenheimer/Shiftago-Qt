@@ -147,6 +147,7 @@ class BoardController(Controller):
         self._performing_animation_state = self.PerformingAnimationState(self)
         self._game_over_state = self.GameOverState(self)
         self._interaction_state: Optional[InteractionState] = None
+        self.start_game()
 
     @property
     def model(self) -> ShiftagoExpressModel:

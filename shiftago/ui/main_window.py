@@ -1,4 +1,3 @@
-import sys
 from PyQt5.QtCore import QSize
 from PyQt5.QtWidgets import QMainWindow
 from shiftago.ui.hmvc import ViewMixin, Controller
@@ -13,22 +12,23 @@ class MainWindow(ViewMixin, QMainWindow):
         self.setWindowTitle('Shiftago')
         self.setStyleSheet("background-color: lightGray;")
         self.setFixedSize(QSize(BoardView.TOTAL_SIZE.width() + 20, BoardView.TOTAL_SIZE.height() + 20))
-        self._board = BoardView(model)
-        self.setCentralWidget(self._board)
-        self.show()
+        self._board_view = BoardView(model)
+        self.setCentralWidget(self._board_view)
 
     @property
     def board_view(self) -> BoardView:
-        return self._board
+        return self._board_view
 
 
 class MainWindowController(Controller):
 
-    def __init__(self, view: MainWindow) -> None:
-        super().__init__(None, view)
-        self._view = view
+    def __init__(self, main_window: MainWindow) -> None:
+        super().__init__(None, main_window)
+        self._main_window = main_window
+        self._main_window.show()
 
     def handle_event(self, event: AppEvent) -> bool:
         if event.__class__ == ExitRequestedEvent:
-            sys.exit(0)
+            self._main_window.close()
+            return True
         return False

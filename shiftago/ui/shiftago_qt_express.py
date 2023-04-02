@@ -4,15 +4,12 @@ from pathlib import Path
 from datetime import datetime
 from typing import List
 from types import TracebackType
-from PyQt5.QtCore import QSize, QThread
-from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox
-from shiftago.core import Colour, GameOverCondition
+from PyQt5.QtCore import QThread
+from PyQt5.QtWidgets import QApplication
+from shiftago.core import Colour
 from shiftago.core.express import ShiftagoExpress
-from shiftago.ui.hmvc import ViewMixin
 from shiftago.ui.game_model import ShiftagoExpressModel
 from shiftago.ui.main_window import MainWindow, MainWindowController
-from shiftago.ui.board_view import BoardView
-from shiftago.ui.board_view import BoardViewModel
 from shiftago.ui.board_controller import BoardController
 
 logger = logging.getLogger(__name__)
@@ -55,7 +52,6 @@ class ShiftagoQtExpress(QApplication):
         self._main_window = MainWindow(game_model)
         self._main_window_controller = MainWindowController(self._main_window)
         self._board_controller = BoardController(self._main_window_controller, game_model, self._main_window.board_view)
-        self._board_controller.start_game()
 
 
 if __name__ == '__main__':
