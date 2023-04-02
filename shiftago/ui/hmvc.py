@@ -3,7 +3,7 @@ from PyQt5.QtCore import QObject, pyqtSignal, pyqtBoundSignal, pyqtSlot
 from shiftago.ui.app_events import AppEvent
 
 
-class ViewMixin:
+class AppEventEmitter:
 
     class SignalWrapper(QObject):
 
@@ -20,17 +20,23 @@ class ViewMixin:
     def app_event_signal(self) -> pyqtBoundSignal:
         return self._signal_wrapper.event_signal
 
+    def emit(self, event: AppEvent) -> None:
+        self.app_event_signal.emit(event)
+
 
 class Controller(QObject):
 
-    def __init__(self, parent: Optional['Controller'], view: ViewMixin) -> None:
+    def __init__(self, parent: Optional['Controller'], view: AppEventEmitter) -> None:
         super().__init__()
         self._parent: Optional['Controller'] = parent
-        view.app_event_signal.connect(self._on_app_event)  # type: ignore
+        self.connect_with(view)
 
     @property
     def parent(self) -> Optional['Controller']:
         return self._parent
+
+    def connect_with(self, eventEmitter: AppEventEmitter):
+        eventEmitter.app_event_signal.connect(self._on_app_event)  # type: ignore
 
     @pyqtSlot(AppEvent)
     def _on_app_event(self, event: AppEvent) -> None:

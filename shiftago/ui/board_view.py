@@ -7,13 +7,13 @@ from PyQt5.QtGui import QPixmap, QPainter, QMouseEvent, QCursor
 from shiftago.core import NUM_SLOTS_PER_SIDE, Colour, Slot, Side, Move, GameOverCondition
 from shiftago.ui import load_image
 from shiftago.ui.app_events import AnimationFinishedEvent, MoveSelectedEvent, ExitRequestedEvent
-from shiftago.ui.hmvc import ViewMixin
+from shiftago.ui.hmvc import AppEventEmitter
 from shiftago.ui.board_view_model import BoardViewModel, ShiftagoModelEvent, MarbleInsertedEvent, MarbleShiftedEvent
 
 logger = logging.getLogger(__name__)
 
 
-class BoardView(ViewMixin, QGraphicsView):
+class BoardView(AppEventEmitter, QGraphicsView):
 
     TOTAL_SIZE = QSize(700, 700)
     IMAGE_SIZE = QSize(600, 600)
@@ -42,10 +42,10 @@ class BoardView(ViewMixin, QGraphicsView):
             def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget: Optional[QWidget]) -> None:
                 painter.drawPixmap(0, 0, self._pixmap)
 
-        def __init__(self, app_event_signal: pyqtBoundSignal, model: BoardViewModel) -> None:
+        def __init__(self, app_event_emitter: AppEventEmitter, model: BoardViewModel) -> None:
             super().__init__()
             board_pixmap = load_image('shiftago_board.jpg').scaled(BoardView.IMAGE_SIZE)
-            self._app_event_signal: pyqtBoundSignal = app_event_signal
+            self._app_event_emitter = app_event_emitter
             self._model = model
             self._marble_pixmaps: Dict[Colour, QPixmap] = dict()
             self._marble_pixmaps[Colour.BLUE] = load_image('blue_marble.png').scaled(self.Marble.SIZE)
@@ -98,7 +98,7 @@ class BoardView(ViewMixin, QGraphicsView):
                 self._running_animation.start()
             else:
                 self._running_animation = None
-                self._app_event_signal.emit(AnimationFinishedEvent())
+                self._app_event_emitter.emit(AnimationFinishedEvent())
 
         def position_of(self, slot: Slot) -> QPoint:
             return QPoint(BoardView.IMAGE_OFFSET_X + 36 + slot.hor_pos * (self.Marble.SIZE.width() + 6),
@@ -109,7 +109,7 @@ class BoardView(ViewMixin, QGraphicsView):
 
         self._model = model
 
-        self._board_scene = self.BoardScene(self.app_event_signal, self._model)
+        self._board_scene = self.BoardScene(self, self._model)
         self.setScene(self._board_scene)
 
         model.model_changed_notifier.connect(self._board_scene.update_from_model)  # type: ignore
@@ -161,7 +161,7 @@ class BoardView(ViewMixin, QGraphicsView):
         if ev.button() == Qt.MouseButton.LeftButton and self._model:
             move: Optional[Move] = self._determine_move(ev.pos())
             if move:
-                self.app_event_signal.emit(MoveSelectedEvent(move))
+                self.emit(MoveSelectedEvent(move))
 
     def show_game_over(self, game_over_condition: GameOverCondition):
         msg_box = QMessageBox(self)
@@ -174,7 +174,7 @@ class BoardView(ViewMixin, QGraphicsView):
             msg_box.setInformativeText("It has ended in a draw.")
         msg_box.setStandardButtons(QMessageBox.Ok)
         msg_box.exec_()
-        self.app_event_signal.emit(ExitRequestedEvent())
+        self.emit(ExitRequestedEvent())
 
     def _determine_move(self, cursor_pos: QPoint) -> Optional[Move]:
         side = self._determine_side(cursor_pos)

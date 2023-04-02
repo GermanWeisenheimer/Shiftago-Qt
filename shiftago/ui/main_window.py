@@ -1,11 +1,11 @@
 from PyQt5.QtCore import QSize
 from PyQt5.QtWidgets import QMainWindow
-from shiftago.ui.hmvc import ViewMixin, Controller
+from shiftago.ui.hmvc import AppEventEmitter, Controller
 from shiftago.ui.app_events import AppEvent, ExitRequestedEvent
 from shiftago.ui.board_view import BoardView, BoardViewModel
 
 
-class MainWindow(ViewMixin, QMainWindow):
+class MainWindow(AppEventEmitter, QMainWindow):
 
     def __init__(self, model: BoardViewModel):
         super().__init__()

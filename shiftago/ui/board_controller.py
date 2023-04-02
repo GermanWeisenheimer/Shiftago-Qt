@@ -3,7 +3,7 @@ from typing import Optional
 import time
 import logging
 from PyQt5.QtCore import QObject, QThread, pyqtSlot
-from shiftago.ui.hmvc import Controller
+from shiftago.ui.hmvc import Controller, AppEventEmitter
 from shiftago.ui.app_events import AppEvent
 from shiftago.ui.game_model import ShiftagoExpressModel, PlayerNature
 from shiftago.ui.board_view import BoardView, MoveSelectedEvent, AnimationFinishedEvent
@@ -76,32 +76,30 @@ class BoardController(Controller):
 
     class ComputerThinkingState(InteractionState):
 
-        class Worker(QObject):
+        class Worker(AppEventEmitter, QObject):
 
             DELAY = 1.
 
-            def __init__(self, controller: 'BoardController') -> None:
+            def __init__(self, model: ShiftagoExpressModel) -> None:
                 super().__init__()
-                self._controller = controller
+                self._model = model
 
             @pyqtSlot()
             def work(self) -> None:
                 logger.debug("Thinking...")
                 start_time: float = time.time()
-                shiftago = self._controller.model.core_model
-                move = self._controller.model.ai_engine.select_move(shiftago)
+                move = self._model.ai_engine.select_move(self._model.core_model)
                 duration: float = time.time() - start_time
                 if duration < self.DELAY:
                     time.sleep(self.DELAY - duration)
-                logger.info(f"Computer is making move: {move}")
-                self._controller.interaction_state = self._controller._performing_animation_state
-                shiftago.apply_move(move)
+                self.emit(MoveSelectedEvent(move))
 
         def __init__(self, controller: 'BoardController') -> None:
             super().__init__(controller)
             self._thread = QThread()
             self._thread.setObjectName('ThinkingThread')
-            self._worker = self.Worker(self.controller)
+            self._worker = self.Worker(self.controller.model)
+            self.controller.connect_with(self._worker)
             self._worker.moveToThread(self._thread)
             self._thread.started.connect(self._worker.work)  # type: ignore
 
@@ -109,7 +107,15 @@ class BoardController(Controller):
             self._thread.start()
 
         def handle_event(self, event: AppEvent) -> bool:
+            if event.__class__ == MoveSelectedEvent:
+                self._handle_move_selected(event)  # type: ignore
+                return True
             return False
+
+        def _handle_move_selected(self, event: MoveSelectedEvent) -> None:
+            logger.info(f"Computer is making move: {event.move}")
+            self._controller.interaction_state = self._controller._performing_animation_state
+            self.controller.model.core_model.apply_move(event.move)
 
         def leave(self) -> None:
             self._thread.quit()
