@@ -3,7 +3,6 @@ from typing import Optional
 import time
 import logging
 from PyQt5.QtCore import QObject, QThread, pyqtSlot
-from shiftago.core.express_ai import AlphaBetaPruning
 from shiftago.ui.hmvc import Controller, AppEventEmitter
 from shiftago.ui.app_events import AppEvent
 from shiftago.ui.game_model import ShiftagoExpressModel, PlayerNature
@@ -42,7 +41,7 @@ class BoardController(Controller):
             super().__init__(controller)
 
         def enter(self):
-            game_over_condition = self.controller.model.core_model.game_over_condition
+            game_over_condition = self.controller.model.game_over_condition
             assert game_over_condition
             if game_over_condition.winner:
                 logger.info(f"Game over: {game_over_condition._winner.name} has won!")
@@ -73,7 +72,7 @@ class BoardController(Controller):
         def _handle_move_selected(self, event: MoveSelectedEvent) -> None:
             logger.info(f"Human is making move: {event.move}")
             self.controller.interaction_state = self._controller._performing_animation_state
-            self.controller.model.core_model.apply_move(event.move)
+            self.controller.model.apply_move(event.move)
 
         def leave(self):
             self.controller.view.setMouseTracking(False)
@@ -88,13 +87,12 @@ class BoardController(Controller):
             def __init__(self, model: ShiftagoExpressModel) -> None:
                 super().__init__()
                 self._model = model
-                self._ai_engine = AlphaBetaPruning()
 
             @pyqtSlot()
             def work(self) -> None:
                 logger.debug("Thinking...")
                 start_time: float = time.time()
-                move = self._ai_engine.select_move(self._model.core_model)
+                move = self._model.ai_select_move()
                 duration: float = time.time() - start_time
                 if duration < self.DELAY:
                     time.sleep(self.DELAY - duration)
@@ -121,7 +119,7 @@ class BoardController(Controller):
         def _handle_move_selected(self, event: MoveSelectedEvent) -> None:
             logger.info(f"Computer is making move: {event.move}")
             self.controller.interaction_state = self._controller._performing_animation_state
-            self.controller.model.core_model.apply_move(event.move)
+            self.controller.model.apply_move(event.move)
 
         def leave(self) -> None:
             self._thread.quit()
