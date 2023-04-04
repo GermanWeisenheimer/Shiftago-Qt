@@ -56,6 +56,7 @@ class BoardView(AppEventEmitter, QGraphicsView):
             self._marbles: Dict[Slot, BoardView.BoardScene.Marble] = dict()
             self._running_animation: Optional[QPropertyAnimation] = None
             self._waiting_animations: Deque[QPropertyAnimation] = deque()
+            self._move_selection_enabled: bool = False
 
         @pyqtSlot(ShiftagoModelEvent)
         def update_from_model(self, event: ShiftagoModelEvent) -> None:
@@ -139,8 +140,16 @@ class BoardView(AppEventEmitter, QGraphicsView):
     def model(self, model: BoardViewModel) -> None:
         self._model = model
 
-    def reset_cursor(self) -> None:
-        self.setCursor(self._neutral_cursor)
+    @property
+    def move_selection_enabled(self) -> bool:
+        return self._move_selection_enabled
+
+    @move_selection_enabled.setter
+    def move_selection_enabled(self, new_val: bool) -> None:
+        self._move_selection_enabled = new_val
+        self.setMouseTracking(new_val)
+        if not new_val:
+            self.setCursor(self._neutral_cursor)
 
     def mouseMoveEvent(self, ev: QMouseEvent) -> None:
         new_cursor = self._neutral_cursor
@@ -156,7 +165,7 @@ class BoardView(AppEventEmitter, QGraphicsView):
         self.setCursor(new_cursor)
 
     def mousePressEvent(self, ev: QMouseEvent) -> None:
-        if ev.button() == Qt.MouseButton.LeftButton and self._model:
+        if self._move_selection_enabled and ev.button() == Qt.MouseButton.LeftButton and self._model:
             move: Optional[Move] = self._determine_move(ev.pos())
             if move:
                 self.emit(MoveSelectedEvent(move))
@@ -167,7 +176,7 @@ class BoardView(AppEventEmitter, QGraphicsView):
         msg_box.setIcon(QMessageBox.Information)
         msg_box.setText("Game over!")
         if game_over_condition.winner:
-            msg_box.setInformativeText(f"{game_over_condition._winner.name} has won.")
+            msg_box.setInformativeText(f"{game_over_condition.winner.name} has won.")
         else:
             msg_box.setInformativeText("It has ended in a draw.")
         msg_box.setStandardButtons(QMessageBox.Ok)

@@ -44,7 +44,7 @@ class BoardController(Controller):
             game_over_condition = self.controller.model.game_over_condition
             assert game_over_condition
             if game_over_condition.winner:
-                logger.info(f"Game over: {game_over_condition._winner.name} has won!")
+                logger.info(f"Game over: {game_over_condition.winner.name} has won!")
             else:
                 logger.info("Game over: it has ended in a draw!")
             self.controller.view.show_game_over(game_over_condition)
@@ -61,7 +61,7 @@ class BoardController(Controller):
             super().__init__(controller)
 
         def enter(self):
-            self.controller.view.setMouseTracking(True)
+            self.controller.view.move_selection_enabled = True
 
         def handle_event(self, event: AppEvent) -> bool:
             if event.__class__ == MoveSelectedEvent:
@@ -75,8 +75,7 @@ class BoardController(Controller):
             self.controller.model.apply_move(event.move)
 
         def leave(self):
-            self.controller.view.setMouseTracking(False)
-            self.controller.view.reset_cursor()
+            self.controller.view.move_selection_enabled = False
 
     class ComputerThinkingState(InteractionState):
 
