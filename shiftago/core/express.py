@@ -26,21 +26,21 @@ class BoardAnalyzer:
         else:
             raise ValueError("Illegal number of players: {0}".format(num_players))
         all_winning_line_ups = WinningLine.get_all(self._winning_line_length)  # type: List[WinningLine]
-        self._slot_to_lines = dict()  # type: Dict[Slot, Tuple[WinningLine]]
+        self._slot_to_lines = dict()  # type: Dict[Slot, Tuple[WinningLine,...]]
         for ver_pos in range(NUM_SLOTS_PER_SIDE):
             for hor_pos in range(NUM_SLOTS_PER_SIDE):
                 slot_pos = Slot(hor_pos, ver_pos)
                 self._slot_to_lines[slot_pos] = tuple(
-                    filter(lambda wlu: slot_pos in wlu.slot_positions, all_winning_line_ups))
+                    filter(lambda wlu: slot_pos in wlu.slots, all_winning_line_ups))
 
     @property
     def winning_line_length(self) -> int:
         return self._winning_line_length
 
-    def winning_lines_at(self, slot: Slot) -> Tuple[WinningLine]:
+    def winning_lines_at(self, slot: Slot) -> Tuple[WinningLine,...]:
         return self._slot_to_lines[slot]
 
-    def analyze(self, players: Tuple[Colour],
+    def analyze(self, players: Tuple[Colour,...],
                 colour_at: Callable[[Slot], Optional[Colour]]) -> Dict[Colour, Dict[int, List[WinningLine]]]:
         intermediate_results = dict()  # type: Dict[Colour, Dict[WinningLine, int]]
         for p in players:
