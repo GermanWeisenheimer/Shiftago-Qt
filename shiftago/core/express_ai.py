@@ -2,7 +2,7 @@
 import logging
 import math
 from typing import List, Dict, Tuple, Optional
-from abc import ABC, abstractproperty
+from abc import ABC, abstractmethod
 from random import randrange
 from shiftago.core.express import ShiftagoExpress, Colour, Move, GameOverCondition, WinningLine
 
@@ -26,7 +26,8 @@ class _MiniMaxStrategy(ABC):
     def win_rating(self) -> float:
         return self._win_rating
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def reverse_order(self) -> bool:
         raise NotImplementedError
 
