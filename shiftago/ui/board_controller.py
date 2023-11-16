@@ -1,3 +1,4 @@
+# pylint: disable=no-name-in-module
 from abc import ABC, abstractmethod
 from typing import Optional
 import time

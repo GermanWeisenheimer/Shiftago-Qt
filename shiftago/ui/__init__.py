@@ -1,3 +1,4 @@
+# pylint: disable=no-name-in-module
 from importlib.resources import path as resrc_path
 from PyQt5.QtGui import QPixmap
 import shiftago.ui.images as images

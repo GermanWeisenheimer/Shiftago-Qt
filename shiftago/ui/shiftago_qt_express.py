@@ -1,3 +1,4 @@
+# pylint: disable=no-name-in-module
 import sys
 import logging
 from pathlib import Path

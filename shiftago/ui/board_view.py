@@ -1,7 +1,8 @@
+# pylint: disable=no-name-in-module
 import logging
 from collections import defaultdict, deque
 from typing import Dict, Optional, NamedTuple, Deque
-from PyQt5.QtCore import Qt, QSize, QPoint, QRectF, pyqtBoundSignal, pyqtSlot, QPropertyAnimation
+from PyQt5.QtCore import Qt, QSize, QPoint, QRectF, pyqtSlot, QPropertyAnimation
 from PyQt5.QtWidgets import QWidget, QGraphicsView, QGraphicsScene, QGraphicsObject, QStyleOptionGraphicsItem, QMessageBox
 from PyQt5.QtGui import QPixmap, QPainter, QMouseEvent, QCursor
 from shiftago.core import Colour, Slot, Side, Move, GameOverCondition

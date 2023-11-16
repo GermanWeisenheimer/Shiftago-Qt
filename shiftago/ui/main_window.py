@@ -1,3 +1,4 @@
+# pylint: disable=no-name-in-module
 from PyQt5.QtCore import QSize
 from PyQt5.QtWidgets import QMainWindow
 from shiftago.ui.hmvc import AppEventEmitter, Controller

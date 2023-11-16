@@ -1,3 +1,4 @@
+# pylint: disable=no-name-in-module
 from typing import Optional
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtBoundSignal, pyqtSlot
 from shiftago.ui.app_events import AppEvent
