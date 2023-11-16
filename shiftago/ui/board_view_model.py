@@ -1,7 +1,7 @@
 from typing import Optional
+from PyQt5.QtCore import QObject, pyqtSignal
 from shiftago.core import Colour, Slot, Side, ShiftagoObserver
 from shiftago.core.express import ShiftagoExpress
-from PyQt5.QtCore import QObject, pyqtSignal
 
 
 class ShiftagoModelEvent:

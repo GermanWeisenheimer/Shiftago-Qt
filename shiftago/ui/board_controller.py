@@ -37,9 +37,6 @@ class BoardController(Controller):
 
     class GameOverState(InteractionState):
 
-        def __init__(self, controller: 'BoardController') -> None:
-            super().__init__(controller)
-
         def enter(self):
             game_over_condition = self.controller.model.game_over_condition
             assert game_over_condition
@@ -56,9 +53,6 @@ class BoardController(Controller):
             pass
 
     class HumanThinkingState(InteractionState):
-
-        def __init__(self, controller: 'BoardController') -> None:
-            super().__init__(controller)
 
         def enter(self):
             self.controller.view.move_selection_enabled = True
@@ -124,9 +118,6 @@ class BoardController(Controller):
             self._thread.quit()
 
     class PerformingAnimationState(InteractionState):
-
-        def __init__(self, controller: 'BoardController') -> None:
-            super().__init__(controller)
 
         def enter(self):
             pass

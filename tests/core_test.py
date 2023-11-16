@@ -74,6 +74,7 @@ class SlotTest(unittest.TestCase):
     def test_neighbour(self):
         self.assertEqual(Slot(1, 3), Slot(0, 3).neighbour(Side.RIGHT))
 
+
 @patch("shiftago.core.Shiftago.__abstractmethods__", set())
 class ShiftagoTest(unittest.TestCase):
 

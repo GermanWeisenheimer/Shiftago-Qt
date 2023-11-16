@@ -34,9 +34,9 @@ class _LoggingConfigurer:
         Path(self.LOGS_DIR).mkdir(exist_ok=True)
         filename = f"{self.LOGS_DIR}/{self._filename_prefix}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log"
         handlers = [logging.StreamHandler(), logging.FileHandler(filename, mode='w')]
-        filter = self.ThreadNameFilter()
+        thread_name_filter = self.ThreadNameFilter()
         for handler in handlers:
-            handler.addFilter(filter)
+            handler.addFilter(thread_name_filter)
         logging.basicConfig(level=logging.DEBUG,
                             format='%(asctime)s [%(qthreadName)14s] %(name)s %(levelname)5s - %(message)s',
                             handlers=handlers)

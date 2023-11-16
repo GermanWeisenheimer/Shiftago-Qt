@@ -1,6 +1,6 @@
-from typing import Tuple, List, Dict, Set, Optional, Callable
+# pylint: disable=consider-using-f-string
+from typing import Tuple, List, Dict, Set, Optional, Callable, TextIO
 from collections import defaultdict, OrderedDict
-from typing import TextIO
 import json
 from shiftago.core import NUM_MARBLES_PER_COLOUR, NUM_SLOTS_PER_SIDE, Slot, Colour, Shiftago, Move, GameOverCondition, JSONEncoder
 from shiftago.core.winning_line import WinningLine
@@ -37,10 +37,10 @@ class BoardAnalyzer:
     def winning_line_length(self) -> int:
         return self._winning_line_length
 
-    def winning_lines_at(self, slot: Slot) -> Tuple[WinningLine,...]:
+    def winning_lines_at(self, slot: Slot) -> Tuple[WinningLine, ...]:
         return self._slot_to_lines[slot]
 
-    def analyze(self, players: Tuple[Colour,...],
+    def analyze(self, players: Tuple[Colour, ...],
                 colour_at: Callable[[Slot], Optional[Colour]]) -> Dict[Colour, Dict[int, List[WinningLine]]]:
         intermediate_results = dict()  # type: Dict[Colour, Dict[WinningLine, int]]
         for p in players:
@@ -110,7 +110,7 @@ class ShiftagoExpress(Shiftago):
                     self._game_over_condition = GameOverCondition()
             else:
                 # all slots are occupied
-                game_over_condition = GameOverCondition()
+                self._game_over_condition = GameOverCondition()
         if self._game_over_condition is not None:
             self._current_player = None
             self.observer.notify_game_over()

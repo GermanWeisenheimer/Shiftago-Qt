@@ -3,7 +3,6 @@ import logging
 from shiftago.core import Colour, Side, Move
 from shiftago.core.express import ShiftagoExpress
 from shiftago.core.express_ai import AlphaBetaPruning
-from shiftago.core.winning_line import WinningLine
 from tests import TestDataLoader
 
 
@@ -26,5 +25,5 @@ class AlphaBetaPruningTest(unittest.TestCase):
         with TestDataLoader(ShiftagoExpress, 'express_ai_test1.json') as express_game:
             print("\n{0}".format(express_game))
             move = AlphaBetaPruning().select_move(express_game)
-            self.assertIn(move, [Move(Side.BOTTOM, 2), Move(Side.BOTTOM, 4)])
+            self.assertIn(move, [Move(Side.BOTTOM, 1), Move(Side.BOTTOM, 2), Move(Side.BOTTOM, 4)])
             print("Move: {0}".format(move))

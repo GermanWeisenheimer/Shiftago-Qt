@@ -1,3 +1,4 @@
+# pylint: disable=consider-using-f-string
 from typing import List, Tuple, Dict, Optional, TextIO
 from abc import ABC, abstractmethod
 from enum import Enum
@@ -45,7 +46,7 @@ class Side(Enum):
             raise ValueError("Illegal shift direction: {0}".format(shift_direction))
 
     def __str__(self) -> str:
-        return self._name_
+        return self.name
 
     @property
     def position(self) -> int:
@@ -203,7 +204,7 @@ class Shiftago(ABC):
                  board: Optional[Dict[Slot, Colour]] = None) -> None:
         num_players = len(set(players))
         if num_players < len(players):
-            raise ValueError("Argument 'players' contains duplicates: ".format(players))
+            raise ValueError("Argument 'players' contains duplicates: {0}".format(players))
         if num_players >= 2 and num_players <= len(Colour):
             self._players = players
         else:

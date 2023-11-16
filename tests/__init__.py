@@ -1,10 +1,10 @@
 import sys
 from typing import Type
+import tests.data
 if (sys.version_info < (3, 7, 0)):
     import importlib_resources as pkg_resources  # use backport
 else:
     import importlib.resources as pkg_resources
-import tests.data
 
 
 class TestDataLoader:

@@ -9,9 +9,6 @@ class AppEventEmitter:
 
         event_signal = pyqtSignal(AppEvent)
 
-        def __init__(self) -> None:
-            super().__init__()
-
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self._signal_wrapper = self.SignalWrapper()

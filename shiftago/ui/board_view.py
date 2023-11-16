@@ -4,7 +4,7 @@ from typing import Dict, Optional, NamedTuple, Deque
 from PyQt5.QtCore import Qt, QSize, QPoint, QRectF, pyqtBoundSignal, pyqtSlot, QPropertyAnimation
 from PyQt5.QtWidgets import QWidget, QGraphicsView, QGraphicsScene, QGraphicsObject, QStyleOptionGraphicsItem, QMessageBox
 from PyQt5.QtGui import QPixmap, QPainter, QMouseEvent, QCursor
-from shiftago.core import NUM_SLOTS_PER_SIDE, Colour, Slot, Side, Move, GameOverCondition
+from shiftago.core import Colour, Slot, Side, Move, GameOverCondition
 from shiftago.ui import load_image
 from shiftago.ui.app_events import AnimationFinishedEvent, MoveSelectedEvent, ExitRequestedEvent
 from shiftago.ui.hmvc import AppEventEmitter
@@ -31,7 +31,7 @@ class BoardView(AppEventEmitter, QGraphicsView):
 
             SIZE = QSize(70, 70)
 
-            def __init__(self, slot: Slot, pixmap: QPixmap, position: QPoint) -> None:
+            def __init__(self, pixmap: QPixmap, position: QPoint) -> None:
                 super().__init__()
                 self.setPos(position)
                 self._pixmap = pixmap
@@ -65,7 +65,7 @@ class BoardView(AppEventEmitter, QGraphicsView):
                 slot: Slot = event.slot  # type: ignore
                 colour = self._model.colour_at(slot)
                 assert colour, f"{slot} is not occupied!"
-                marble = self.Marble(slot, self._marble_pixmaps[colour], self.position_of(slot))
+                marble = self.Marble(self._marble_pixmaps[colour], self.position_of(slot))
                 self._marbles[slot] = marble
                 marble.setOpacity(0.0)
                 self.addItem(marble)

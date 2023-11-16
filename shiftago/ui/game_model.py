@@ -38,4 +38,4 @@ class ShiftagoExpressModel(BoardViewModel):
 
     @property
     def game_over_condition(self) -> Optional[GameOverCondition]:
-        return self._core_model._game_over_condition
+        return self._core_model.game_over_condition

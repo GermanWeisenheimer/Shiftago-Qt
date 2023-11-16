@@ -1,16 +1,17 @@
+# pylint: disable=consider-using-f-string
 import logging
+import math
 from typing import List, Dict, Tuple, Optional
 from abc import ABC, abstractproperty
-from shiftago.core.express import ShiftagoExpress, Colour, Move, GameOverCondition, WinningLine
-from math import inf, pow
 from random import randrange
+from shiftago.core.express import ShiftagoExpress, Colour, Move, GameOverCondition, WinningLine
 
 logger = logging.getLogger(__name__)
 
 
 def _current_opponent(game_state: ShiftagoExpress) -> Colour:
     players = game_state.players
-    return players[1 if players.index(game_state.current_player) == 0 else 0]  # type: Colour
+    return players[1 if players.index(game_state.current_player) == 0 else 0]
 
 
 class _MiniMaxStrategy(ABC):
@@ -74,13 +75,15 @@ class AlphaBetaPruning:
 
     MAX_DEPTH = 3
 
+    def __init__(self) -> None:
+        self._player_strategies = dict()  # type: Dict[Colour, _MiniMaxStrategy]
+
     def select_move(self, game_state: ShiftagoExpress) -> Move:
         assert len(game_state.players) == 2
-        self._player_strategies = dict()  # type: Dict[Colour, _MiniMaxStrategy]
         assert game_state.current_player, "No current player!"
         self._player_strategies[game_state.current_player] = _Maximizer()
         self._player_strategies[_current_opponent(game_state)] = _Minimizer()
-        move, node, num_visited_nodes = self._apply_mini_max(game_state, 1, -inf, inf)
+        move, node, num_visited_nodes = self._apply_mini_max(game_state, 1, -math.inf, math.inf)
         logger.debug("Selected move: {0} (level = {1}, rating = {2}, num_visited_nodes = {3})".format(
             move, node.level, node.rating, num_visited_nodes))
         return move
@@ -148,5 +151,5 @@ class AlphaBetaPruning:
             win_rating = current_strategy.win_rating
             for i in range(winning_line_length, 1, -1):
                 rating += (len(current_player_result[i]) - len(opponent_result[i])
-                           ) * pow(10, -(winning_line_length - i + 1)) * win_rating
+                           ) * math.pow(10, -(winning_line_length - i + 1)) * win_rating
         return _Node(cloned_game_state, is_leaf, level, rating)

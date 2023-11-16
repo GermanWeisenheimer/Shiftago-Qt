@@ -1,3 +1,4 @@
+# pylint: disable=consider-using-f-string
 from typing import List, Tuple
 from shiftago.core import NUM_SLOTS_PER_SIDE, Slot, LineOrientation
 
@@ -57,7 +58,7 @@ class WinningLine:
         return self._orientation
 
     @property
-    def slots(self) -> Tuple[Slot,...]:
+    def slots(self) -> Tuple[Slot, ...]:
         return self._slots
 
     @staticmethod

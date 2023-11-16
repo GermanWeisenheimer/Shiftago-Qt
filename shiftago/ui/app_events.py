@@ -1,4 +1,4 @@
-from shiftago.core import Move, GameOverCondition
+from shiftago.core import Move
 
 
 class AppEvent:
