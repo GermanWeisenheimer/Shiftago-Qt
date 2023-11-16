@@ -21,6 +21,9 @@ class InteractionState(ABC):
     def controller(self) -> 'BoardController':
         return self._controller
 
+    def __str__(self) -> str:
+        return self.__class__.__name__
+
     @abstractmethod
     def enter(self) -> None:
         raise NotImplementedError
@@ -42,7 +45,7 @@ class BoardController(Controller):
             game_over_condition = self.controller.model.game_over_condition
             assert game_over_condition
             if game_over_condition.winner:
-                logger.info(f"Game over: {game_over_condition.winner.name} has won!")
+                logger.info("Game over: %s has won!", game_over_condition.winner.name)
             else:
                 logger.info("Game over: it has ended in a draw!")
             self.controller.view.show_game_over(game_over_condition)
@@ -65,8 +68,8 @@ class BoardController(Controller):
             return False
 
         def _handle_move_selected(self, event: MoveSelectedEvent) -> None:
-            logger.info(f"Human is making move: {event.move}")
-            self.controller.interaction_state = self._controller._performing_animation_state
+            logger.info("Human is making move: %s", event.move)
+            self.controller.interaction_state = self._controller.performing_animation_state
             self.controller.model.apply_move(event.move)
 
         def leave(self):
@@ -111,8 +114,8 @@ class BoardController(Controller):
             return False
 
         def _handle_move_selected(self, event: MoveSelectedEvent) -> None:
-            logger.info(f"Computer is making move: {event.move}")
-            self.controller.interaction_state = self._controller._performing_animation_state
+            logger.info("Computer is making move: %s", event.move)
+            self.controller.interaction_state = self._controller.performing_animation_state
             self.controller.model.apply_move(event.move)
 
         def leave(self) -> None:
@@ -167,6 +170,10 @@ class BoardController(Controller):
         return self._computer_thinking_state
 
     @property
+    def performing_animation_state(self) -> PerformingAnimationState:
+        return self._performing_animation_state
+
+    @property
     def game_over_state(self) -> GameOverState:
         return self._game_over_state
 
@@ -177,10 +184,10 @@ class BoardController(Controller):
     @interaction_state.setter
     def interaction_state(self, new_state: InteractionState) -> None:
         if self._interaction_state:
-            logger.debug(f"Leaving state {self._interaction_state.__class__.__name__}.")
+            logger.debug("Leaving state %s.", self._interaction_state)
             self._interaction_state.leave()
         self._interaction_state = new_state
-        logger.debug(f"Entering state {self._interaction_state.__class__.__name__}.")
+        logger.debug("Entering state %s.", self._interaction_state)
         self._interaction_state.enter()
 
     def start_game(self) -> None:
