@@ -84,8 +84,8 @@ class AlphaBetaPruning:
         self._player_strategies[game_state.current_player] = _Maximizer()
         self._player_strategies[_current_opponent(game_state)] = _Minimizer()
         move, node, num_visited_nodes = self._apply_mini_max(game_state, 1, -math.inf, math.inf)
-        logger.debug("Selected move: {0} (level = {1}, rating = {2}, num_visited_nodes = {3})".format(
-            move, node.level, node.rating, num_visited_nodes))
+        logger.debug("Selected move: %s (level = %d, rating = %f, num_visited_nodes = %d)",
+                     move, node.level, node.rating, num_visited_nodes)
         return move
 
     def _apply_mini_max(self, game_state: ShiftagoExpress, level: int,

@@ -1,9 +1,11 @@
 # pylint: disable=no-name-in-module
+# pylint: disable=invalid-name
 import logging
 from collections import defaultdict, deque
 from typing import Dict, Optional, NamedTuple, Deque
 from PyQt5.QtCore import Qt, QSize, QPoint, QRectF, pyqtSlot, QPropertyAnimation
-from PyQt5.QtWidgets import QWidget, QGraphicsView, QGraphicsScene, QGraphicsObject, QStyleOptionGraphicsItem, QMessageBox
+from PyQt5.QtWidgets import QWidget, QMessageBox
+from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsObject, QStyleOptionGraphicsItem
 from PyQt5.QtGui import QPixmap, QPainter, QMouseEvent, QCursor
 from shiftago.core import Colour, Slot, Side, Move, GameOverCondition
 from shiftago.ui import load_image
@@ -40,6 +42,7 @@ class BoardView(AppEventEmitter, QGraphicsView):
             def boundingRect(self) -> QRectF:
                 return QRectF(0, 0, self.SIZE.width(), self.SIZE.height())
 
+            # pylint: disable=unused-argument
             def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget: Optional[QWidget]) -> None:
                 painter.drawPixmap(0, 0, self._pixmap)
 
@@ -61,7 +64,7 @@ class BoardView(AppEventEmitter, QGraphicsView):
 
         @pyqtSlot(ShiftagoModelEvent)
         def update_from_model(self, event: ShiftagoModelEvent) -> None:
-            logger.debug(f"Event occurred: {event}")
+            logger.debug("Event occurred: %s", event)
             if event.__class__ == MarbleInsertedEvent:
                 slot: Slot = event.slot  # type: ignore
                 colour = self._model.colour_at(slot)
@@ -123,7 +126,7 @@ class BoardView(AppEventEmitter, QGraphicsView):
         cursor_sizes[Side.TOP] = QSize(70, 122)
         cursor_sizes[Side.BOTTOM] = cursor_sizes[Side.TOP]
 
-        self._insert_cursors: Dict[Colour, Dict[Side, BoardView.CursorPair]] = defaultdict(lambda: dict())
+        self._insert_cursors: Dict[Colour, Dict[Side, BoardView.CursorPair]] = defaultdict(dict)
         for colour in (Colour.BLUE, Colour.ORANGE):
             cn = colour.name.lower()
             for side in Side:
