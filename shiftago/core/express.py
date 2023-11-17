@@ -30,9 +30,11 @@ class BoardAnalyzer:
         self._slot_to_lines = dict()  # type: Dict[Slot, Tuple[WinningLine,...]]
         for ver_pos in range(NUM_SLOTS_PER_SIDE):
             for hor_pos in range(NUM_SLOTS_PER_SIDE):
-                slot_pos = Slot(hor_pos, ver_pos)
-                self._slot_to_lines[slot_pos] = tuple(
-                    filter(lambda wlu: slot_pos in wlu.slots, all_winning_line_ups))
+                slot = Slot(hor_pos, ver_pos)
+                # pylint: disable=cell-var-from-loop
+                self._slot_to_lines[slot] = tuple(
+                    filter(lambda wlu: slot in wlu.slots, all_winning_line_ups))
+                # pylint: enable=cell-var-from-loop
 
     @property
     def winning_line_length(self) -> int:
