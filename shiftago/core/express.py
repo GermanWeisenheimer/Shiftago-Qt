@@ -27,11 +27,10 @@ class BoardAnalyzer:
         else:
             raise ValueError("Illegal number of players: {0}".format(num_players))
         all_winning_line_ups = WinningLine.get_all(self._winning_line_length)  # type: List[WinningLine]
-        # pylint: disable=cell-var-from-loop
-        self._slot_to_lines = {slot: set(filter(lambda wlu: slot in wlu.slots, all_winning_line_ups))
+        self._slot_to_lines = {slot: set(filter(lambda wlu: slot in wlu.slots,  # pylint: disable=cell-var-from-loop
+                                                all_winning_line_ups))
                                for slot in [Slot(hor_pos, ver_pos) for ver_pos in range(NUM_SLOTS_PER_SIDE)
                                             for hor_pos in range(NUM_SLOTS_PER_SIDE)]}
-        # pylint: enable=cell-var-from-loop
 
     @property
     def winning_line_length(self) -> int:
@@ -71,7 +70,7 @@ class BoardAnalyzer:
                 if colour_at(slot) is player:
                     for wl in self.winning_lines_at(slot):
                         wl_dict[wl] += 1
-        return {wl for wl in wl_dict.keys() if wl_dict[wl] == self._winning_line_length}
+        return {wl for wl, match_count in wl_dict.items() if match_count == self._winning_line_length}
 
 
 class ShiftagoExpress(Shiftago):

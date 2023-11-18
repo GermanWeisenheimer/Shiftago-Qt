@@ -2,7 +2,7 @@
 	"files.eol": "\n",
     "autopep8.args": ["--max-line-length=120"],
     "pylint.args": ["--extension-pkg-whitelist=PyQt5", "--disable=C0114,C0115,C0116", "--max-line-length=120"],
-    "[python]":{
+    "[python]": {
         "editor.defaultFormatter": "ms-python.autopep8",
     },
 	"python.languageServer": "Pylance",

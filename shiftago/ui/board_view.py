@@ -2,8 +2,8 @@ import logging
 from collections import defaultdict, deque
 from typing import Dict, Optional, NamedTuple, Deque
 from PyQt5.QtCore import Qt, QSize, QPoint, QRectF, pyqtSlot, QPropertyAnimation
-from PyQt5.QtWidgets import QWidget, QMessageBox
-from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsObject, QStyleOptionGraphicsItem
+from PyQt5.QtWidgets import QWidget, QMessageBox, QGraphicsView, QGraphicsScene, QGraphicsObject, \
+    QStyleOptionGraphicsItem
 from PyQt5.QtGui import QPixmap, QPainter, QMouseEvent, QCursor
 from shiftago.core import Colour, Slot, Side, Move, GameOverCondition
 from shiftago.ui import load_image
@@ -40,8 +40,10 @@ class BoardView(AppEventEmitter, QGraphicsView):
             def boundingRect(self) -> QRectF:  # pylint: disable=invalid-name
                 return QRectF(0, 0, self.SIZE.width(), self.SIZE.height())
 
-            # pylint: disable=unused-argument
-            def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget: Optional[QWidget]) -> None:
+            def paint(self, painter: QPainter,
+                      option: QStyleOptionGraphicsItem,  # pylint: disable=unused-argument
+                      widget: Optional[QWidget]) -> None:  # pylint: disable=unused-argument
+
                 painter.drawPixmap(0, 0, self._pixmap)
 
         def __init__(self, app_event_emitter: AppEventEmitter, model: BoardViewModel) -> None:
@@ -162,12 +164,14 @@ class BoardView(AppEventEmitter, QGraphicsView):
                                                     if side == Side.LEFT or side == Side.RIGHT else ev_pos.x())
             if self._model.current_player:
                 cursor_pair = self._insert_cursors[self._model.current_player][side]  # type: ignore
-                new_cursor = cursor_pair.enabled if (insert_pos is not None and
-                                                     self._model.is_insertion_possible(side, insert_pos)) else cursor_pair.disabled
+                new_cursor = cursor_pair.enabled \
+                    if (insert_pos is not None and
+                        self._model.is_insertion_possible(side, insert_pos)) else cursor_pair.disabled
         self.setCursor(new_cursor)
 
     def mousePressEvent(self, ev: QMouseEvent) -> None:  # pylint: disable=invalid-name
-        if self._move_selection_enabled and ev.button() == Qt.MouseButton.LeftButton and self._model:  # pylint: disable=no-member
+        if (self._move_selection_enabled
+                and ev.button() == Qt.MouseButton.LeftButton and self._model):  # pylint: disable=no-member
             move: Optional[Move] = self._determine_move(ev.pos())
             if move:
                 self.emit(MoveSelectedEvent(move))
@@ -213,9 +217,11 @@ class BoardView(AppEventEmitter, QGraphicsView):
         cursor_pos_y = cursor_pos.y()
 
         left_bound = BoardView.IMAGE_OFFSET_X + self.BoardScene.Marble.SIZE.width() // 3
-        right_bound = BoardView.IMAGE_OFFSET_X + BoardView.IMAGE_SIZE.width() - self.BoardScene.Marble.SIZE.width() // 3
+        right_bound = BoardView.IMAGE_OFFSET_X + BoardView.IMAGE_SIZE.width() \
+            - self.BoardScene.Marble.SIZE.width() // 3
         top_bound = BoardView.IMAGE_OFFSET_Y + self.BoardScene.Marble.SIZE.height() // 3
-        bottom_bound = BoardView.IMAGE_OFFSET_Y + BoardView.IMAGE_SIZE.height() - self.BoardScene.Marble.SIZE.height() // 3
+        bottom_bound = BoardView.IMAGE_OFFSET_Y + BoardView.IMAGE_SIZE.height() \
+            - self.BoardScene.Marble.SIZE.height() // 3
 
         if cursor_pos_x < left_bound:
             if cursor_pos_y > top_bound and cursor_pos_y < bottom_bound:
