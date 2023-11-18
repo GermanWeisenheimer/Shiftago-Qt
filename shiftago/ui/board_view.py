@@ -1,5 +1,3 @@
-# pylint: disable=no-name-in-module
-# pylint: disable=invalid-name
 import logging
 from collections import defaultdict, deque
 from typing import Dict, Optional, NamedTuple, Deque
@@ -39,7 +37,7 @@ class BoardView(AppEventEmitter, QGraphicsView):
                 self.setPos(position)
                 self._pixmap = pixmap
 
-            def boundingRect(self) -> QRectF:
+            def boundingRect(self) -> QRectF:  # pylint: disable=invalid-name
                 return QRectF(0, 0, self.SIZE.width(), self.SIZE.height())
 
             # pylint: disable=unused-argument
@@ -117,7 +115,7 @@ class BoardView(AppEventEmitter, QGraphicsView):
 
         self._model = model
 
-        self._neutral_cursor = QCursor(Qt.CursorShape.ArrowCursor)
+        self._neutral_cursor = QCursor(Qt.CursorShape.ArrowCursor)  # pylint: disable=no-member
 
         cursor_sizes: Dict[Side, QSize] = dict()
 
@@ -155,7 +153,7 @@ class BoardView(AppEventEmitter, QGraphicsView):
         if not new_val:
             self.setCursor(self._neutral_cursor)
 
-    def mouseMoveEvent(self, ev: QMouseEvent) -> None:
+    def mouseMoveEvent(self, ev: QMouseEvent) -> None:  # pylint: disable=invalid-name
         new_cursor = self._neutral_cursor
         ev_pos = ev.pos()
         side = self._determine_side(ev_pos)
@@ -168,8 +166,8 @@ class BoardView(AppEventEmitter, QGraphicsView):
                                                      self._model.is_insertion_possible(side, insert_pos)) else cursor_pair.disabled
         self.setCursor(new_cursor)
 
-    def mousePressEvent(self, ev: QMouseEvent) -> None:
-        if self._move_selection_enabled and ev.button() == Qt.MouseButton.LeftButton and self._model:
+    def mousePressEvent(self, ev: QMouseEvent) -> None:  # pylint: disable=invalid-name
+        if self._move_selection_enabled and ev.button() == Qt.MouseButton.LeftButton and self._model:  # pylint: disable=no-member
             move: Optional[Move] = self._determine_move(ev.pos())
             if move:
                 self.emit(MoveSelectedEvent(move))
