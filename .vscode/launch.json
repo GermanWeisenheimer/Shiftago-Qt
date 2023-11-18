@@ -9,7 +9,7 @@
             "name": "Shiftago_Qt",
             "type": "python",
             "request": "launch",
-            "module": "shiftago.ui.shiftago_qt_express",
+            "module": "shiftago",
             "console": "integratedTerminal",
             "justMyCode": true
         }

@@ -1,69 +1,48 @@
-# pylint: disable=no-name-in-module
-import sys
-import logging
-from pathlib import Path
-from datetime import datetime
 from typing import List
-from types import TracebackType
-from PyQt5.QtCore import QThread
-from PyQt5.QtWidgets import QApplication
+from PyQt5.QtCore import QSize
+from PyQt5.QtWidgets import QApplication, QMainWindow
 from shiftago.core import Colour
 from shiftago.core.express import ShiftagoExpress
 from shiftago.ui.game_model import ShiftagoExpressModel
-from shiftago.ui.main_window import MainWindow, MainWindowController
 from shiftago.ui.board_controller import BoardController
+from shiftago.ui.hmvc import AppEventEmitter, Controller
+from shiftago.ui.app_events import AppEvent, ExitRequestedEvent
+from shiftago.ui.board_view import BoardView, BoardViewModel
 
-logger = logging.getLogger(__name__)
 
+class _MainWindow(AppEventEmitter, QMainWindow):
 
-class _LoggingConfigurer:
+    def __init__(self, model: BoardViewModel):
+        super().__init__()
+        self.setWindowTitle('Shiftago')
+        self.setStyleSheet("background-color: lightGray;")
+        self.setFixedSize(QSize(BoardView.TOTAL_SIZE.width() + 20, BoardView.TOTAL_SIZE.height() + 20))
+        self._board_view = BoardView(model)
+        self.setCentralWidget(self._board_view)
 
-    LOGS_DIR = './logs'
-
-    class ThreadNameFilter(logging.Filter):
-        '''Adds the name of the current QThread as custom field 'qthreadName'.'''
-
-        def filter(self, record: logging.LogRecord):
-            qthread_name = QThread.currentThread().objectName()
-            record.qthreadName = qthread_name if qthread_name else record.threadName
-            return True
-
-    def __init__(self, filename_prefix: str = 'shiftago_qt') -> None:
-        self._filename_prefix = filename_prefix
-
-    def configure(self) -> str:
-        Path(self.LOGS_DIR).mkdir(exist_ok=True)
-        filename = f"{self.LOGS_DIR}/{self._filename_prefix}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log"
-        handlers = [logging.StreamHandler(), logging.FileHandler(filename, mode='w')]
-        thread_name_filter = self.ThreadNameFilter()
-        for handler in handlers:
-            handler.addFilter(thread_name_filter)
-        logging.basicConfig(level=logging.DEBUG,
-                            format='%(asctime)s [%(qthreadName)14s] %(name)s %(levelname)5s - %(message)s',
-                            handlers=handlers)
-        return filename
+    @property
+    def board_view(self) -> BoardView:
+        return self._board_view
 
 
 class ShiftagoQtExpress(QApplication):
 
+    class MainWindowController(Controller):
+
+        def __init__(self, main_window: _MainWindow) -> None:
+            super().__init__(None, main_window)
+            self._main_window = main_window
+            self._main_window.show()
+
+        def handle_event(self, event: AppEvent) -> bool:
+            if event.__class__ == ExitRequestedEvent:
+                self._main_window.close()
+                return True
+            return False
+
     def __init__(self, argv: List[str]) -> None:
         super().__init__(argv)
-        shiftago = ShiftagoExpress((Colour.BLUE, Colour.ORANGE), current_player=Colour.BLUE)
-        game_model = ShiftagoExpressModel(shiftago)
-        self._main_window = MainWindow(game_model)
-        self._main_window_controller = MainWindowController(self._main_window)
+        game_model = ShiftagoExpressModel(ShiftagoExpress((Colour.BLUE, Colour.ORANGE), current_player=Colour.BLUE))
+        self._main_window = _MainWindow(game_model)
+        self._main_window_controller = self.MainWindowController(self._main_window)
         self._board_controller = BoardController(self._main_window_controller, game_model, self._main_window.board_view)
-
-
-if __name__ == '__main__':
-    def handle_uncaught_exception(exc_type: type[BaseException], exc_value: BaseException,
-                                  exc_traceback: TracebackType | None):
-        if issubclass(exc_type, KeyboardInterrupt):
-            sys.__excepthook__(exc_type, exc_value, exc_traceback)
-            return
-        logger.fatal("Uncaught exception!", exc_info=(exc_type, exc_value, exc_traceback))
-        sys.exit(1)
-
-    sys.excepthook = handle_uncaught_exception
-    print(f"Writing log file {_LoggingConfigurer().configure()}")
-    sys.exit(ShiftagoQtExpress(sys.argv).exec())
