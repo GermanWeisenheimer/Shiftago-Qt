@@ -24,7 +24,8 @@ class _LoggingConfigurer:
         '''Adds the name of the current QThread as custom field 'qthreadName'.'''
         def thread_name_filter(record: logging.LogRecord):
             qthread_name = QThread.currentThread().objectName()
-            record.qthreadName = qthread_name if qthread_name else record.threadName
+            if qthread_name:
+                record.threadName = qthread_name
             return True
         Path(self.LOGS_DIR).mkdir(exist_ok=True)
         filename = f"{self.LOGS_DIR}/{self.filename_prefix}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log"
@@ -32,7 +33,7 @@ class _LoggingConfigurer:
         for handler in handlers:
             handler.addFilter(thread_name_filter)
         logging.basicConfig(level=logging.DEBUG,
-                            format='%(asctime)s [%(qthreadName)14s] %(name)s %(levelname)5s - %(message)s',
+                            format='%(asctime)s [%(threadName)14s] %(name)s %(levelname)5s - %(message)s',
                             handlers=handlers)
         return filename
 
