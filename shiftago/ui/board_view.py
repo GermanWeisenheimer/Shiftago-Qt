@@ -11,7 +11,7 @@ from shiftago.ui.app_events import AnimationFinishedEvent, MoveSelectedEvent, Ex
 from shiftago.ui.hmvc import AppEventEmitter
 from shiftago.ui.board_view_model import BoardViewModel, ShiftagoModelEvent, MarbleInsertedEvent, MarbleShiftedEvent
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 class BoardView(AppEventEmitter, QGraphicsView):
@@ -64,7 +64,7 @@ class BoardView(AppEventEmitter, QGraphicsView):
 
         @pyqtSlot(ShiftagoModelEvent)
         def update_from_model(self, event: ShiftagoModelEvent) -> None:
-            logger.debug("Event occurred: %s", event)
+            _logger.debug("Event occurred: %s", event)
             if event.__class__ == MarbleInsertedEvent:
                 slot: Slot = event.slot  # type: ignore
                 colour = self._model.colour_at(slot)

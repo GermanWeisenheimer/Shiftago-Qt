@@ -8,7 +8,7 @@ from shiftago.ui.app_events import AppEvent
 from shiftago.ui.game_model import ShiftagoExpressModel, PlayerNature
 from shiftago.ui.board_view import BoardView, MoveSelectedEvent, AnimationFinishedEvent
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 class InteractionState(ABC):
@@ -44,9 +44,9 @@ class BoardController(Controller):
             game_over_condition = self.controller.model.game_over_condition
             assert game_over_condition
             if game_over_condition.winner:
-                logger.info("Game over: %s has won!", game_over_condition.winner.name)
+                _logger.info("Game over: %s has won!", game_over_condition.winner.name)
             else:
-                logger.info("Game over: it has ended in a draw!")
+                _logger.info("Game over: it has ended in a draw!")
             self.controller.view.show_game_over(game_over_condition)
 
         def handle_event(self, event: AppEvent) -> bool:
@@ -67,7 +67,7 @@ class BoardController(Controller):
             return False
 
         def _handle_move_selected(self, event: MoveSelectedEvent) -> None:
-            logger.info("Human is making move: %s", event.move)
+            _logger.info("Human is making move: %s", event.move)
             self.controller.interaction_state = self._controller.performing_animation_state
             self.controller.model.apply_move(event.move)
 
@@ -86,7 +86,7 @@ class BoardController(Controller):
 
             @pyqtSlot()
             def work(self) -> None:
-                logger.debug("Thinking...")
+                _logger.debug("Thinking...")
                 start_time: float = time.time()
                 move = self._model.ai_select_move()
                 duration: float = time.time() - start_time
@@ -113,7 +113,7 @@ class BoardController(Controller):
             return False
 
         def _handle_move_selected(self, event: MoveSelectedEvent) -> None:
-            logger.info("Computer is making move: %s", event.move)
+            _logger.info("Computer is making move: %s", event.move)
             self.controller.interaction_state = self._controller.performing_animation_state
             self.controller.model.apply_move(event.move)
 
@@ -139,7 +139,7 @@ class BoardController(Controller):
             return False
 
         def leave(self):
-            logger.debug("Animation finished.")
+            _logger.debug("Animation finished.")
 
     def __init__(self, parent: Controller, model: ShiftagoExpressModel, view: BoardView) -> None:
         super().__init__(parent, view)
@@ -183,10 +183,10 @@ class BoardController(Controller):
     @interaction_state.setter
     def interaction_state(self, new_state: InteractionState) -> None:
         if self._interaction_state:
-            logger.debug("Leaving state %s.", self._interaction_state)
+            _logger.debug("Leaving state %s.", self._interaction_state)
             self._interaction_state.leave()
         self._interaction_state = new_state
-        logger.debug("Entering state %s.", self._interaction_state)
+        _logger.debug("Entering state %s.", self._interaction_state)
         self._interaction_state.enter()
 
     def start_game(self) -> None:
