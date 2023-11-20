@@ -20,7 +20,7 @@ class BoardAnalyzer:
         return instance
 
     def __init__(self, num_players: int) -> None:
-        if num_players >= 3 and num_players <= 4:
+        if 3 <= num_players <= 4:
             self._winning_line_length = 4
         elif num_players == 2:
             self._winning_line_length = 5
@@ -41,7 +41,7 @@ class BoardAnalyzer:
 
     def analyze(self, players: Tuple[Colour, ...],
                 colour_at: Callable[[Slot], Optional[Colour]]) -> Dict[Colour, Dict[int, List[WinningLine]]]:
-        intermediate_results = dict()  # type: Dict[Colour, Dict[WinningLine, int]]
+        intermediate_results = {}  # type: Dict[Colour, Dict[WinningLine, int]]
         for p in players:
             intermediate_results[p] = defaultdict(lambda: 0)
         for ver_pos in range(NUM_SLOTS_PER_SIDE):
@@ -52,11 +52,11 @@ class BoardAnalyzer:
                     wl_dict = intermediate_results[c]  # type: Dict[WinningLine, int]
                     for wl in self.winning_lines_at(slot_pos):
                         wl_dict[wl] += 1
-        results = dict()  # type: Dict[Colour, Dict[int, List[WinningLine]]]
+        results = {}  # type: Dict[Colour, Dict[int, List[WinningLine]]]
         for p in players:
             results[p] = p_value = OrderedDict()  # Dict[int, List[WinningLine]]
             for i in range(self._winning_line_length, 1, -1):
-                p_value[i] = list()
+                p_value[i] = []
             for winning_line, match_count in intermediate_results[p].items():
                 if match_count > 1:
                     p_value[match_count].append(winning_line)
