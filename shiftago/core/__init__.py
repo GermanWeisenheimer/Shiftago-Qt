@@ -68,12 +68,11 @@ class Side(Enum):
     def opposite(self) -> 'Side':
         if self == Side.LEFT:
             return Side.RIGHT
-        elif self == Side.RIGHT:
+        if self == Side.RIGHT:
             return Side.LEFT
-        elif self == Side.TOP:
+        if self == Side.TOP:
             return Side.BOTTOM
-        else:
-            return Side.TOP
+        return Side.TOP
 
 
 @total_ordering
@@ -85,9 +84,8 @@ class Slot(namedtuple('Slot', 'hor_pos ver_pos')):
     def initialize(cls):
         if cls.is_initialized():
             raise RuntimeError("Class Slot has already been initialized!")
-        else:
-            cls._instances = [[Slot(hor_pos, ver_pos) for hor_pos in range(NUM_SLOTS_PER_SIDE)]
-                              for ver_pos in range(NUM_SLOTS_PER_SIDE)]
+        cls._instances = [[Slot(hor_pos, ver_pos) for hor_pos in range(NUM_SLOTS_PER_SIDE)]
+                          for ver_pos in range(NUM_SLOTS_PER_SIDE)]
 
     @classmethod
     def is_initialized(cls) -> bool:
@@ -102,8 +100,7 @@ class Slot(namedtuple('Slot', 'hor_pos ver_pos')):
                 "Parameter hor_pos has illegal value: {0}".format(hor_pos))
         if cls.is_initialized():
             return cls._instances[ver_pos][hor_pos]
-        else:
-            return super().__new__(cls, hor_pos, ver_pos)
+        return super().__new__(cls, hor_pos, ver_pos)
 
     def __str__(self) -> str:
         return "[{0},{1}]".format(self.hor_pos, self.ver_pos)
@@ -116,15 +113,13 @@ class Slot(namedtuple('Slot', 'hor_pos ver_pos')):
     def neighbour(self, direction: Side):
         if direction.is_vertical:
             return Slot(self.hor_pos - direction.shift_direction, self.ver_pos)
-        else:
-            return Slot(self.hor_pos, self.ver_pos - direction.shift_direction)
+        return Slot(self.hor_pos, self.ver_pos - direction.shift_direction)
 
     @staticmethod
     def on_edge(side: Side, position: int) -> 'Slot':
         if side.is_vertical:
             return Slot(side.position, position)
-        else:
-            return Slot(position, side.position)
+        return Slot(position, side.position)
 
 
 Slot.initialize()
@@ -153,7 +148,7 @@ class GameOverCondition:
         self._winner = winner
 
     def __str__(self) -> str:
-        if (self._winner is None):
+        if self._winner is None:
             return "Game over: draw!"
         return "Game over: {0} has won!".format(self._winner)
 
@@ -200,7 +195,7 @@ class Shiftago(ABC):
 
     _DEFAULT_OBSERVER = ShiftagoObserver()
 
-    def __init__(self, players: Tuple[Colour, ...], *, current_player: Optional[Colour] = None,
+    def __init__(self, players: Tuple[Colour, ...], current_player: Optional[Colour] = None,
                  board: Optional[Dict[Slot, Colour]] = None) -> None:
         num_players = len(set(players))
         if num_players < len(players):

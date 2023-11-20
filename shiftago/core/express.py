@@ -46,11 +46,11 @@ class BoardAnalyzer:
             intermediate_results[p] = defaultdict(lambda: 0)
         for ver_pos in range(NUM_SLOTS_PER_SIDE):
             for hor_pos in range(NUM_SLOTS_PER_SIDE):
-                slot_pos = Slot(hor_pos, ver_pos)
-                c = colour_at(slot_pos)
+                slot = Slot(hor_pos, ver_pos)
+                c = colour_at(slot)
                 if c is not None:
                     wl_dict = intermediate_results[c]  # type: Dict[WinningLine, int]
-                    for wl in self.winning_lines_at(slot_pos):
+                    for wl in self.winning_lines_at(slot):
                         wl_dict[wl] += 1
         results = {}  # type: Dict[Colour, Dict[int, List[WinningLine]]]
         for p in players:
@@ -75,7 +75,7 @@ class BoardAnalyzer:
 
 class ShiftagoExpress(Shiftago):
 
-    def __init__(self, players: Tuple[Colour, ...], *, current_player: Optional[Colour] = None,
+    def __init__(self, players: Tuple[Colour, ...], current_player: Optional[Colour] = None,
                  board: Optional[Dict[Slot, Colour]] = None) -> None:
         super().__init__(players, current_player=current_player, board=board)
         self._board_analyzer = BoardAnalyzer(len(self.players))
