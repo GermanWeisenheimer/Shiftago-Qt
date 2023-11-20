@@ -24,8 +24,7 @@ class ShiftagoExpressModel(BoardViewModel):
     def current_player_nature(self) -> Optional[PlayerNature]:
         if self._core_model.current_player:
             return self.player_nature_of(self._core_model.current_player)
-        else:
-            return None
+        return None
 
     def player_nature_of(self, colour: Colour) -> PlayerNature:
         return PlayerNature.HUMAN if colour == Colour.BLUE else PlayerNature.ARTIFICIAL

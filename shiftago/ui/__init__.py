@@ -1,7 +1,6 @@
-# pylint: disable=no-name-in-module
 from importlib.resources import path as resrc_path
 from PyQt5.QtGui import QPixmap
-import shiftago.ui.images as images
+from shiftago.ui import images
 
 
 def load_image(image_resource: str) -> QPixmap:

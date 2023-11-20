@@ -1,4 +1,3 @@
-# pylint: disable=no-name-in-module
 from typing import Optional
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtBoundSignal, pyqtSlot
 from shiftago.ui.app_events import AppEvent
@@ -33,8 +32,8 @@ class Controller(QObject):
     def parent(self) -> Optional['Controller']:
         return self._parent
 
-    def connect_with(self, eventEmitter: AppEventEmitter):
-        eventEmitter.app_event_signal.connect(self._on_app_event)  # type: ignore
+    def connect_with(self, event_emitter: AppEventEmitter):
+        event_emitter.app_event_signal.connect(self._on_app_event)  # type: ignore
 
     @pyqtSlot(AppEvent)
     def _on_app_event(self, event: AppEvent) -> None:
