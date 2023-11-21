@@ -75,7 +75,7 @@ class BoardAnalyzer:
 
 class ShiftagoExpress(Shiftago):
 
-    def __init__(self, players: Tuple[Colour, ...], current_player: Optional[Colour] = None,
+    def __init__(self, players: Tuple[Colour, ...], *, current_player: Optional[Colour] = None,
                  board: Optional[Dict[Slot, Colour]] = None) -> None:
         super().__init__(players, current_player=current_player, board=board)
         self._board_analyzer = BoardAnalyzer(len(self.players))
