@@ -88,7 +88,7 @@ class BoardView(AppEventEmitter, QGraphicsView):
                 animation.setDuration(500)
                 self.run_animation(animation)
             else:
-                raise ValueError(f"Unknown event type: {event.__class__.__class__}")
+                raise ValueError(f"Unknown event type: {event.__class__}")
 
         def run_animation(self, animation: QPropertyAnimation) -> None:
             animation.finished.connect(self.animation_finished)  # type: ignore
@@ -169,7 +169,7 @@ class BoardView(AppEventEmitter, QGraphicsView):
     def mousePressEvent(self, ev: QMouseEvent) -> None:  # pylint: disable=invalid-name
         if (self._move_selection_enabled
                 and ev.button() == Qt.MouseButton.LeftButton and self._model):  # pylint: disable=no-member
-            move: Optional[Move] = self._determine_move(ev.pos())
+            move = self._determine_move(ev.pos())
             if move:
                 self.emit(MoveSelectedEvent(move))
 
