@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Optional, Dict
 import time
 import logging
 from PyQt5.QtCore import QObject, QThread, pyqtSlot
@@ -68,7 +68,7 @@ class BoardController(Controller):
 
         def _handle_move_selected(self, event: MoveSelectedEvent) -> None:
             _logger.info("Human is making move: %s", event.move)
-            self.controller.interaction_state = self._controller.performing_animation_state
+            self.controller.active_state = self._controller.performing_animation_state
             self.controller.model.apply_move(event.move)
 
         def leave(self):
@@ -114,7 +114,7 @@ class BoardController(Controller):
 
         def _handle_move_selected(self, event: MoveSelectedEvent) -> None:
             _logger.info("Computer is making move: %s", event.move)
-            self.controller.interaction_state = self._controller.performing_animation_state
+            self.controller.active_state = self._controller.performing_animation_state
             self.controller.model.apply_move(event.move)
 
         def leave(self) -> None:
@@ -130,11 +130,11 @@ class BoardController(Controller):
                 current_player_nature = self.controller.model.current_player_nature
                 if current_player_nature:
                     if current_player_nature == PlayerNature.HUMAN:
-                        self.controller.interaction_state = self._controller.human_thinking_state
+                        self.controller.active_state = self._controller.human_thinking_state
                     else:
-                        self.controller.interaction_state = self._controller.computer_thinking_state
+                        self.controller.active_state = self._controller.computer_thinking_state
                 else:
-                    self.controller.interaction_state = self._controller.game_over_state
+                    self.controller.active_state = self._controller.game_over_state
                 return True
             return False
 
@@ -145,11 +145,12 @@ class BoardController(Controller):
         super().__init__(parent, view)
         self._model = model
         self._view = view
-        self._human_thinking_state = self.HumanThinkingState(self)
-        self._computer_thinking_state = self.ComputerThinkingState(self)
-        self._performing_animation_state = self.PerformingAnimationState(self)
-        self._game_over_state = self.GameOverState(self)
-        self._interaction_state: Optional[InteractionState] = None
+        self._interaction_states: Dict[str, InteractionState] = {
+            self.HumanThinkingState.__name__: self.HumanThinkingState(self),
+            self.ComputerThinkingState.__name__: self.ComputerThinkingState(self),
+            self.PerformingAnimationState.__name__: self.PerformingAnimationState(self),
+            self.GameOverState.__name__: self.GameOverState(self)}
+        self._active_state: Optional[InteractionState] = None
         self.start_game()
 
     @property
@@ -161,41 +162,41 @@ class BoardController(Controller):
         return self._view
 
     @property
-    def human_thinking_state(self) -> HumanThinkingState:
-        return self._human_thinking_state
+    def human_thinking_state(self) -> InteractionState:
+        return self._interaction_states[self.HumanThinkingState.__name__]
 
     @property
-    def computer_thinking_state(self) -> ComputerThinkingState:
-        return self._computer_thinking_state
+    def computer_thinking_state(self) -> InteractionState:
+        return self._interaction_states[self.ComputerThinkingState.__name__]
 
     @property
-    def performing_animation_state(self) -> PerformingAnimationState:
-        return self._performing_animation_state
+    def performing_animation_state(self) -> InteractionState:
+        return self._interaction_states[self.PerformingAnimationState.__name__]
 
     @property
-    def game_over_state(self) -> GameOverState:
-        return self._game_over_state
+    def game_over_state(self) -> InteractionState:
+        return self._interaction_states[self.GameOverState.__name__]
 
     @property
-    def interaction_state(self) -> Optional[InteractionState]:
-        return self._interaction_state
+    def active_state(self) -> Optional[InteractionState]:
+        return self._active_state
 
-    @interaction_state.setter
-    def interaction_state(self, new_state: InteractionState) -> None:
-        if self._interaction_state:
-            _logger.debug("Leaving state %s.", self._interaction_state)
-            self._interaction_state.leave()
-        self._interaction_state = new_state
-        _logger.debug("Entering state %s.", self._interaction_state)
-        self._interaction_state.enter()
+    @active_state.setter
+    def active_state(self, new_state: InteractionState) -> None:
+        if self._active_state:
+            _logger.debug("Leaving state %s.", self._active_state)
+            self._active_state.leave()
+        self._active_state = new_state
+        _logger.debug("Entering state %s.", self._active_state)
+        self._active_state.enter()
 
     def start_game(self) -> None:
         assert self.model.current_player, "No current player!"
         if self.model.current_player_nature == PlayerNature.HUMAN:
-            self.interaction_state = self._human_thinking_state
+            self.active_state = self.human_thinking_state
         else:
-            self.interaction_state = self._computer_thinking_state
+            self.active_state = self.computer_thinking_state
 
     def handle_event(self, event: AppEvent) -> bool:
-        assert self._interaction_state, f"No interaction_state set on BoardController {repr(self)}!"
-        return self._interaction_state.handle_event(event)
+        assert self._active_state, f"No active_state set on BoardController {repr(self)}!"
+        return self._active_state.handle_event(event)
