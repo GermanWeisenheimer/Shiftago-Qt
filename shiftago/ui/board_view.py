@@ -1,6 +1,6 @@
 import logging
 from collections import defaultdict, deque
-from typing import Dict, Optional, NamedTuple, Deque
+from typing import Dict, Optional, NamedTuple, Deque, cast
 from PyQt5.QtCore import Qt, QSize, QPoint, QRectF, pyqtSlot, QPropertyAnimation
 from PyQt5.QtWidgets import QWidget, QMessageBox, QGraphicsView, QGraphicsScene, QGraphicsObject, \
     QStyleOptionGraphicsItem
@@ -52,12 +52,13 @@ class BoardView(AppEventEmitter, QGraphicsView):
             model.model_changed_notifier.connect(self.update_from_model)  # type: ignore
             self._app_event_emitter = app_event_emitter
             self._model = model
-            self._marble_pixmaps: Dict[Colour, QPixmap] = dict()
-            self._marble_pixmaps[Colour.BLUE] = load_image('blue_marble.png').scaled(self.Marble.SIZE)
-            self._marble_pixmaps[Colour.ORANGE] = load_image('orange_marble.png').scaled(self.Marble.SIZE)
+            self._marble_pixmaps: Dict[Colour, QPixmap] = {
+                Colour.BLUE: load_image('blue_marble.png').scaled(self.Marble.SIZE),
+                Colour.ORANGE: load_image('orange_marble.png').scaled(self.Marble.SIZE)
+            }
             self.setSceneRect(0, 0, BoardView.TOTAL_SIZE.width(), BoardView.TOTAL_SIZE.height())
             self.addPixmap(board_pixmap).setPos(QPoint(BoardView.IMAGE_OFFSET_X, BoardView.IMAGE_OFFSET_Y))
-            self._marbles: Dict[Slot, BoardView.BoardScene.Marble] = dict()
+            self._marbles: Dict[Slot, BoardView.BoardScene.Marble] = {}
             self._running_animation: Optional[QPropertyAnimation] = None
             self._waiting_animations: Deque[QPropertyAnimation] = deque()
             self._move_selection_enabled: bool = False
@@ -66,7 +67,7 @@ class BoardView(AppEventEmitter, QGraphicsView):
         def update_from_model(self, event: ShiftagoModelEvent) -> None:
             _logger.debug("Event occurred: %s", event)
             if event.__class__ == MarbleInsertedEvent:
-                slot: Slot = event.slot  # type: ignore
+                slot: Slot = cast(MarbleInsertedEvent, event).slot
                 colour = self._model.colour_at(slot)
                 assert colour, f"{slot} is not occupied!"
                 marble = self.Marble(self._marble_pixmaps[colour], self.position_of(slot))
@@ -78,8 +79,8 @@ class BoardView(AppEventEmitter, QGraphicsView):
                 animation.setDuration(500)
                 self.run_animation(animation)
             elif event.__class__ == MarbleShiftedEvent:
-                from_slot: Slot = event.slot  # type: ignore
-                to_slot = from_slot.neighbour(event.direction)  # type: ignore
+                from_slot: Slot = cast(MarbleShiftedEvent, event).slot
+                to_slot = from_slot.neighbour(cast(MarbleShiftedEvent, event).direction)
                 marble = self._marbles.pop(from_slot)
                 self._marbles[to_slot] = marble
                 animation = QPropertyAnimation(marble, b'pos')
@@ -119,19 +120,15 @@ class BoardView(AppEventEmitter, QGraphicsView):
 
         self._neutral_cursor = QCursor(Qt.CursorShape.ArrowCursor)  # pylint: disable=no-member
 
-        cursor_sizes: Dict[Side, QSize] = dict()
-
-        cursor_sizes[Side.LEFT] = QSize(122, 70)
-        cursor_sizes[Side.RIGHT] = cursor_sizes[Side.LEFT]
-        cursor_sizes[Side.TOP] = QSize(70, 122)
-        cursor_sizes[Side.BOTTOM] = cursor_sizes[Side.TOP]
+        cursor_hor_size = QSize(70, 122)
+        cursor_ver_size = QSize(122, 70)
 
         self._insert_cursors: Dict[Colour, Dict[Side, BoardView.CursorPair]] = defaultdict(dict)
         for colour in (Colour.BLUE, Colour.ORANGE):
             cn = colour.name.lower()
             for side in Side:
                 sn = side.name.lower()
-                csize = cursor_sizes[side]
+                csize = cursor_hor_size if side.is_horizontal else cursor_ver_size
                 self._insert_cursors[colour][side] = self.CursorPair(
                     QCursor(load_image(f'insert_{cn}_{sn}_enabled.png').scaled(csize), -1, -1),
                     QCursor(load_image(f'insert_{cn}_{sn}_disabled.png').scaled(csize), -1, -1))
@@ -161,7 +158,7 @@ class BoardView(AppEventEmitter, QGraphicsView):
         side = self._determine_side(ev_pos)
         if side:
             insert_pos = self._determine_insert_pos(side, ev_pos.y()
-                                                    if side == Side.LEFT or side == Side.RIGHT else ev_pos.x())
+                                                    if side in (Side.LEFT, Side.RIGHT) else ev_pos.x())
             if self._model.current_player:
                 cursor_pair = self._insert_cursors[self._model.current_player][side]  # type: ignore
                 new_cursor = cursor_pair.enabled \
