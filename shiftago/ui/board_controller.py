@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Optional, Dict
+from typing import Optional, Dict, cast
 import time
 import logging
 from PyQt5.QtCore import QObject, QThread, pyqtSlot
@@ -62,7 +62,7 @@ class BoardController(Controller):
 
         def handle_event(self, event: AppEvent) -> bool:
             if event.__class__ == MoveSelectedEvent:
-                self._handle_move_selected(event)  # type: ignore
+                self._handle_move_selected(cast(MoveSelectedEvent, event))
                 return True
             return False
 
@@ -108,7 +108,7 @@ class BoardController(Controller):
 
         def handle_event(self, event: AppEvent) -> bool:
             if event.__class__ == MoveSelectedEvent:
-                self._handle_move_selected(event)  # type: ignore
+                self._handle_move_selected(cast(MoveSelectedEvent, event))
                 return True
             return False
 

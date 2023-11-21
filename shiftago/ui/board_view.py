@@ -201,13 +201,13 @@ class BoardView(AppEventEmitter, QGraphicsView):
         if side.is_vertical:
             board_relative_pos = cursor_pos - (BoardView.IMAGE_OFFSET_Y + 38)
             insert_pos = board_relative_pos // (self.SLOT_SIZE.height() + 18)
-            if insert_pos >= 0 and insert_pos <= 6 and (
+            if 0 <= insert_pos <= 6 and (
                     board_relative_pos % (self.SLOT_SIZE.height() + 18)) < self.SLOT_SIZE.height():
                 return insert_pos
         else:
             board_relative_pos = cursor_pos - (BoardView.IMAGE_OFFSET_X + 38)
             insert_pos = board_relative_pos // (self.SLOT_SIZE.width() + 18)
-            if insert_pos >= 0 and insert_pos <= 6 and (
+            if 0 <= insert_pos <= 6 and (
                     board_relative_pos % (self.SLOT_SIZE.width() + 18)) < self.SLOT_SIZE.width():
                 return insert_pos
         return None
@@ -224,15 +224,15 @@ class BoardView(AppEventEmitter, QGraphicsView):
             - self.BoardScene.Marble.SIZE.height() // 3
 
         if cursor_pos_x < left_bound:
-            if cursor_pos_y > top_bound and cursor_pos_y < bottom_bound:
+            if top_bound < cursor_pos_y < bottom_bound:
                 return Side.LEFT
         elif cursor_pos_x > right_bound:
-            if cursor_pos_y > top_bound and cursor_pos_y < bottom_bound:
+            if top_bound < cursor_pos_y < bottom_bound:
                 return Side.RIGHT
         elif cursor_pos_y < top_bound:
-            if cursor_pos_x > left_bound and cursor_pos_x < right_bound:
+            if left_bound < cursor_pos_x < right_bound:
                 return Side.TOP
         elif cursor_pos_y > bottom_bound:
-            if cursor_pos_x > left_bound and cursor_pos_x < right_bound:
+            if left_bound < cursor_pos_x < right_bound:
                 return Side.BOTTOM
         return None

@@ -1,7 +1,9 @@
+# pylint: disable=too-few-public-methods
+from abc import ABC
 from shiftago.core import Move
 
 
-class AppEvent:
+class AppEvent(ABC):
 
     def __init__(self) -> None:
         pass
