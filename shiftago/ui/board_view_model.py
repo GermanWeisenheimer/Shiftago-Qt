@@ -1,46 +1,24 @@
 from typing import Optional
+from dataclasses import dataclass
 from PyQt5.QtCore import QObject, pyqtSignal
 from shiftago.core import Colour, Slot, Side, ShiftagoObserver
 from shiftago.core.express import ShiftagoExpress
 
 
+@dataclass(frozen=True)
 class ShiftagoModelEvent:
-
-    def __init__(self) -> None:
-        pass
+    pass
 
 
+@dataclass(frozen=True)
 class MarbleShiftedEvent(ShiftagoModelEvent):
-
-    def __init__(self, slot: Slot, direction: Side) -> None:
-        super().__init__()
-        self._slot = slot
-        self._direction = direction
-
-    def __str__(self) -> str:
-        return f"MarbleShiftedEvent(slot: {self._slot} => {self._direction})"
-
-    @property
-    def slot(self) -> Slot:
-        return self._slot
-
-    @property
-    def direction(self) -> Side:
-        return self._direction
+    slot: Slot
+    direction: Side
 
 
+@dataclass(frozen=True)
 class MarbleInsertedEvent(ShiftagoModelEvent):
-
-    def __init__(self, slot: Slot) -> None:
-        super().__init__()
-        self._slot = slot
-
-    def __str__(self) -> str:
-        return f"MarbleInsertedEvent(slot: {self._slot})"
-
-    @property
-    def slot(self) -> Slot:
-        return self._slot
+    slot: Slot
 
 
 class BoardViewModel(ShiftagoObserver, QObject):

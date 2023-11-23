@@ -1,34 +1,22 @@
-# pylint: disable=too-few-public-methods
-from abc import ABC
+from dataclasses import dataclass
 from shiftago.core import Move
 
 
-class AppEvent(ABC):
+@dataclass(frozen=True)
+class AppEvent:
+    pass
 
-    def __init__(self) -> None:
-        pass
 
-
+@dataclass(frozen=True)
 class MoveSelectedEvent(AppEvent):
-
-    def __init__(self, move: Move) -> None:
-        self._move = move
-
-    def __str__(self) -> str:
-        return f"MoveSelectedEvent{self.move}"
-
-    @property
-    def move(self) -> Move:
-        return self._move
+    move: Move
 
 
+@dataclass(frozen=True)
 class AnimationFinishedEvent(AppEvent):
-
-    def __init__(self) -> None:
-        pass
+    pass
 
 
+@dataclass(frozen=True)
 class ExitRequestedEvent(AppEvent):
-
-    def __init__(self) -> None:
-        pass
+    pass
