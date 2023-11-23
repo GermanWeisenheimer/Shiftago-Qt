@@ -1,4 +1,3 @@
-from typing import List
 from PyQt5.QtCore import QSize
 from PyQt5.QtWidgets import QApplication, QMainWindow
 from shiftago.core import Colour
@@ -40,7 +39,7 @@ class ShiftagoQtExpress(QApplication):
                 return True
             return False
 
-    def __init__(self, argv: List[str]) -> None:
+    def __init__(self, argv: list[str]) -> None:
         super().__init__(argv)
         game_model = ShiftagoExpressModel(ShiftagoExpress((Colour.BLUE, Colour.ORANGE), current_player=Colour.BLUE))
         self._main_window = _MainWindow(game_model)

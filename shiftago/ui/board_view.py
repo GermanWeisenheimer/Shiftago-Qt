@@ -1,6 +1,6 @@
 import logging
 from collections import defaultdict, deque
-from typing import Dict, Optional, NamedTuple, Deque, cast
+from typing import Optional, NamedTuple, cast
 from PyQt5.QtCore import Qt, QSize, QPoint, QRectF, pyqtSlot, QPropertyAnimation
 from PyQt5.QtWidgets import QWidget, QMessageBox, QGraphicsView, QGraphicsScene, QGraphicsObject, \
     QStyleOptionGraphicsItem
@@ -52,15 +52,15 @@ class BoardView(AppEventEmitter, QGraphicsView):
             model.model_changed_notifier.connect(self.update_from_model)  # type: ignore
             self._app_event_emitter = app_event_emitter
             self._model = model
-            self._marble_pixmaps: Dict[Colour, QPixmap] = {
+            self._marble_pixmaps: dict[Colour, QPixmap] = {
                 Colour.BLUE: load_image('blue_marble.png').scaled(self.Marble.SIZE),
                 Colour.ORANGE: load_image('orange_marble.png').scaled(self.Marble.SIZE)
             }
             self.setSceneRect(0, 0, BoardView.TOTAL_SIZE.width(), BoardView.TOTAL_SIZE.height())
             self.addPixmap(board_pixmap).setPos(QPoint(BoardView.IMAGE_OFFSET_X, BoardView.IMAGE_OFFSET_Y))
-            self._marbles: Dict[Slot, BoardView.BoardScene.Marble] = {}
+            self._marbles: dict[Slot, BoardView.BoardScene.Marble] = {}
             self._running_animation: Optional[QPropertyAnimation] = None
-            self._waiting_animations: Deque[QPropertyAnimation] = deque()
+            self._waiting_animations: deque[QPropertyAnimation] = deque()
             self._move_selection_enabled: bool = False
 
         @pyqtSlot(ShiftagoModelEvent)
@@ -123,7 +123,7 @@ class BoardView(AppEventEmitter, QGraphicsView):
         cursor_hor_size = QSize(70, 122)
         cursor_ver_size = QSize(122, 70)
 
-        self._insert_cursors: Dict[Colour, Dict[Side, BoardView.CursorPair]] = defaultdict(dict)
+        self._insert_cursors: dict[Colour, dict[Side, BoardView.CursorPair]] = defaultdict(dict)
         for colour in (Colour.BLUE, Colour.ORANGE):
             cn = colour.name.lower()
             for side in Side:

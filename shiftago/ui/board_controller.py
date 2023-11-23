@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Optional, Dict, cast
+from typing import Optional, cast
 import time
 import logging
 from PyQt5.QtCore import QObject, QThread, pyqtSlot
@@ -145,7 +145,7 @@ class BoardController(Controller):
         super().__init__(parent, view)
         self._model = model
         self._view = view
-        self._interaction_states: Dict[str, InteractionState] = {
+        self._interaction_states: dict[str, InteractionState] = {
             self.HumanThinkingState.__name__: self.HumanThinkingState(self),
             self.ComputerThinkingState.__name__: self.ComputerThinkingState(self),
             self.PerformingAnimationState.__name__: self.PerformingAnimationState(self),
