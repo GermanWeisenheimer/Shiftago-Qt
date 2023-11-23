@@ -9,8 +9,7 @@ from shiftago.core import Colour, Slot, Side, Move, GameOverCondition
 from shiftago.ui import BOARD_VIEW_SIZE, load_image
 from shiftago.ui.app_events import AnimationFinishedEvent, MoveSelectedEvent, ExitRequestedEvent
 from shiftago.ui.hmvc import AppEventEmitter
-from shiftago.ui.board_view_model import BoardViewModel, PlayerNature, ShiftagoModelEvent, \
-    MarbleInsertedEvent, MarbleShiftedEvent
+from shiftago.ui.board_view_model import BoardViewModel, ShiftagoModelEvent, MarbleInsertedEvent, MarbleShiftedEvent
 
 _logger = logging.getLogger(__name__)
 
