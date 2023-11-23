@@ -194,18 +194,19 @@ class BoardView(AppEventEmitter, QGraphicsView):
             self.setCursor(self._neutral_cursor)
 
     def mouseMoveEvent(self, ev: QMouseEvent) -> None:  # pylint: disable=invalid-name
-        new_cursor = self._neutral_cursor
-        if self._model.current_player_nature == PlayerNature.HUMAN:
+        if self._move_selection_enabled:
+            new_cursor = self._neutral_cursor
             ev_pos = ev.pos()
             side = self.BoardScene.determine_side(ev_pos)
             if side is not None:
+                cursor_pair = self._insert_cursors[self._model.current_player][side]  # type: ignore
                 insert_pos = self.BoardScene.determine_insert_pos(
                     side, ev_pos.y() if side in (Side.LEFT, Side.RIGHT) else ev_pos.x())
-                cursor_pair = self._insert_cursors[self._model.current_player][side]  # type: ignore
-                new_cursor = cursor_pair.enabled if (insert_pos is not None and
-                                                     self._model.is_insertion_possible(side, insert_pos)) \
-                    else cursor_pair.disabled
-        self.setCursor(new_cursor)
+                if insert_pos is not None and self._model.is_insertion_possible(side, insert_pos):
+                    new_cursor = cursor_pair.enabled
+                else:
+                    new_cursor = cursor_pair.disabled
+            self.setCursor(new_cursor)
 
     def mousePressEvent(self, ev: QMouseEvent) -> None:  # pylint: disable=invalid-name
         if (self._move_selection_enabled and
