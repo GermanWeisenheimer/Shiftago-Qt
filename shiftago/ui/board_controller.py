@@ -5,7 +5,8 @@ import logging
 from PyQt5.QtCore import QObject, QThread, pyqtSlot
 from shiftago.ui.hmvc import Controller, AppEventEmitter
 from shiftago.ui.app_events import AppEvent
-from shiftago.ui.game_model import ShiftagoExpressModel, PlayerNature
+from shiftago.ui.board_view_model import PlayerNature
+from shiftago.ui.game_model import ShiftagoExpressModel
 from shiftago.ui.board_view import BoardView, MoveSelectedEvent, AnimationFinishedEvent
 
 _logger = logging.getLogger(__name__)

@@ -1,8 +1,15 @@
 from typing import Optional
+from enum import Enum
 from dataclasses import dataclass
 from PyQt5.QtCore import QObject, pyqtSignal
 from shiftago.core import Colour, Slot, Side, ShiftagoObserver
 from shiftago.core.express import ShiftagoExpress
+
+
+class PlayerNature(Enum):
+
+    HUMAN = 1
+    ARTIFICIAL = 2
 
 
 @dataclass(frozen=True)
@@ -33,6 +40,15 @@ class BoardViewModel(ShiftagoObserver, QObject):
     @property
     def current_player(self) -> Optional[Colour]:
         return self._core_model.current_player
+
+    @property
+    def current_player_nature(self) -> Optional[PlayerNature]:
+        if self._core_model.current_player is not None:
+            return self.player_nature_of(self._core_model.current_player)
+        return None
+
+    def player_nature_of(self, colour: Colour) -> PlayerNature:
+        raise NotImplementedError
 
     def colour_at(self, position: Slot) -> Optional[Colour]:
         return self._core_model.colour_at(position)

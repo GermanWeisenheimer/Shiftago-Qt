@@ -6,27 +6,27 @@ from PyQt5.QtWidgets import QWidget, QMessageBox, QGraphicsView, QGraphicsScene,
     QStyleOptionGraphicsItem
 from PyQt5.QtGui import QPixmap, QPainter, QMouseEvent, QCursor
 from shiftago.core import Colour, Slot, Side, Move, GameOverCondition
-from shiftago.ui import load_image
+from shiftago.ui import BOARD_VIEW_SIZE, load_image
 from shiftago.ui.app_events import AnimationFinishedEvent, MoveSelectedEvent, ExitRequestedEvent
 from shiftago.ui.hmvc import AppEventEmitter
-from shiftago.ui.board_view_model import BoardViewModel, ShiftagoModelEvent, MarbleInsertedEvent, MarbleShiftedEvent
+from shiftago.ui.board_view_model import BoardViewModel, PlayerNature, ShiftagoModelEvent, \
+    MarbleInsertedEvent, MarbleShiftedEvent
 
 _logger = logging.getLogger(__name__)
 
 
 class BoardView(AppEventEmitter, QGraphicsView):
 
-    TOTAL_SIZE = QSize(700, 700)
-    IMAGE_SIZE = QSize(600, 600)
-    IMAGE_OFFSET_X = (TOTAL_SIZE.width() - IMAGE_SIZE.width()) // 2
-    IMAGE_OFFSET_Y = (TOTAL_SIZE.height() - IMAGE_SIZE.height()) // 2
-    SLOT_SIZE = QSize(59, 59)
-
     class CursorPair(NamedTuple):
         enabled: QCursor
         disabled: QCursor
 
     class BoardScene(QGraphicsScene):
+
+        IMAGE_SIZE = QSize(600, 600)
+        IMAGE_OFFSET_X = (BOARD_VIEW_SIZE.width() - IMAGE_SIZE.width()) // 2
+        IMAGE_OFFSET_Y = (BOARD_VIEW_SIZE.height() - IMAGE_SIZE.height()) // 2
+        SLOT_SIZE = QSize(59, 59)
 
         class Marble(QGraphicsObject):
 
@@ -48,7 +48,7 @@ class BoardView(AppEventEmitter, QGraphicsView):
 
         def __init__(self, app_event_emitter: AppEventEmitter, model: BoardViewModel) -> None:
             super().__init__()
-            board_pixmap = load_image('shiftago_board.jpg').scaled(BoardView.IMAGE_SIZE)
+            board_pixmap = load_image('shiftago_board.jpg').scaled(self.IMAGE_SIZE)
             model.model_changed_notifier.connect(self.update_from_model)  # type: ignore
             self._app_event_emitter = app_event_emitter
             self._model = model
@@ -56,8 +56,8 @@ class BoardView(AppEventEmitter, QGraphicsView):
                 Colour.BLUE: load_image('blue_marble.png').scaled(self.Marble.SIZE),
                 Colour.ORANGE: load_image('orange_marble.png').scaled(self.Marble.SIZE)
             }
-            self.setSceneRect(0, 0, BoardView.TOTAL_SIZE.width(), BoardView.TOTAL_SIZE.height())
-            self.addPixmap(board_pixmap).setPos(QPoint(BoardView.IMAGE_OFFSET_X, BoardView.IMAGE_OFFSET_Y))
+            self.setSceneRect(0, 0, BOARD_VIEW_SIZE.width(), BOARD_VIEW_SIZE.height())
+            self.addPixmap(board_pixmap).setPos(QPoint(self.IMAGE_OFFSET_X, self.IMAGE_OFFSET_Y))
             self._marbles: dict[Slot, BoardView.BoardScene.Marble] = {}
             self._running_animation: Optional[QPropertyAnimation] = None
             self._waiting_animations: deque[QPropertyAnimation] = deque()
@@ -107,9 +107,50 @@ class BoardView(AppEventEmitter, QGraphicsView):
                 self._running_animation = None
                 self._app_event_emitter.emit(AnimationFinishedEvent())
 
-        def position_of(self, slot: Slot) -> QPoint:
-            return QPoint(BoardView.IMAGE_OFFSET_X + 36 + slot.hor_pos * (self.Marble.SIZE.width() + 6),
-                          BoardView.IMAGE_OFFSET_Y + 36 + slot.ver_pos * (self.Marble.SIZE.height() + 6))
+        @classmethod
+        def position_of(cls, slot: Slot) -> QPoint:
+            return QPoint(cls.IMAGE_OFFSET_X + 36 + slot.hor_pos * (cls.Marble.SIZE.width() + 6),
+                          cls.IMAGE_OFFSET_Y + 36 + slot.ver_pos * (cls.Marble.SIZE.height() + 6))
+
+        @classmethod
+        def determine_side(cls, cursor_pos: QPoint) -> Optional[Side]:
+            cursor_pos_x = cursor_pos.x()
+            cursor_pos_y = cursor_pos.y()
+
+            left_bound = cls.IMAGE_OFFSET_X + cls.Marble.SIZE.width() // 3
+            right_bound = cls.IMAGE_OFFSET_X + cls.IMAGE_SIZE.width() - cls.Marble.SIZE.width() // 3
+            top_bound = cls.IMAGE_OFFSET_Y + cls.Marble.SIZE.height() // 3
+            bottom_bound = cls.IMAGE_OFFSET_Y + cls.IMAGE_SIZE.height() - cls.Marble.SIZE.height() // 3
+
+            if cursor_pos_x < left_bound:
+                if top_bound < cursor_pos_y < bottom_bound:
+                    return Side.LEFT
+            elif cursor_pos_x > right_bound:
+                if top_bound < cursor_pos_y < bottom_bound:
+                    return Side.RIGHT
+            elif cursor_pos_y < top_bound:
+                if left_bound < cursor_pos_x < right_bound:
+                    return Side.TOP
+            elif cursor_pos_y > bottom_bound:
+                if left_bound < cursor_pos_x < right_bound:
+                    return Side.BOTTOM
+            return None
+
+        @classmethod
+        def determine_insert_pos(cls, side: Side, cursor_pos: int) -> Optional[int]:
+            if side.is_vertical:
+                board_relative_pos = cursor_pos - (cls.IMAGE_OFFSET_Y + 50)
+                insert_pos = board_relative_pos // (cls.SLOT_SIZE.height() + 18)
+                if 0 <= insert_pos <= 6 and (
+                        board_relative_pos % (cls.SLOT_SIZE.height() + 18)) < cls.SLOT_SIZE.height():
+                    return insert_pos
+            else:
+                board_relative_pos = cursor_pos - (cls.IMAGE_OFFSET_X + 50)
+                insert_pos = board_relative_pos // (cls.SLOT_SIZE.width() + 18)
+                if 0 <= insert_pos <= 6 and (
+                        board_relative_pos % (cls.SLOT_SIZE.width() + 18)) < cls.SLOT_SIZE.width():
+                    return insert_pos
+            return None
 
     def __init__(self, model: BoardViewModel) -> None:
         super().__init__()
@@ -154,24 +195,28 @@ class BoardView(AppEventEmitter, QGraphicsView):
 
     def mouseMoveEvent(self, ev: QMouseEvent) -> None:  # pylint: disable=invalid-name
         new_cursor = self._neutral_cursor
-        ev_pos = ev.pos()
-        side = self._determine_side(ev_pos)
-        if side:
-            insert_pos = self._determine_insert_pos(side, ev_pos.y()
-                                                    if side in (Side.LEFT, Side.RIGHT) else ev_pos.x())
-            if self._model.current_player:
+        if self._model.current_player_nature == PlayerNature.HUMAN:
+            ev_pos = ev.pos()
+            side = self.BoardScene.determine_side(ev_pos)
+            if side is not None:
+                insert_pos = self.BoardScene.determine_insert_pos(
+                    side, ev_pos.y() if side in (Side.LEFT, Side.RIGHT) else ev_pos.x())
                 cursor_pair = self._insert_cursors[self._model.current_player][side]  # type: ignore
-                new_cursor = cursor_pair.enabled \
-                    if (insert_pos is not None and
-                        self._model.is_insertion_possible(side, insert_pos)) else cursor_pair.disabled
+                new_cursor = cursor_pair.enabled if (insert_pos is not None and
+                                                     self._model.is_insertion_possible(side, insert_pos)) \
+                    else cursor_pair.disabled
         self.setCursor(new_cursor)
 
     def mousePressEvent(self, ev: QMouseEvent) -> None:  # pylint: disable=invalid-name
-        if (self._move_selection_enabled
-                and ev.button() == Qt.MouseButton.LeftButton and self._model):  # pylint: disable=no-member
-            move = self._determine_move(ev.pos())
-            if move:
-                self.emit(MoveSelectedEvent(move))
+        if (self._move_selection_enabled and
+                ev.button() == Qt.MouseButton.LeftButton):  # pylint: disable=no-member
+            ev_pos = ev.pos()
+            side = self.BoardScene.determine_side(ev_pos)
+            if side is not None:
+                insert_pos = self.BoardScene.determine_insert_pos(
+                    side, ev_pos.y() if side.is_vertical else ev_pos.x())
+                if insert_pos is not None and self._model.is_insertion_possible(side, insert_pos):
+                    self.emit(MoveSelectedEvent(Move(side, insert_pos)))
 
     def show_game_over(self, game_over_condition: GameOverCondition):
         msg_box = QMessageBox(self)
@@ -185,51 +230,3 @@ class BoardView(AppEventEmitter, QGraphicsView):
         msg_box.setStandardButtons(QMessageBox.Ok)
         msg_box.exec_()
         self.emit(ExitRequestedEvent())
-
-    def _determine_move(self, cursor_pos: QPoint) -> Optional[Move]:
-        side = self._determine_side(cursor_pos)
-        if side:
-            insert_pos = self._determine_insert_pos(side, cursor_pos.y() if side.is_vertical else cursor_pos.x())
-            if insert_pos is not None and self._model.is_insertion_possible(side, insert_pos):
-                return Move(side, insert_pos)
-        return None
-
-    def _determine_insert_pos(self, side: Side, cursor_pos: int) -> Optional[int]:
-        if side.is_vertical:
-            board_relative_pos = cursor_pos - (BoardView.IMAGE_OFFSET_Y + 38)
-            insert_pos = board_relative_pos // (self.SLOT_SIZE.height() + 18)
-            if 0 <= insert_pos <= 6 and (
-                    board_relative_pos % (self.SLOT_SIZE.height() + 18)) < self.SLOT_SIZE.height():
-                return insert_pos
-        else:
-            board_relative_pos = cursor_pos - (BoardView.IMAGE_OFFSET_X + 38)
-            insert_pos = board_relative_pos // (self.SLOT_SIZE.width() + 18)
-            if 0 <= insert_pos <= 6 and (
-                    board_relative_pos % (self.SLOT_SIZE.width() + 18)) < self.SLOT_SIZE.width():
-                return insert_pos
-        return None
-
-    def _determine_side(self, cursor_pos: QPoint) -> Optional[Side]:
-        cursor_pos_x = cursor_pos.x()
-        cursor_pos_y = cursor_pos.y()
-
-        left_bound = BoardView.IMAGE_OFFSET_X + self.BoardScene.Marble.SIZE.width() // 3
-        right_bound = BoardView.IMAGE_OFFSET_X + BoardView.IMAGE_SIZE.width() \
-            - self.BoardScene.Marble.SIZE.width() // 3
-        top_bound = BoardView.IMAGE_OFFSET_Y + self.BoardScene.Marble.SIZE.height() // 3
-        bottom_bound = BoardView.IMAGE_OFFSET_Y + BoardView.IMAGE_SIZE.height() \
-            - self.BoardScene.Marble.SIZE.height() // 3
-
-        if cursor_pos_x < left_bound:
-            if top_bound < cursor_pos_y < bottom_bound:
-                return Side.LEFT
-        elif cursor_pos_x > right_bound:
-            if top_bound < cursor_pos_y < bottom_bound:
-                return Side.RIGHT
-        elif cursor_pos_y < top_bound:
-            if left_bound < cursor_pos_x < right_bound:
-                return Side.TOP
-        elif cursor_pos_y > bottom_bound:
-            if left_bound < cursor_pos_x < right_bound:
-                return Side.BOTTOM
-        return None

@@ -2,6 +2,7 @@ from PyQt5.QtCore import QSize
 from PyQt5.QtWidgets import QApplication, QMainWindow
 from shiftago.core import Colour
 from shiftago.core.express import ShiftagoExpress
+from shiftago.ui import BOARD_VIEW_SIZE
 from shiftago.ui.game_model import ShiftagoExpressModel
 from shiftago.ui.board_controller import BoardController
 from shiftago.ui.hmvc import AppEventEmitter, Controller
@@ -15,7 +16,7 @@ class _MainWindow(AppEventEmitter, QMainWindow):
         super().__init__()
         self.setWindowTitle('Shiftago')
         self.setStyleSheet("background-color: lightGray;")
-        self.setFixedSize(QSize(BoardView.TOTAL_SIZE.width() + 20, BoardView.TOTAL_SIZE.height() + 20))
+        self.setFixedSize(QSize(BOARD_VIEW_SIZE.width() + 20, BOARD_VIEW_SIZE.height() + 20))
         self._board_view = BoardView(model)
         self.setCentralWidget(self._board_view)
 
