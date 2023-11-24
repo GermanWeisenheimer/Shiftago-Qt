@@ -1,17 +1,31 @@
 import logging
 from collections import defaultdict, deque
+from dataclasses import dataclass
 from typing import Optional, NamedTuple, cast
 from PyQt5.QtCore import Qt, QSize, QPoint, QRectF, pyqtSlot, QPropertyAnimation
 from PyQt5.QtWidgets import QWidget, QMessageBox, QGraphicsView, QGraphicsScene, QGraphicsObject, \
     QStyleOptionGraphicsItem
 from PyQt5.QtGui import QPixmap, QPainter, QMouseEvent, QCursor
 from shiftago.core import Colour, Slot, Side, Move, GameOverCondition
-from shiftago.ui import BOARD_VIEW_SIZE, load_image
-from shiftago.ui.app_events import AnimationFinishedEvent, MoveSelectedEvent, ExitRequestedEvent
-from shiftago.ui.hmvc import AppEventEmitter
-from shiftago.ui.board_view_model import BoardViewModel, ShiftagoModelEvent, MarbleInsertedEvent, MarbleShiftedEvent
+from shiftago.ui import BOARD_VIEW_SIZE, load_image, AppEvent, AppEventEmitter
+from shiftago.ui.board_view_model import BoardViewModel, MarbleInsertedEvent, MarbleShiftedEvent
 
 _logger = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class MoveSelectedEvent(AppEvent):
+    move: Move
+
+
+@dataclass(frozen=True)
+class AnimationFinishedEvent(AppEvent):
+    pass
+
+
+@dataclass(frozen=True)
+class ExitRequestedEvent(AppEvent):
+    pass
 
 
 class BoardView(AppEventEmitter, QGraphicsView):
@@ -51,7 +65,7 @@ class BoardView(AppEventEmitter, QGraphicsView):
         def __init__(self, app_event_emitter: AppEventEmitter, model: BoardViewModel) -> None:
             super().__init__()
             board_pixmap = load_image('shiftago_board.jpg').scaled(self.IMAGE_SIZE)
-            model.model_changed_notifier.connect(self.update_from_model)  # type: ignore
+            model.app_event_signal.connect(self.update_from_model)  # type: ignore
             self._app_event_emitter = app_event_emitter
             self._model = model
             self._marble_pixmaps: dict[Colour, QPixmap] = {
@@ -65,8 +79,8 @@ class BoardView(AppEventEmitter, QGraphicsView):
             self._waiting_animations: deque[QPropertyAnimation] = deque()
             self._move_selection_enabled: bool = False
 
-        @pyqtSlot(ShiftagoModelEvent)
-        def update_from_model(self, event: ShiftagoModelEvent) -> None:
+        @pyqtSlot(AppEvent)
+        def update_from_model(self, event: AppEvent) -> None:
             _logger.debug("Event occurred: %s", event)
             if event.__class__ == MarbleInsertedEvent:
                 slot: Slot = cast(MarbleInsertedEvent, event).slot

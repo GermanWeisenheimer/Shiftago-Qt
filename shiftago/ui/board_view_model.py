@@ -1,9 +1,10 @@
 from typing import Optional
 from enum import Enum
 from dataclasses import dataclass
-from PyQt5.QtCore import QObject, pyqtSignal
+from abc import ABC, abstractmethod
 from shiftago.core import Colour, Slot, Side, ShiftagoObserver
 from shiftago.core.express import ShiftagoExpress
+from shiftago.ui import AppEvent, AppEventEmitter
 
 
 class PlayerNature(Enum):
@@ -13,24 +14,17 @@ class PlayerNature(Enum):
 
 
 @dataclass(frozen=True)
-class ShiftagoModelEvent:
-    pass
-
-
-@dataclass(frozen=True)
-class MarbleShiftedEvent(ShiftagoModelEvent):
+class MarbleShiftedEvent(AppEvent):
     slot: Slot
     direction: Side
 
 
 @dataclass(frozen=True)
-class MarbleInsertedEvent(ShiftagoModelEvent):
+class MarbleInsertedEvent(AppEvent):
     slot: Slot
 
 
-class BoardViewModel(ShiftagoObserver, QObject):
-
-    model_changed_notifier = pyqtSignal(ShiftagoModelEvent)
+class BoardViewModel(AppEventEmitter, ABC, ShiftagoObserver):
 
     def __init__(self, core_model: ShiftagoExpress) -> None:
         super().__init__()
@@ -47,8 +41,9 @@ class BoardViewModel(ShiftagoObserver, QObject):
             return self.player_nature_of(self._core_model.current_player)
         return None
 
+    @abstractmethod
     def player_nature_of(self, colour: Colour) -> PlayerNature:
-        raise NotImplementedError
+        pass
 
     def colour_at(self, position: Slot) -> Optional[Colour]:
         return self._core_model.colour_at(position)
@@ -57,7 +52,7 @@ class BoardViewModel(ShiftagoObserver, QObject):
         return self._core_model.find_first_empty_slot(side, insert_pos) is not None
 
     def notify_marble_shifted(self, slot: Slot, direction: Side):
-        self.model_changed_notifier.emit(MarbleShiftedEvent(slot, direction))
+        self.emit(MarbleShiftedEvent(slot, direction))
 
     def notify_marble_inserted(self, slot: Slot):
-        self.model_changed_notifier.emit(MarbleInsertedEvent(slot))
+        self.emit(MarbleInsertedEvent(slot))

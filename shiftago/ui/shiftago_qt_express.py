@@ -2,12 +2,10 @@ from PyQt5.QtCore import QSize
 from PyQt5.QtWidgets import QApplication, QMainWindow
 from shiftago.core import Colour
 from shiftago.core.express import ShiftagoExpress
-from shiftago.ui import BOARD_VIEW_SIZE
+from shiftago.ui import BOARD_VIEW_SIZE, Controller, AppEvent, AppEventEmitter
 from shiftago.ui.game_model import ShiftagoExpressModel
 from shiftago.ui.board_controller import BoardController
-from shiftago.ui.hmvc import AppEventEmitter, Controller
-from shiftago.ui.app_events import AppEvent, ExitRequestedEvent
-from shiftago.ui.board_view import BoardView, BoardViewModel
+from shiftago.ui.board_view import BoardView, BoardViewModel, ExitRequestedEvent
 
 
 class _MainWindow(AppEventEmitter, QMainWindow):
