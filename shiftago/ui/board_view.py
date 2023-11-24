@@ -20,6 +20,9 @@ class BoardView(AppEventEmitter, QGraphicsView):
         enabled: QCursor
         disabled: QCursor
 
+        def get(self, enabled: bool) -> QCursor:
+            return self.enabled if enabled else self.disabled
+
     class BoardScene(QGraphicsScene):
 
         IMAGE_SIZE = QSize(600, 600)
@@ -194,29 +197,30 @@ class BoardView(AppEventEmitter, QGraphicsView):
 
     def mouseMoveEvent(self, ev: QMouseEvent) -> None:  # pylint: disable=invalid-name
         if self._move_selection_enabled:
+            assert self._model.current_player is not None, "current_player not set!"
+            side, insert_pos = self._determine_move_args(ev.pos())
             new_cursor = self._neutral_cursor
-            ev_pos = ev.pos()
-            side = self.BoardScene.determine_side(ev_pos)
             if side is not None:
-                cursor_pair = self._insert_cursors[self._model.current_player][side]  # type: ignore
-                insert_pos = self.BoardScene.determine_insert_pos(
-                    side, ev_pos.y() if side in (Side.LEFT, Side.RIGHT) else ev_pos.x())
-                if insert_pos is not None and self._model.is_insertion_possible(side, insert_pos):
-                    new_cursor = cursor_pair.enabled
-                else:
-                    new_cursor = cursor_pair.disabled
+                cursor_pair = self._insert_cursors[self._model.current_player][side]
+                new_cursor = cursor_pair.get(insert_pos is not None)
             self.setCursor(new_cursor)
 
     def mousePressEvent(self, ev: QMouseEvent) -> None:  # pylint: disable=invalid-name
         if (self._move_selection_enabled and
                 ev.button() == Qt.MouseButton.LeftButton):  # pylint: disable=no-member
-            ev_pos = ev.pos()
-            side = self.BoardScene.determine_side(ev_pos)
-            if side is not None:
-                insert_pos = self.BoardScene.determine_insert_pos(
-                    side, ev_pos.y() if side.is_vertical else ev_pos.x())
-                if insert_pos is not None and self._model.is_insertion_possible(side, insert_pos):
-                    self.emit(MoveSelectedEvent(Move(side, insert_pos)))
+            side, insert_pos = self._determine_move_args(ev.pos())
+            if side is not None and insert_pos is not None:
+                self.emit(MoveSelectedEvent(Move(side, insert_pos)))
+
+    def _determine_move_args(self, ev_pos: QPoint) -> tuple[Optional[Side], Optional[int]]:
+        side = self.BoardScene.determine_side(ev_pos)
+        if side is not None:
+            insert_pos = self.BoardScene.determine_insert_pos(
+                side, ev_pos.y() if side.is_vertical else ev_pos.x())
+            if insert_pos is not None and self._model.is_insertion_possible(side, insert_pos):
+                return (side, insert_pos)
+            return (side, None)
+        return (None, None)
 
     def show_game_over(self, game_over_condition: GameOverCondition):
         msg_box = QMessageBox(self)
