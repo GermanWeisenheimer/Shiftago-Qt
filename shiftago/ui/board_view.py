@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import QWidget, QMessageBox, QGraphicsView, QGraphicsScene,
 from PyQt5.QtGui import QPixmap, QPainter, QMouseEvent, QCursor
 from shiftago.core import Colour, Slot, Side, Move, GameOverCondition
 from shiftago.ui import BOARD_VIEW_SIZE, load_image, AppEvent, AppEventEmitter
-from shiftago.ui.board_view_model import BoardViewModel, MarbleInsertedEvent, MarbleShiftedEvent
+from shiftago.ui.game_model import BoardViewModel, MarbleInsertedEvent, MarbleShiftedEvent
 
 _logger = logging.getLogger(__name__)
 
