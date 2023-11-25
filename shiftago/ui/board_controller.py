@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Optional, cast
+from typing import cast
 import time
 import logging
 from PyQt5.QtCore import QObject, QThread, pyqtSlot
@@ -38,7 +38,18 @@ class InteractionState(ABC):
 
 class BoardController(Controller):
 
-    class GameOverState(InteractionState):
+    class _IdleState(InteractionState):
+
+        def enter(self):
+            pass
+
+        def handle_event(self, event: AppEvent) -> bool:
+            return False
+
+        def leave(self):
+            pass
+
+    class _GameOverState(InteractionState):
 
         def enter(self):
             game_over_condition = self.controller.model.game_over_condition
@@ -55,7 +66,7 @@ class BoardController(Controller):
         def leave(self):
             pass
 
-    class HumanThinkingState(InteractionState):
+    class _HumanThinkingState(InteractionState):
 
         def enter(self):
             self.controller.view.move_selection_enabled = True
@@ -74,7 +85,7 @@ class BoardController(Controller):
         def leave(self):
             self.controller.view.move_selection_enabled = False
 
-    class ComputerThinkingState(InteractionState):
+    class _ComputerThinkingState(InteractionState):
 
         class Worker(AppEventEmitter, QObject):
 
@@ -120,7 +131,7 @@ class BoardController(Controller):
         def leave(self) -> None:
             self._thread.quit()
 
-    class PerformingAnimationState(InteractionState):
+    class _PerformingAnimationState(InteractionState):
 
         def enter(self):
             pass
@@ -145,13 +156,13 @@ class BoardController(Controller):
         super().__init__(parent, view)
         self._model = model
         self._view = view
-        self._interaction_states: dict[str, InteractionState] = {
-            self.HumanThinkingState.__name__: self.HumanThinkingState(self),
-            self.ComputerThinkingState.__name__: self.ComputerThinkingState(self),
-            self.PerformingAnimationState.__name__: self.PerformingAnimationState(self),
-            self.GameOverState.__name__: self.GameOverState(self)}
-        self._active_state: Optional[InteractionState] = None
-        self.start_game()
+        self._interaction_states: dict[type[InteractionState], InteractionState] = {
+            self._IdleState: self._IdleState(self),
+            self._HumanThinkingState: self._HumanThinkingState(self),
+            self._ComputerThinkingState: self._ComputerThinkingState(self),
+            self._PerformingAnimationState: self._PerformingAnimationState(self),
+            self._GameOverState: self._GameOverState(self)}
+        self._active_state: InteractionState = self.idle_state
 
     @property
     def model(self) -> ShiftagoExpressModel:
@@ -162,23 +173,27 @@ class BoardController(Controller):
         return self._view
 
     @property
+    def idle_state(self) -> InteractionState:
+        return self._interaction_states[self._IdleState]
+
+    @property
     def human_thinking_state(self) -> InteractionState:
-        return self._interaction_states[self.HumanThinkingState.__name__]
+        return self._interaction_states[self._HumanThinkingState]
 
     @property
     def computer_thinking_state(self) -> InteractionState:
-        return self._interaction_states[self.ComputerThinkingState.__name__]
+        return self._interaction_states[self._ComputerThinkingState]
 
     @property
     def performing_animation_state(self) -> InteractionState:
-        return self._interaction_states[self.PerformingAnimationState.__name__]
+        return self._interaction_states[self._PerformingAnimationState]
 
     @property
     def game_over_state(self) -> InteractionState:
-        return self._interaction_states[self.GameOverState.__name__]
+        return self._interaction_states[self._GameOverState]
 
     @property
-    def active_state(self) -> Optional[InteractionState]:
+    def active_state(self) -> InteractionState:
         return self._active_state
 
     @active_state.setter
@@ -198,5 +213,4 @@ class BoardController(Controller):
             self.active_state = self.computer_thinking_state
 
     def handle_event(self, event: AppEvent) -> bool:
-        assert self._active_state, f"No active_state set on BoardController {repr(self)}!"
         return self._active_state.handle_event(event)

@@ -5,12 +5,12 @@ from shiftago.core.express import ShiftagoExpress
 from shiftago.ui import BOARD_VIEW_SIZE, Controller, AppEvent, AppEventEmitter
 from shiftago.ui.game_model import ShiftagoExpressModel
 from shiftago.ui.board_controller import BoardController
-from shiftago.ui.board_view import BoardView, BoardViewModel, ExitRequestedEvent
+from shiftago.ui.board_view import BoardView, ExitRequestedEvent
 
 
 class _MainWindow(AppEventEmitter, QMainWindow):
 
-    def __init__(self, model: BoardViewModel):
+    def __init__(self, model: ShiftagoExpressModel):
         super().__init__()
         self.setWindowTitle('Shiftago')
         self.setStyleSheet("background-color: lightGray;")
@@ -23,24 +23,27 @@ class _MainWindow(AppEventEmitter, QMainWindow):
         return self._board_view
 
 
+class _MainWindowController(Controller):
+
+    def __init__(self, main_window: _MainWindow, model: ShiftagoExpressModel) -> None:
+        super().__init__(None, main_window)
+        self._board_controller = BoardController(self, model, main_window.board_view)
+        self._main_window = main_window
+        self._main_window.show()
+        self._board_controller.start_game()
+
+    def handle_event(self, event: AppEvent) -> bool:
+        if event.__class__ == ExitRequestedEvent:
+            self._main_window.close()
+            return True
+        return False
+
+
 class ShiftagoQtExpress(QApplication):
-
-    class MainWindowController(Controller):
-
-        def __init__(self, main_window: _MainWindow) -> None:
-            super().__init__(None, main_window)
-            self._main_window = main_window
-            self._main_window.show()
-
-        def handle_event(self, event: AppEvent) -> bool:
-            if event.__class__ == ExitRequestedEvent:
-                self._main_window.close()
-                return True
-            return False
 
     def __init__(self, argv: list[str]) -> None:
         super().__init__(argv)
-        game_model = ShiftagoExpressModel(ShiftagoExpress((Colour.BLUE, Colour.ORANGE), current_player=Colour.BLUE))
+        game_model = ShiftagoExpressModel(ShiftagoExpress((Colour.BLUE, Colour.ORANGE),
+                                                          current_player=Colour.BLUE))
         self._main_window = _MainWindow(game_model)
-        self._main_window_controller = self.MainWindowController(self._main_window)
-        self._board_controller = BoardController(self._main_window_controller, game_model, self._main_window.board_view)
+        self._main_window_controller = _MainWindowController(self._main_window, game_model)
