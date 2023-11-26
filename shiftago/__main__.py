@@ -10,7 +10,7 @@ _logger = logging.getLogger(__name__)
 
 
 def _configure_logging(*, logs_dir: str = './logs', filename_prefix: str = 'shiftago_qt') -> str:
-    '''Adds the name of the current QThread as custom field 'qthreadName'.'''
+    '''Adds the name of the current QThread as field 'threadName'.'''
     def thread_name_filter(record: logging.LogRecord):
         qthread_name = QThread.currentThread().objectName()
         if qthread_name:
