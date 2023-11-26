@@ -4,7 +4,7 @@ from pathlib import Path
 from datetime import datetime
 from types import TracebackType
 from PyQt5.QtCore import QThread
-from shiftago.ui.shiftago_qt_express import ShiftagoQtExpress
+from .ui.shiftago_qt_express import ShiftagoQtExpress
 
 _logger = logging.getLogger(__name__)
 

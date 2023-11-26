@@ -3,9 +3,10 @@ from typing import cast
 import time
 import logging
 from PyQt5.QtCore import QObject, QThread, pyqtSlot
-from shiftago.ui import Controller, AppEvent, AppEventEmitter
-from shiftago.ui.game_model import ShiftagoExpressModel, PlayerNature
-from shiftago.ui.board_view import BoardView, MoveSelectedEvent, AnimationFinishedEvent
+from .hmvc import Controller, AppEvent, AppEventEmitter
+from .board_view import BoardView
+from .game_model import ShiftagoExpressModel, PlayerNature
+from .app_events import MoveSelectedEvent, AnimationFinishedEvent
 
 _logger = logging.getLogger(__name__)
 

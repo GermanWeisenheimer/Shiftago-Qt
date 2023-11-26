@@ -1,28 +1,17 @@
 from typing import Optional
 from enum import Enum
-from dataclasses import dataclass
 from abc import ABC, abstractmethod
 from shiftago.core import Colour, Slot, Side, Move, GameOverCondition, ShiftagoObserver
 from shiftago.core.express import ShiftagoExpress
 from shiftago.core.express_ai import AlphaBetaPruning
-from shiftago.ui import AppEvent, AppEventEmitter
+from .hmvc import AppEventEmitter
+from .app_events import MarbleShiftedEvent, MarbleInsertedEvent
 
 
 class PlayerNature(Enum):
 
     HUMAN = 1
     ARTIFICIAL = 2
-
-
-@dataclass(frozen=True)
-class MarbleShiftedEvent(AppEvent):
-    slot: Slot
-    direction: Side
-
-
-@dataclass(frozen=True)
-class MarbleInsertedEvent(AppEvent):
-    slot: Slot
 
 
 class BoardViewModel(AppEventEmitter, ABC, ShiftagoObserver):

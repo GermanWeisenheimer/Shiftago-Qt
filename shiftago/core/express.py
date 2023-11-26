@@ -4,7 +4,7 @@ from collections import defaultdict, OrderedDict
 import json
 from shiftago.core import NUM_MARBLES_PER_COLOUR, NUM_SLOTS_PER_SIDE
 from shiftago.core import Slot, Colour, Shiftago, Move, GameOverCondition, JSONEncoder
-from shiftago.core.winning_line import WinningLine
+from .winning_line import WinningLine
 
 
 class BoardAnalyzer:

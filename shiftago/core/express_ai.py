@@ -4,7 +4,7 @@ import math
 from typing import List, Dict, Tuple, Optional
 from abc import ABC, abstractmethod
 from random import randrange
-from shiftago.core.express import ShiftagoExpress, Colour, Move, GameOverCondition, WinningLine
+from .express import ShiftagoExpress, Colour, Move, GameOverCondition, WinningLine
 
 _logger = logging.getLogger(__name__)
 
