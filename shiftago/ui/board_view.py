@@ -7,6 +7,7 @@ from PyQt5.QtWidgets import QWidget, QMessageBox, QGraphicsView, QGraphicsScene,
     QStyleOptionGraphicsItem
 from PyQt5.QtGui import QPixmap, QPainter, QMouseEvent, QCursor
 from shiftago.core import Colour, Slot, Side, Move, GameOverCondition
+from shiftago.ui import QtSlot
 import shiftago.ui.images
 from .hmvc import AppEvent, AppEventEmitter
 from .app_events import AnimationFinishedEvent, MoveSelectedEvent, ExitRequestedEvent, \
@@ -61,7 +62,7 @@ class BoardView(AppEventEmitter, QGraphicsView):
         def __init__(self, app_event_emitter: AppEventEmitter, model: BoardViewModel) -> None:
             super().__init__()
             board_pixmap = _load_image('shiftago_board.jpg').scaled(self.IMAGE_SIZE)
-            model.app_event_signal.connect(self.update_from_model)  # type: ignore
+            model.app_event_signal.connect(cast(QtSlot, self.update_from_model))
             self._app_event_emitter = app_event_emitter
             self._model = model
             self._marble_pixmaps: dict[Colour, QPixmap] = {
@@ -103,7 +104,7 @@ class BoardView(AppEventEmitter, QGraphicsView):
                 raise ValueError(f"Unknown event type: {event.__class__}")
 
         def run_animation(self, animation: QPropertyAnimation) -> None:
-            animation.finished.connect(self.animation_finished)  # type: ignore
+            animation.finished.connect(cast(QtSlot, self.animation_finished))
             if self._running_animation:
                 self._waiting_animations.append(animation)
             else:

@@ -1,7 +1,7 @@
 from abc import ABC
-from typing import Optional
+from typing import Optional, cast
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtBoundSignal, pyqtSlot
-
+from shiftago.ui import QtSlot
 
 class AppEvent(ABC): # pylint: disable= too-few-public-methods
     pass
@@ -37,7 +37,7 @@ class Controller(QObject):
         return self._parent
 
     def connect_with(self, event_emitter: AppEventEmitter):
-        event_emitter.app_event_signal.connect(self._on_app_event)  # type: ignore
+        event_emitter.app_event_signal.connect(cast(QtSlot, self._on_app_event))
 
     @pyqtSlot(AppEvent)
     def _on_app_event(self, event: AppEvent) -> None:
