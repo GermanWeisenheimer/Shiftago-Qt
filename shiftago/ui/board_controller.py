@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import cast
+from typing import Callable, cast
 import time
 import logging
 from PyQt5.QtCore import QObject, QThread, pyqtSlot
@@ -94,9 +94,17 @@ class BoardController(Controller):
             def __init__(self, model: ShiftagoExpressModel) -> None:
                 super().__init__()
                 self._model = model
+                self._thread = QThread()
+                self._thread.setObjectName('ThinkingThread')
+                self._thread.started.connect(cast(Callable[[], None], self._work))
+                self.moveToThread(self._thread)
+
+            @property
+            def thread(self) -> QThread:
+                return self._thread
 
             @pyqtSlot()
-            def work(self) -> None:
+            def _work(self) -> None:
                 _logger.debug("Thinking...")
                 start_time: float = time.time()
                 move = self._model.ai_select_move()
@@ -107,15 +115,11 @@ class BoardController(Controller):
 
         def __init__(self, controller: 'BoardController') -> None:
             super().__init__(controller)
-            self._thread = QThread()
-            self._thread.setObjectName('ThinkingThread')
             self._worker = self.Worker(self.controller.model)
             self.controller.connect_with(self._worker)
-            self._worker.moveToThread(self._thread)
-            self._thread.started.connect(self._worker.work)  # type: ignore
 
         def enter(self):
-            self._thread.start()
+            self._worker.thread.start()
 
         def handle_event(self, event: AppEvent) -> bool:
             if event.__class__ == MoveSelectedEvent:
@@ -129,7 +133,7 @@ class BoardController(Controller):
             self.controller.model.apply_move(event.move)
 
         def leave(self) -> None:
-            self._thread.quit()
+            self._worker.thread.quit()
 
     class _PerformingAnimationState(InteractionState):
 
