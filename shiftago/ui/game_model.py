@@ -35,6 +35,7 @@ class BoardViewModel(AppEventEmitter, ABC, ShiftagoObserver):
     def player_nature_of(self, colour: Colour) -> PlayerNature:
         pass
 
+    @property
     @abstractmethod
     def game_over_condition(self) -> Optional[GameOverCondition]:
         pass
