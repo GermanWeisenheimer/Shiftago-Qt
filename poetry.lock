@@ -61,7 +61,18 @@ files = [
     {file = "PyQt5_sip-12.11.1.tar.gz", hash = "sha256:97d3fbda0f61edb1be6529ec2d5c7202ae83aee4353e4b264a159f8c9ada4369"},
 ]
 
+[[package]]
+name = "python-statemachine"
+version = "2.1.2"
+description = "Python Finite State Machines made easy."
+optional = false
+python-versions = ">=3.7,<3.13"
+files = [
+    {file = "python_statemachine-2.1.2-py3-none-any.whl", hash = "sha256:d7e369d5da5b9007cc7cf5eb7a1b169081e2f4b7d30b6415fc122858fb7696ec"},
+    {file = "python_statemachine-2.1.2.tar.gz", hash = "sha256:0b0dd8b28738b53f14391b06d5072cd5e72259da5ae23574d3d4f5e6dd366663"},
+]
+
 [metadata]
 lock-version = "2.0"
-python-versions = "^3.10"
-content-hash = "cd339ba693493358e2aa7c1a27d2fb582f4709269d97d7f873d81f7c4074a3b6"
+python-versions = ">=3.10,<3.13"
+content-hash = "3f670d65cc45d0ec7048e155dd3b69a7023d3de042c21a7545869fed0886cabd"

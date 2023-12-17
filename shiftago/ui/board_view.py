@@ -232,11 +232,13 @@ class BoardView(AppEventEmitter, QGraphicsView):
             return (side, None)
         return (None, None)
 
-    def show_game_over(self, game_over_condition: GameOverCondition):
+    def show_game_over(self):
         msg_box = QMessageBox(self)
         msg_box.setWindowTitle("Shiftago-Qt")
         msg_box.setIcon(QMessageBox.Information)
         msg_box.setText("Game over!")
+        game_over_condition = self._model.game_over_condition
+        assert game_over_condition is not None, "Game not yet over!"
         if game_over_condition.winner:
             msg_box.setInformativeText(f"{game_over_condition.winner.name} has won.")
         else:

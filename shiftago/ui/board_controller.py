@@ -1,8 +1,8 @@
-from abc import ABC, abstractmethod
 from typing import Callable, cast
 import time
 import logging
 from PyQt5.QtCore import QObject, QThread, pyqtSlot
+from statemachine import StateMachine, State
 from .hmvc import Controller, AppEvent, AppEventEmitter
 from .board_view import BoardView
 from .game_model import ShiftagoExpressModel, PlayerNature
@@ -11,89 +11,18 @@ from .app_events import MoveSelectedEvent, AnimationFinishedEvent
 _logger = logging.getLogger(__name__)
 
 
-class InteractionState(ABC):
-
-    def __init__(self, controller: 'BoardController') -> None:
-        self._controller = controller
-
-    @property
-    def controller(self) -> 'BoardController':
-        return self._controller
-
-    def __str__(self) -> str:
-        return self.__class__.__name__
-
-    @abstractmethod
-    def enter(self) -> None:
-        raise NotImplementedError
-
-    @abstractmethod
-    def handle_event(self, event: AppEvent) -> bool:
-        raise NotImplementedError
-
-    @abstractmethod
-    def leave(self) -> None:
-        raise NotImplementedError
-
-
 class BoardController(Controller):
 
-    class _IdleState(InteractionState):
+    class _BoardStateMaschine(AppEventEmitter, StateMachine):
 
-        def enter(self):
-            pass
-
-        def handle_event(self, event: AppEvent) -> bool:
-            return False
-
-        def leave(self):
-            pass
-
-    class _GameOverState(InteractionState):
-
-        def enter(self):
-            game_over_condition = self.controller.model.game_over_condition
-            assert game_over_condition
-            if game_over_condition.winner:
-                _logger.info("Game over: %s has won!", game_over_condition.winner.name)
-            else:
-                _logger.info("Game over: it has ended in a draw!")
-            self.controller.view.show_game_over(game_over_condition)
-
-        def handle_event(self, event: AppEvent) -> bool:
-            return False
-
-        def leave(self):
-            pass
-
-    class _HumanThinkingState(InteractionState):
-
-        def enter(self):
-            self.controller.view.move_selection_enabled = True
-
-        def handle_event(self, event: AppEvent) -> bool:
-            if event.__class__ == MoveSelectedEvent:
-                self._handle_move_selected(cast(MoveSelectedEvent, event))
-                return True
-            return False
-
-        def _handle_move_selected(self, event: MoveSelectedEvent) -> None:
-            _logger.info("Human is making move: %s", event.move)
-            self.controller.active_state = self._controller.performing_animation_state
-            self.controller.model.apply_move(event.move)
-
-        def leave(self):
-            self.controller.view.move_selection_enabled = False
-
-    class _ComputerThinkingState(InteractionState):
-
-        class Worker(AppEventEmitter, QObject):
+        class ComputerThinkingWorker(QObject):
 
             DELAY = 1.
 
-            def __init__(self, model: ShiftagoExpressModel) -> None:
+            def __init__(self, model: ShiftagoExpressModel, app_event_emitter: AppEventEmitter) -> None:
                 super().__init__()
                 self._model = model
+                self._app_event_emitter = app_event_emitter
                 self._thread = QThread()
                 self._thread.setObjectName('ThinkingThread')
                 self._thread.started.connect(cast(Callable[[], None], self._work))
@@ -105,68 +34,71 @@ class BoardController(Controller):
 
             @pyqtSlot()
             def _work(self) -> None:
-                _logger.debug("Thinking...")
+                _logger.debug("Computer is thinking...")
                 start_time: float = time.time()
                 move = self._model.ai_select_move()
                 duration: float = time.time() - start_time
                 if duration < self.DELAY:
                     time.sleep(self.DELAY - duration)
-                self.emit(MoveSelectedEvent(move))
+                self._app_event_emitter.emit(MoveSelectedEvent(move))
 
-        def __init__(self, controller: 'BoardController') -> None:
-            super().__init__(controller)
-            self._worker = self.Worker(self.controller.model)
-            self.controller.connect_with(self._worker)
+            def start_work(self):
+                self._thread.start()
 
-        def enter(self):
-            self._worker.thread.start()
+            def finish_work(self):
+                self._thread.quit()
 
-        def handle_event(self, event: AppEvent) -> bool:
-            if event.__class__ == MoveSelectedEvent:
-                self._handle_move_selected(cast(MoveSelectedEvent, event))
-                return True
-            return False
+        idle_state = State('Idle', initial=True)
+        computer_thinking_state = State('ComputerThinking')
+        human_thinking_state = State('HumanThinking')
+        performing_animation_state = State('PerformingAnimation')
+        game_over_state = State('GameOver', final=True)
 
-        def _handle_move_selected(self, event: MoveSelectedEvent) -> None:
-            _logger.info("Computer is making move: %s", event.move)
-            self.controller.active_state = self._controller.performing_animation_state
-            self.controller.model.apply_move(event.move)
+        start_game = idle_state.to(human_thinking_state)
+        perform_animation = computer_thinking_state.to(performing_animation_state) | \
+            human_thinking_state.to(performing_animation_state)
+        computer_on_turn = performing_animation_state.to(computer_thinking_state)
+        human_on_turn = performing_animation_state.to(human_thinking_state)
+        finish_game = performing_animation_state.to(game_over_state)
 
-        def leave(self) -> None:
-            self._worker.thread.quit()
+        def __init__(self, model: ShiftagoExpressModel, view: BoardView) -> None:
+            super().__init__()
+            self._model = model
+            self._view = view
+            self._computer_thinking_worker = self.ComputerThinkingWorker(model, self)
 
-    class _PerformingAnimationState(InteractionState):
+        @computer_thinking_state.enter
+        def enter_computer_thinking(self) -> None:
+            self._computer_thinking_worker.start_work()
 
-        def enter(self):
-            pass
+        @computer_thinking_state.exit
+        def exit_computer_thinking(self) -> None:
+            self._computer_thinking_worker.finish_work()
 
-        def handle_event(self, event: AppEvent) -> bool:
-            if event.__class__ == AnimationFinishedEvent:
-                current_player_nature = self.controller.model.current_player_nature
-                if current_player_nature:
-                    if current_player_nature == PlayerNature.HUMAN:
-                        self.controller.active_state = self._controller.human_thinking_state
-                    else:
-                        self.controller.active_state = self._controller.computer_thinking_state
-                else:
-                    self.controller.active_state = self._controller.game_over_state
-                return True
-            return False
+        @human_thinking_state.enter
+        def enter_human_thinking(self) -> None:
+            self._view.move_selection_enabled = True
 
-        def leave(self):
-            _logger.debug("Animation finished.")
+        @human_thinking_state.exit
+        def exit_human_thinking(self) -> None:
+            self._view.move_selection_enabled = False
+
+        @game_over_state.enter
+        def enter_game_over(self) -> None:
+            game_over_condition = self._model.game_over_condition
+            assert game_over_condition is not None
+            if game_over_condition.winner:
+                _logger.info("Game over: %s has won!", game_over_condition.winner.name)
+            else:
+                _logger.info("Game over: it has ended in a draw!")
+            self._view.show_game_over()
 
     def __init__(self, parent: Controller, model: ShiftagoExpressModel, view: BoardView) -> None:
         super().__init__(parent, view)
         self._model = model
         self._view = view
-        self._interaction_states: dict[type[InteractionState], InteractionState] = {
-            self._IdleState: self._IdleState(self),
-            self._HumanThinkingState: self._HumanThinkingState(self),
-            self._ComputerThinkingState: self._ComputerThinkingState(self),
-            self._PerformingAnimationState: self._PerformingAnimationState(self),
-            self._GameOverState: self._GameOverState(self)}
-        self._active_state: InteractionState = self.idle_state
+        self._state_machine = self._BoardStateMaschine(model, view)
+        self.connect_with(self._state_machine)
 
     @property
     def model(self) -> ShiftagoExpressModel:
@@ -176,45 +108,35 @@ class BoardController(Controller):
     def view(self) -> BoardView:
         return self._view
 
-    @property
-    def idle_state(self) -> InteractionState:
-        return self._interaction_states[self._IdleState]
-
-    @property
-    def human_thinking_state(self) -> InteractionState:
-        return self._interaction_states[self._HumanThinkingState]
-
-    @property
-    def computer_thinking_state(self) -> InteractionState:
-        return self._interaction_states[self._ComputerThinkingState]
-
-    @property
-    def performing_animation_state(self) -> InteractionState:
-        return self._interaction_states[self._PerformingAnimationState]
-
-    @property
-    def game_over_state(self) -> InteractionState:
-        return self._interaction_states[self._GameOverState]
-
-    @property
-    def active_state(self) -> InteractionState:
-        return self._active_state
-
-    @active_state.setter
-    def active_state(self, new_state: InteractionState) -> None:
-        if self._active_state:
-            _logger.debug("Leaving state %s.", self._active_state)
-            self._active_state.leave()
-        self._active_state = new_state
-        _logger.debug("Entering state %s.", self._active_state)
-        self._active_state.enter()
-
     def start_game(self) -> None:
-        assert self.model.current_player, "No current player!"
-        if self.model.current_player_nature == PlayerNature.HUMAN:
-            self.active_state = self.human_thinking_state
-        else:
-            self.active_state = self.computer_thinking_state
+        assert self.model.current_player is not None, "No current player!"
+        self._state_machine.send('start_game')
 
     def handle_event(self, event: AppEvent) -> bool:
-        return self._active_state.handle_event(event)
+        if event.__class__ == MoveSelectedEvent:
+            assert self._state_machine.current_state in (self._BoardStateMaschine.computer_thinking_state,
+                                                         self._BoardStateMaschine.human_thinking_state)
+            self._handle_move_selected(cast(MoveSelectedEvent, event))
+            return True
+        if event.__class__ == AnimationFinishedEvent:
+            assert self._state_machine.current_state == self._BoardStateMaschine.performing_animation_state
+            self._handle_animation_finished()
+            return True
+        return False
+
+    def _handle_move_selected(self, event: MoveSelectedEvent) -> None:
+        if self._model.current_player_nature == PlayerNature.HUMAN:
+            _logger.info("Human is making move: %s", event.move)
+        else:
+            _logger.info("Computer is making move: %s", event.move)
+        self._state_machine.send('perform_animation')
+        self._model.apply_move(event.move)
+
+    def _handle_animation_finished(self) -> None:
+        _logger.debug("Animation finished.")
+        current_player_nature = self.model.current_player_nature
+        if current_player_nature is not None:
+            event = 'human_on_turn' if current_player_nature == PlayerNature.HUMAN else 'computer_on_turn'
+        else:
+            event = 'finish_game'
+        self._state_machine.send(event)
