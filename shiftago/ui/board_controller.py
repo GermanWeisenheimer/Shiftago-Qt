@@ -15,6 +15,19 @@ class BoardController(Controller):
 
     class _BoardStateMaschine(AppEventEmitter, StateMachine):
 
+        idle_state = State('Idle', initial=True)
+        computer_thinking_state = State('ComputerThinking')
+        human_thinking_state = State('HumanThinking')
+        performing_animation_state = State('PerformingAnimation')
+        game_over_state = State('GameOver', final=True)
+
+        to_first_player = idle_state.to(human_thinking_state)
+        to_animation = computer_thinking_state.to(performing_animation_state) | \
+            human_thinking_state.to(performing_animation_state)
+        to_artifial_player = performing_animation_state.to(computer_thinking_state)
+        to_human_player = performing_animation_state.to(human_thinking_state)
+        to_end_of_game = performing_animation_state.to(game_over_state)
+
         class ComputerThinkingWorker(QObject):
 
             DELAY = 1.
@@ -47,19 +60,6 @@ class BoardController(Controller):
 
             def finish_work(self):
                 self._thread.quit()
-
-        idle_state = State('Idle', initial=True)
-        computer_thinking_state = State('ComputerThinking')
-        human_thinking_state = State('HumanThinking')
-        performing_animation_state = State('PerformingAnimation')
-        game_over_state = State('GameOver', final=True)
-
-        start_game = idle_state.to(human_thinking_state)
-        perform_animation = computer_thinking_state.to(performing_animation_state) | \
-            human_thinking_state.to(performing_animation_state)
-        computer_on_turn = performing_animation_state.to(computer_thinking_state)
-        human_on_turn = performing_animation_state.to(human_thinking_state)
-        finish_game = performing_animation_state.to(game_over_state)
 
         def __init__(self, model: ShiftagoExpressModel, view: BoardView) -> None:
             super().__init__()
@@ -110,7 +110,7 @@ class BoardController(Controller):
 
     def start_game(self) -> None:
         assert self.model.current_player is not None, "No current player!"
-        self._state_machine.send('start_game')
+        self._state_machine.to_first_player()
 
     def handle_event(self, event: AppEvent) -> bool:
         if event.__class__ == MoveSelectedEvent:
@@ -129,14 +129,16 @@ class BoardController(Controller):
             _logger.info("Human is making move: %s", event.move)
         else:
             _logger.info("Computer is making move: %s", event.move)
-        self._state_machine.send('perform_animation')
+        self._state_machine.to_animation()
         self._model.apply_move(event.move)
 
     def _handle_animation_finished(self) -> None:
         _logger.debug("Animation finished.")
         current_player_nature = self.model.current_player_nature
         if current_player_nature is not None:
-            event = 'human_on_turn' if current_player_nature == PlayerNature.HUMAN else 'computer_on_turn'
+            if current_player_nature == PlayerNature.HUMAN:
+                self._state_machine.to_human_player()
+            else:
+                self._state_machine.to_artifial_player()
         else:
-            event = 'finish_game'
-        self._state_machine.send(event)
+            self._state_machine.to_end_of_game()
