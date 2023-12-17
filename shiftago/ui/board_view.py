@@ -6,7 +6,7 @@ from PyQt5.QtCore import Qt, QSize, QPoint, QRectF, pyqtSlot, QPropertyAnimation
 from PyQt5.QtWidgets import QWidget, QMessageBox, QGraphicsView, QGraphicsScene, QGraphicsObject, \
     QStyleOptionGraphicsItem
 from PyQt5.QtGui import QPixmap, QPainter, QMouseEvent, QCursor
-from shiftago.core import Colour, Slot, Side, Move, GameOverCondition
+from shiftago.core import Colour, Slot, Side, Move
 import shiftago.ui.images
 from .hmvc import AppEvent, AppEventEmitter, AppEventSlot
 from .app_events import AnimationFinishedEvent, MoveSelectedEvent, ExitRequestedEvent, \
