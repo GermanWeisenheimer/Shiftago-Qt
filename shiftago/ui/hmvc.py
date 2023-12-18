@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Optional, Callable, TypeAlias, cast
-from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
+from typing import Optional, Callable, TypeAlias
+from PyQt5.QtCore import QObject, pyqtSignal
 
 
 @dataclass(frozen=True)
@@ -31,31 +31,8 @@ class AppEventEmitter:
 
 class Controller(ABC):
 
-    class _QObject(QObject):
-
-        def __init__(self, event_handler: AppEventHandler) -> None:
-            super().__init__()
-            self._event_handler = event_handler
-
-        @pyqtSlot(AppEvent)
-        def on_app_event(self, event: AppEvent) -> None:
-            self._event_handler(event)
-
-        def connect_with(self, event_emitter: AppEventEmitter):
-            event_emitter.connect_with(cast(AppEventHandler, self.on_app_event))
-
     def __init__(self, parent: Optional['Controller'], view: AppEventEmitter) -> None:
-        super().__init__()
-
-        def event_handler(event: AppEvent) -> None:
-            if not self.handle_event(event):
-                if parent is not None:
-                    parent.handle_event(event)
-                else:
-                    raise ValueError(f"Unexpected event: {event}")
-
         self._parent: Optional['Controller'] = parent
-        self._qobject = self._QObject(event_handler)
         self.connect_with(view)
 
     @property
@@ -63,7 +40,14 @@ class Controller(ABC):
         return self._parent
 
     def connect_with(self, event_emitter: AppEventEmitter):
-        self._qobject.connect_with(event_emitter)
+        def handle_event(event: AppEvent) -> None:
+            if not self.handle_event(event):
+                if self._parent is not None:
+                    self._parent.handle_event(event)
+                else:
+                    raise ValueError(f"Unexpected event: {event}")
+
+        event_emitter.connect_with(handle_event)
 
     @abstractmethod
     def handle_event(self, event: AppEvent) -> bool:
