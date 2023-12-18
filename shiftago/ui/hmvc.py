@@ -5,23 +5,23 @@ from PyQt5.QtCore import QObject, pyqtSignal, pyqtBoundSignal, pyqtSlot
 
 
 @dataclass(frozen=True)
-class AppEvent(ABC):
+class AppEvent:
     pass
 
 
 class AppEventEmitter:
 
-    class SignalWrapper(QObject):
+    class _QObject(QObject):
 
         event_signal = pyqtSignal(AppEvent)
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        self._signal_wrapper = self.SignalWrapper()
+        self._qobject = self._QObject()
 
     @property
     def app_event_signal(self) -> pyqtBoundSignal:
-        return self._signal_wrapper.event_signal
+        return self._qobject.event_signal
 
     def emit(self, event: AppEvent) -> None:
         self.app_event_signal.emit(event)
