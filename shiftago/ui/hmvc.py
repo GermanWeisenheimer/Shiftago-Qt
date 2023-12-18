@@ -1,12 +1,15 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Optional, Callable, TypeAlias, cast
-from PyQt5.QtCore import QObject, pyqtSignal, pyqtBoundSignal, pyqtSlot
+from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
 
 
 @dataclass(frozen=True)
 class AppEvent:
     pass
+
+
+AppEventHandler: TypeAlias = Callable[[AppEvent], None]
 
 
 class AppEventEmitter:
@@ -19,33 +22,32 @@ class AppEventEmitter:
         super().__init__(*args, **kwargs)
         self._qobject = self._QObject()
 
-    @property
-    def app_event_signal(self) -> pyqtBoundSignal:
-        return self._qobject.event_signal
+    def connect_with(self, handler: AppEventHandler):
+        self._qobject.event_signal.connect(handler)
 
     def emit(self, event: AppEvent) -> None:
-        self.app_event_signal.emit(event)
-
-
-AppEventSlot: TypeAlias = Callable[[AppEvent], None]
+        self._qobject.event_signal.emit(event)
 
 
 class Controller(ABC):
 
     class _QObject(QObject):
 
-        def __init__(self, slot_delegate: AppEventSlot) -> None:
+        def __init__(self, event_handler: AppEventHandler) -> None:
             super().__init__()
-            self._slot_delegate = slot_delegate
+            self._event_handler = event_handler
 
         @pyqtSlot(AppEvent)
         def on_app_event(self, event: AppEvent) -> None:
-            self._slot_delegate(event)
+            self._event_handler(event)
+
+        def connect_with(self, event_emitter: AppEventEmitter):
+            event_emitter.connect_with(cast(AppEventHandler, self.on_app_event))
 
     def __init__(self, parent: Optional['Controller'], view: AppEventEmitter) -> None:
         super().__init__()
 
-        def on_app_event(event: AppEvent) -> None:
+        def event_handler(event: AppEvent) -> None:
             if not self.handle_event(event):
                 if parent is not None:
                     parent.handle_event(event)
@@ -53,7 +55,7 @@ class Controller(ABC):
                     raise ValueError(f"Unexpected event: {event}")
 
         self._parent: Optional['Controller'] = parent
-        self._app_event_receiver = self._QObject(on_app_event)
+        self._qobject = self._QObject(event_handler)
         self.connect_with(view)
 
     @property
@@ -61,7 +63,7 @@ class Controller(ABC):
         return self._parent
 
     def connect_with(self, event_emitter: AppEventEmitter):
-        event_emitter.app_event_signal.connect(cast(AppEventSlot, self._app_event_receiver.on_app_event))
+        self._qobject.connect_with(event_emitter)
 
     @abstractmethod
     def handle_event(self, event: AppEvent) -> bool:
