@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Optional, Callable, TypeAlias, cast
-from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
+from typing import Optional, Callable, TypeAlias
+from PyQt5.QtCore import QObject, pyqtSignal
 
 
 @dataclass(frozen=True)
@@ -37,12 +37,8 @@ class Controller(ABC):
             super().__init__()
             self._event_handler = event_handler
 
-        @pyqtSlot(AppEvent)
-        def on_app_event(self, event: AppEvent) -> None:
-            self._event_handler(event)
-
         def connect_with(self, event_emitter: AppEventEmitter):
-            event_emitter.connect_with(cast(AppEventHandler, self.on_app_event))
+            event_emitter.connect_with(self._event_handler)
 
     def __init__(self, parent: Optional['Controller'], view: AppEventEmitter) -> None:
         super().__init__()

@@ -1,6 +1,6 @@
 import logging
 from collections import defaultdict, deque
-from typing import Optional, NamedTuple, cast
+from typing import Optional, NamedTuple, Callable, cast
 from importlib.resources import path as resrc_path
 from PyQt5.QtCore import Qt, QSize, QPoint, QRectF, pyqtSlot, QPropertyAnimation
 from PyQt5.QtWidgets import QWidget, QMessageBox, QGraphicsView, QGraphicsScene, QGraphicsObject, \
@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import QWidget, QMessageBox, QGraphicsView, QGraphicsScene,
 from PyQt5.QtGui import QPixmap, QPainter, QMouseEvent, QCursor
 from shiftago.core import Colour, Slot, Side, Move
 import shiftago.ui.images
-from .hmvc import AppEvent, AppEventEmitter, AppEventHandler
+from .hmvc import AppEvent, AppEventEmitter
 from .app_events import AnimationFinishedEvent, MoveSelectedEvent, ExitRequestedEvent, \
     MarbleInsertedEvent, MarbleShiftedEvent
 from .game_model import BoardViewModel
@@ -61,7 +61,7 @@ class BoardView(AppEventEmitter, QGraphicsView):
         def __init__(self, app_event_emitter: AppEventEmitter, model: BoardViewModel) -> None:
             super().__init__()
             board_pixmap = _load_image('shiftago_board.jpg').scaled(self.IMAGE_SIZE)
-            model.connect_with(cast(AppEventHandler, self.update_from_model))
+            model.connect_with(self.update_from_model)
             self._app_event_emitter = app_event_emitter
             self._model = model
             self._marble_pixmaps: dict[Colour, QPixmap] = {
@@ -75,7 +75,6 @@ class BoardView(AppEventEmitter, QGraphicsView):
             self._waiting_animations: deque[QPropertyAnimation] = deque()
             self._move_selection_enabled: bool = False
 
-        @pyqtSlot(AppEvent)
         def update_from_model(self, event: AppEvent) -> None:
             _logger.debug("Event occurred: %s", event)
             if event.__class__ == MarbleInsertedEvent:
@@ -103,7 +102,7 @@ class BoardView(AppEventEmitter, QGraphicsView):
                 raise ValueError(f"Unknown event type: {event.__class__}")
 
         def run_animation(self, animation: QPropertyAnimation) -> None:
-            animation.finished.connect(cast(AppEventHandler, self.animation_finished))
+            animation.finished.connect(cast(Callable[[], None], self.animation_finished))
             if self._running_animation:
                 self._waiting_animations.append(animation)
             else:
