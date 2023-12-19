@@ -13,7 +13,7 @@ class _MainWindow(AppEventEmitter, QMainWindow):
 
     def __init__(self, model: ShiftagoExpressModel):
         super().__init__()
-        self.setWindowTitle('Shiftago')
+        self.setWindowTitle('Shiftago-Qt')
         self.setStyleSheet("background-color: lightGray;")
         self.setFixedSize(QSize(BOARD_VIEW_SIZE.width() + 20, BOARD_VIEW_SIZE.height() + 20))
         self._board_view = BoardView(model)
