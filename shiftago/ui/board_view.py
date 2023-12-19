@@ -102,20 +102,19 @@ class BoardView(AppEventEmitter, QGraphicsView):
                 raise ValueError(f"Unknown event type: {event.__class__}")
 
         def run_animation(self, animation: QPropertyAnimation) -> None:
-            animation.finished.connect(self.animation_finished)
+            def finished() -> None:
+                if len(self._waiting_animations) > 0:
+                    self._running_animation = self._waiting_animations.popleft()
+                    self._running_animation.start()
+                else:
+                    self._running_animation = None
+                    self._app_event_emitter.emit(AnimationFinishedEvent())
+            animation.finished.connect(finished)
             if self._running_animation:
                 self._waiting_animations.append(animation)
             else:
                 self._running_animation = animation
                 self._running_animation.start()
-
-        def animation_finished(self) -> None:
-            if len(self._waiting_animations) > 0:
-                self._running_animation = self._waiting_animations.popleft()
-                self._running_animation.start()
-            else:
-                self._running_animation = None
-                self._app_event_emitter.emit(AnimationFinishedEvent())
 
         @classmethod
         def position_of(cls, slot: Slot) -> QPoint:

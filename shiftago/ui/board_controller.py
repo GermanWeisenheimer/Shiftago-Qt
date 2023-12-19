@@ -34,25 +34,20 @@ class BoardController(Controller):
 
             def __init__(self, model: ShiftagoExpressModel, app_event_emitter: AppEventEmitter) -> None:
                 super().__init__()
-                self._model = model
-                self._app_event_emitter = app_event_emitter
+
+                def think() -> None:
+                    _logger.debug("Computer is thinking...")
+                    start_time: float = time.time()
+                    move = model.ai_select_move()
+                    duration: float = time.time() - start_time
+                    if duration < self.DELAY:
+                        time.sleep(self.DELAY - duration)
+                    app_event_emitter.emit(MoveSelectedEvent(move))
+
                 self._thread = QThread()
                 self._thread.setObjectName('ThinkingThread')
-                self._thread.started.connect(self._work)
+                self._thread.started.connect(think)
                 self.moveToThread(self._thread)
-
-            @property
-            def thread(self) -> QThread:
-                return self._thread
-
-            def _work(self) -> None:
-                _logger.debug("Computer is thinking...")
-                start_time: float = time.time()
-                move = self._model.ai_select_move()
-                duration: float = time.time() - start_time
-                if duration < self.DELAY:
-                    time.sleep(self.DELAY - duration)
-                self._app_event_emitter.emit(MoveSelectedEvent(move))
 
             def start_work(self):
                 self._thread.start()
