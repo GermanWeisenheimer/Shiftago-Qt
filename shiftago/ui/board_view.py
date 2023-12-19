@@ -1,8 +1,8 @@
 import logging
 from collections import defaultdict, deque
-from typing import Optional, NamedTuple, Callable, cast
+from typing import Optional, NamedTuple, cast
 from importlib.resources import path as resrc_path
-from PyQt5.QtCore import Qt, QSize, QPoint, QRectF, pyqtSlot, QPropertyAnimation
+from PyQt5.QtCore import Qt, QSize, QPoint, QRectF, QPropertyAnimation
 from PyQt5.QtWidgets import QWidget, QMessageBox, QGraphicsView, QGraphicsScene, QGraphicsObject, \
     QStyleOptionGraphicsItem
 from PyQt5.QtGui import QPixmap, QPainter, QMouseEvent, QCursor
@@ -102,14 +102,13 @@ class BoardView(AppEventEmitter, QGraphicsView):
                 raise ValueError(f"Unknown event type: {event.__class__}")
 
         def run_animation(self, animation: QPropertyAnimation) -> None:
-            animation.finished.connect(cast(Callable[[], None], self.animation_finished))
+            animation.finished.connect(self.animation_finished)
             if self._running_animation:
                 self._waiting_animations.append(animation)
             else:
                 self._running_animation = animation
                 self._running_animation.start()
 
-        @pyqtSlot()
         def animation_finished(self) -> None:
             if len(self._waiting_animations) > 0:
                 self._running_animation = self._waiting_animations.popleft()

@@ -1,7 +1,7 @@
-from typing import Callable, cast
+from typing import cast
 import time
 import logging
-from PyQt5.QtCore import QObject, QThread, pyqtSlot
+from PyQt5.QtCore import QObject, QThread
 from statemachine import StateMachine, State
 from .hmvc import Controller, AppEvent, AppEventEmitter
 from .board_view import BoardView
@@ -38,14 +38,13 @@ class BoardController(Controller):
                 self._app_event_emitter = app_event_emitter
                 self._thread = QThread()
                 self._thread.setObjectName('ThinkingThread')
-                self._thread.started.connect(cast(Callable[[], None], self._work))
+                self._thread.started.connect(self._work)
                 self.moveToThread(self._thread)
 
             @property
             def thread(self) -> QThread:
                 return self._thread
 
-            @pyqtSlot()
             def _work(self) -> None:
                 _logger.debug("Computer is thinking...")
                 start_time: float = time.time()
