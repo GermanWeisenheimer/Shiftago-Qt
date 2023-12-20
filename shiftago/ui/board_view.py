@@ -77,7 +77,7 @@ class BoardView(AppEventEmitter, QGraphicsView):
 
         def update_from_model(self, event: AppEvent) -> None:
             _logger.debug("Event occurred: %s", event)
-            if event.__class__ == MarbleInsertedEvent:
+            if isinstance(event, MarbleInsertedEvent):
                 slot: Slot = cast(MarbleInsertedEvent, event).slot
                 colour = self._model.colour_at(slot)
                 assert colour, f"{slot} is not occupied!"
@@ -89,7 +89,7 @@ class BoardView(AppEventEmitter, QGraphicsView):
                 animation.setEndValue(1.0)
                 animation.setDuration(500)
                 self.run_animation(animation)
-            elif event.__class__ == MarbleShiftedEvent:
+            elif isinstance(event, MarbleShiftedEvent):
                 from_slot: Slot = cast(MarbleShiftedEvent, event).slot
                 to_slot = from_slot.neighbour(cast(MarbleShiftedEvent, event).direction)
                 marble = self._marbles.pop(from_slot)

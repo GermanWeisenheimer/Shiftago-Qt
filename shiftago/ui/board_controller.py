@@ -107,12 +107,12 @@ class BoardController(Controller):
         self._state_machine.to_first_player()
 
     def handle_event(self, event: AppEvent) -> bool:
-        if event.__class__ == MoveSelectedEvent:
+        if isinstance(event, MoveSelectedEvent):
             assert self._state_machine.current_state in (self._BoardStateMaschine.computer_thinking_state,
                                                          self._BoardStateMaschine.human_thinking_state)
             self._handle_move_selected(cast(MoveSelectedEvent, event))
             return True
-        if event.__class__ == AnimationFinishedEvent:
+        if isinstance(event, AnimationFinishedEvent):
             assert self._state_machine.current_state == self._BoardStateMaschine.performing_animation_state
             self._handle_animation_finished()
             return True
