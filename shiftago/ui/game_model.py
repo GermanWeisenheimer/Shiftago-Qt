@@ -31,6 +31,9 @@ class BoardViewModel(AppEventEmitter, ABC, ShiftagoObserver):
             return self.player_nature_of(self._core_model.current_player)
         return None
 
+    def count_occupied_slots(self) -> int:
+        return self._core_model.count_occupied_slots()
+
     @abstractmethod
     def player_nature_of(self, colour: Colour) -> PlayerNature:
         pass

@@ -9,8 +9,7 @@ from PyQt5.QtGui import QPixmap, QPainter, QMouseEvent, QCursor
 from shiftago.core import Colour, Slot, Side, Move
 import shiftago.ui.images
 from .hmvc import AppEvent, AppEventEmitter
-from .app_events import AnimationFinishedEvent, MoveSelectedEvent, ExitRequestedEvent, \
-    MarbleInsertedEvent, MarbleShiftedEvent
+from .app_events import AnimationFinishedEvent, MoveSelectedEvent, MarbleInsertedEvent, MarbleShiftedEvent
 from .game_model import BoardViewModel
 
 BOARD_VIEW_SIZE = QSize(700, 700)
@@ -184,12 +183,8 @@ class BoardView(AppEventEmitter, QGraphicsView):
                     QCursor(_load_image(f'insert_{cn}_{sn}_disabled.png').scaled(csize), -1, -1))
 
     @property
-    def model(self) -> Optional[BoardViewModel]:
+    def model(self) -> BoardViewModel:
         return self._model
-
-    @model.setter
-    def model(self, model: BoardViewModel) -> None:
-        self._model = model
 
     @property
     def move_selection_enabled(self) -> bool:
@@ -242,4 +237,3 @@ class BoardView(AppEventEmitter, QGraphicsView):
             msg_box.setInformativeText("It has ended in a draw.")
         msg_box.setStandardButtons(QMessageBox.Ok)
         msg_box.exec_()
-        self.emit(ExitRequestedEvent())

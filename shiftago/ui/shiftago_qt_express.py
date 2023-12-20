@@ -1,5 +1,5 @@
 from PyQt5.QtCore import QSize
-from PyQt5.QtWidgets import QApplication, QMainWindow
+from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox
 from shiftago.core import Colour
 from shiftago.core.express import ShiftagoExpress
 from .hmvc import Controller, AppEvent, AppEventEmitter
@@ -19,6 +19,15 @@ class _MainWindow(AppEventEmitter, QMainWindow):
         self._board_view = BoardView(model)
         self.setCentralWidget(self._board_view)
 
+    def closeEvent(self, event):  # pylint: disable=invalid-name
+        event.ignore()
+        self.emit(ExitRequestedEvent())
+
+    def confirm_exit(self) -> bool:
+        reply = QMessageBox.question(self, self.windowTitle(), 'Are you sure you want to quit?',
+                                     QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        return reply == QMessageBox.Yes
+
     @property
     def board_view(self) -> BoardView:
         return self._board_view
@@ -33,9 +42,17 @@ class _MainWindowController(Controller):
         self._main_window.show()
         self._board_controller.start_game()
 
+    @property
+    def model(self) -> ShiftagoExpressModel:
+        return self._board_controller.model
+
     def handle_event(self, event: AppEvent) -> bool:
-        if event.__class__ == ExitRequestedEvent:
-            self._main_window.close()
+        if isinstance(event, ExitRequestedEvent):
+            if self.model.count_occupied_slots() > 0:
+                if self._main_window.confirm_exit():
+                    QApplication.quit()
+            else:
+                QApplication.quit()
             return True
         return False
 
