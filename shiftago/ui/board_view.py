@@ -160,12 +160,13 @@ class BoardView(AppEventEmitter, QGraphicsView):
                     return insert_pos
             return None
 
-    def __init__(self, model: BoardViewModel) -> None:
+    def __init__(self, model: BoardViewModel, main_window_title: str) -> None:
         super().__init__()
 
         self.setScene(self.BoardScene(self, model))
 
         self._model = model
+        self._main_window_title = main_window_title
 
         self._neutral_cursor = QCursor(Qt.CursorShape.ArrowCursor)  # pylint: disable=no-member
 
@@ -226,7 +227,7 @@ class BoardView(AppEventEmitter, QGraphicsView):
 
     def show_game_over(self):
         msg_box = QMessageBox(self)
-        msg_box.setWindowTitle("Shiftago-Qt")
+        msg_box.setWindowTitle(self._main_window_title)
         msg_box.setIcon(QMessageBox.Information)
         msg_box.setText("Game over!")
         game_over_condition = self._model.game_over_condition

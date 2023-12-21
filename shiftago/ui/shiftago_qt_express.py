@@ -11,12 +11,14 @@ from .board_controller import BoardController
 
 class _MainWindow(AppEventEmitter, QMainWindow):
 
+    TITLE = 'Shiftago-Qt'
+
     def __init__(self, model: ShiftagoExpressModel):
         super().__init__()
-        self.setWindowTitle('Shiftago-Qt')
+        self.setWindowTitle(self.TITLE)
         self.setStyleSheet("background-color: lightGray;")
         self.setFixedSize(QSize(BOARD_VIEW_SIZE.width() + 20, BOARD_VIEW_SIZE.height() + 20))
-        self._board_view = BoardView(model)
+        self._board_view = BoardView(model, self.TITLE)
         self.setCentralWidget(self._board_view)
 
     def closeEvent(self, event):  # pylint: disable=invalid-name
@@ -24,7 +26,7 @@ class _MainWindow(AppEventEmitter, QMainWindow):
         self.emit(ExitRequestedEvent())
 
     def confirm_exit(self) -> bool:
-        reply = QMessageBox.question(self, self.windowTitle(), 'Are you sure you want to quit?',
+        reply = QMessageBox.question(self, self.TITLE, 'Are you sure you want to quit?',
                                      QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         return reply == QMessageBox.Yes
 
