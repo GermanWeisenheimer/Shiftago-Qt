@@ -32,18 +32,17 @@ class AppEventEmitter:
 class Controller(ABC):
 
     def __init__(self, parent: Optional['Controller'], view: AppEventEmitter) -> None:
-        self._parent: Optional['Controller'] = parent
+        self._app_event_emitter: Optional[AppEventEmitter] = None
+        if parent is not None:
+            self._app_event_emitter = AppEventEmitter()
+            parent.connect_with(self._app_event_emitter)
         self.connect_with(view)
-
-    @property
-    def parent(self) -> Optional['Controller']:
-        return self._parent
 
     def connect_with(self, event_emitter: AppEventEmitter):
         def handle_event(event: AppEvent) -> None:
             if not self.handle_event(event):
-                if self._parent is not None:
-                    self._parent.handle_event(event)
+                if self._app_event_emitter is not None:
+                    self._app_event_emitter.emit(event) # delegate handling to parent
                 else:
                     raise ValueError(f"Unexpected event: {event}")
 
