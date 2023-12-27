@@ -1,6 +1,7 @@
 import logging
 from collections import defaultdict, deque
-from typing import Optional, NamedTuple, cast
+from functools import singledispatchmethod
+from typing import Optional, NamedTuple
 from importlib.resources import path as resrc_path
 from PyQt5.QtCore import Qt, QSize, QPoint, QRectF, QPropertyAnimation
 from PyQt5.QtWidgets import QWidget, QMessageBox, QGraphicsView, QGraphicsScene, QGraphicsObject, \
@@ -74,31 +75,36 @@ class BoardView(AppEventEmitter, QGraphicsView):
             self._waiting_animations: deque[QPropertyAnimation] = deque()
             self._move_selection_enabled: bool = False
 
+        @singledispatchmethod
         def update_from_model(self, event: AppEvent) -> None:
-            _logger.debug("Event occurred: %s", event)
-            if isinstance(event, MarbleInsertedEvent):
-                slot: Slot = cast(MarbleInsertedEvent, event).slot
-                colour = self._model.colour_at(slot)
-                assert colour, f"{slot} is not occupied!"
-                marble = self.Marble(self._marble_pixmaps[colour], self.position_of(slot))
-                self._marbles[slot] = marble
-                marble.setOpacity(0.0)
-                self.addItem(marble)
-                animation = QPropertyAnimation(marble, b'opacity')
-                animation.setEndValue(1.0)
-                animation.setDuration(500)
-                self.run_animation(animation)
-            elif isinstance(event, MarbleShiftedEvent):
-                from_slot: Slot = cast(MarbleShiftedEvent, event).slot
-                to_slot = from_slot.neighbour(cast(MarbleShiftedEvent, event).direction)
-                marble = self._marbles.pop(from_slot)
-                self._marbles[to_slot] = marble
-                animation = QPropertyAnimation(marble, b'pos')
-                animation.setEndValue(self.position_of(to_slot))
-                animation.setDuration(500)
-                self.run_animation(animation)
-            else:
-                raise ValueError(f"Unknown event type: {event.__class__}")
+            raise ValueError(f"Unsupported event type: {event.__class__}")
+
+        @update_from_model.register
+        def _(self, event: MarbleInsertedEvent) -> None:
+            _logger.debug("Model event occurred: %s", event)
+            slot: Slot = event.slot
+            colour = self._model.colour_at(slot)
+            assert colour, f"{slot} is not occupied!"
+            marble = self.Marble(self._marble_pixmaps[colour], self.position_of(slot))
+            self._marbles[slot] = marble
+            marble.setOpacity(0.0)
+            self.addItem(marble)
+            animation = QPropertyAnimation(marble, b'opacity')
+            animation.setEndValue(1.0)
+            animation.setDuration(500)
+            self.run_animation(animation)
+
+        @update_from_model.register
+        def _(self, event: MarbleShiftedEvent) -> None:
+            _logger.debug("Model event occurred: %s", event)
+            from_slot: Slot = event.slot
+            to_slot = from_slot.neighbour(event.direction)
+            marble = self._marbles.pop(from_slot)
+            self._marbles[to_slot] = marble
+            animation = QPropertyAnimation(marble, b'pos')
+            animation.setEndValue(self.position_of(to_slot))
+            animation.setDuration(500)
+            self.run_animation(animation)
 
         def run_animation(self, animation: QPropertyAnimation) -> None:
             def finished() -> None:
