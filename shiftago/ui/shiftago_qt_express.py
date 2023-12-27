@@ -1,5 +1,5 @@
-from PyQt5.QtCore import QSize
-from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox
+from PySide2.QtCore import QSize
+from PySide2.QtWidgets import QApplication, QMainWindow, QMessageBox
 from shiftago.core import Colour
 from shiftago.core.express import ShiftagoExpress
 from .hmvc import Controller, AppEvent, AppEventEmitter

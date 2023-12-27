@@ -3,10 +3,10 @@ from collections import defaultdict, deque
 from functools import singledispatchmethod
 from typing import Optional, NamedTuple
 from importlib.resources import path as resrc_path
-from PyQt5.QtCore import Qt, QSize, QPoint, QRectF, QPropertyAnimation
-from PyQt5.QtWidgets import QWidget, QMessageBox, QGraphicsView, QGraphicsScene, QGraphicsObject, \
+from PySide2.QtCore import Qt, QSize, QPoint, QRectF, QByteArray, QPropertyAnimation
+from PySide2.QtWidgets import QWidget, QMessageBox, QGraphicsView, QGraphicsScene, QGraphicsObject, \
     QStyleOptionGraphicsItem
-from PyQt5.QtGui import QPixmap, QPainter, QMouseEvent, QCursor
+from PySide2.QtGui import QPixmap, QPainter, QMouseEvent, QCursor
 from shiftago.core import Colour, Slot, Side, Move
 import shiftago.ui.images
 from .hmvc import AppEvent, AppEventEmitter
@@ -89,7 +89,7 @@ class BoardView(AppEventEmitter, QGraphicsView):
             self._marbles[slot] = marble
             marble.setOpacity(0.0)
             self.addItem(marble)
-            animation = QPropertyAnimation(marble, b'opacity')
+            animation = QPropertyAnimation(marble, QByteArray(b'opacity'))
             animation.setEndValue(1.0)
             animation.setDuration(500)
             self.run_animation(animation)
@@ -101,7 +101,7 @@ class BoardView(AppEventEmitter, QGraphicsView):
             to_slot = from_slot.neighbour(event.direction)
             marble = self._marbles.pop(from_slot)
             self._marbles[to_slot] = marble
-            animation = QPropertyAnimation(marble, b'pos')
+            animation = QPropertyAnimation(marble, QByteArray(b'pos'))
             animation.setEndValue(self.position_of(to_slot))
             animation.setDuration(500)
             self.run_animation(animation)

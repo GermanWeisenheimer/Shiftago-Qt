@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Optional, Callable, TypeAlias
-from PyQt5.QtCore import QObject, pyqtSignal
+from typing import Optional, Callable, TypeAlias, cast
+from PySide2.QtCore import QObject, Signal, SignalInstance
 
 
 @dataclass(frozen=True)
@@ -16,17 +16,17 @@ class AppEventEmitter:
 
     class _QObject(QObject):
 
-        event_signal = pyqtSignal(AppEvent)
+        event_signal = Signal(AppEvent)
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self._qobject = self._QObject()
 
     def connect_with(self, handler: AppEventHandler):
-        self._qobject.event_signal.connect(handler)
+        cast(SignalInstance, self._qobject.event_signal).connect(handler)
 
     def emit(self, event: AppEvent) -> None:
-        self._qobject.event_signal.emit(event)
+        cast(SignalInstance, self._qobject.event_signal).emit(event)
 
 
 class Controller(ABC):

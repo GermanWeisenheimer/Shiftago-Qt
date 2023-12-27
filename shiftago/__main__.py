@@ -3,7 +3,7 @@ import logging
 from pathlib import Path
 from datetime import datetime
 from types import TracebackType
-from PyQt5.QtCore import QThread
+from PySide2.QtCore import QThread
 from .ui.shiftago_qt_express import ShiftagoQtExpress
 
 _logger = logging.getLogger(__name__)
@@ -38,4 +38,4 @@ if __name__ == '__main__':
 
     sys.excepthook = handle_uncaught_exception
     print(f"Writing log file {_configure_logging()}")
-    sys.exit(ShiftagoQtExpress(sys.argv).exec())
+    sys.exit(ShiftagoQtExpress(sys.argv).exec_())

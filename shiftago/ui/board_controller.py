@@ -1,7 +1,7 @@
 import time
 import logging
 from functools import singledispatchmethod
-from PyQt5.QtCore import QObject, QThread
+from PySide2.QtCore import QObject, QThread
 from statemachine import StateMachine, State
 from .hmvc import Controller, AppEvent, AppEventEmitter
 from .board_view import BoardView
@@ -32,42 +32,38 @@ class BoardController(Controller):
 
             DELAY = 1.
 
-            def __init__(self, model: ShiftagoExpressModel, app_event_emitter: AppEventEmitter) -> None:
+            def __init__(self, thread: QThread, model: ShiftagoExpressModel,
+                         app_event_emitter: AppEventEmitter) -> None:
                 super().__init__()
+                self._model = model
+                self._app_event_emitter = app_event_emitter
+                self.moveToThread(thread)
+                thread.started.connect(self._think)
 
-                def think() -> None:
-                    _logger.debug("Computer is thinking...")
-                    start_time: float = time.time()
-                    move = model.ai_select_move()
-                    duration: float = time.time() - start_time
-                    if duration < self.DELAY:
-                        time.sleep(self.DELAY - duration)
-                    app_event_emitter.emit(MoveSelectedEvent(move))
-
-                self._thread = QThread()
-                self._thread.setObjectName('ThinkingThread')
-                self._thread.started.connect(think)
-                self.moveToThread(self._thread)
-
-            def start_work(self):
-                self._thread.start()
-
-            def finish_work(self):
-                self._thread.quit()
+            def _think(self) -> None:
+                _logger.debug("Computer is thinking...")
+                start_time: float = time.time()
+                move = self._model.ai_select_move()
+                duration: float = time.time() - start_time
+                if duration < self.DELAY:
+                    time.sleep(self.DELAY - duration)
+                self._app_event_emitter.emit(MoveSelectedEvent(move))
 
         def __init__(self, model: ShiftagoExpressModel, view: BoardView) -> None:
             super().__init__()
             self._model = model
             self._view = view
-            self._computer_thinking_worker = self.ComputerThinkingWorker(model, self)
+            self._thread = QThread()
+            self._thread.setObjectName('ThinkingThread')
+            self._computer_thinking_worker = self.ComputerThinkingWorker(self._thread, model, self)
 
         @computer_thinking_state.enter
         def enter_computer_thinking(self) -> None:
-            self._computer_thinking_worker.start_work()
+            self._thread.start()
 
         @computer_thinking_state.exit
         def exit_computer_thinking(self) -> None:
-            self._computer_thinking_worker.finish_work()
+            self._thread.quit()
 
         @human_thinking_state.enter
         def enter_human_thinking(self) -> None:

@@ -7,9 +7,9 @@ readme = "README.md"
 packages = [{include = "shiftago_qt"}]
 
 [tool.poetry.dependencies]
-python = ">=3.10,<3.13"
-pyqt5 = "^5.15.9"
+python = ">=3.10,<3.11"
 python-statemachine = "^2.1.2"
+pyside2 = "^5.15.2.1"
 
 
 [build-system]
