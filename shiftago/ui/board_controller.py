@@ -1,6 +1,6 @@
-from typing import cast
 import time
 import logging
+from functools import singledispatchmethod
 from PyQt5.QtCore import QObject, QThread
 from statemachine import StateMachine, State
 from .hmvc import Controller, AppEvent, AppEventEmitter
@@ -106,27 +106,25 @@ class BoardController(Controller):
         assert self.model.current_player is not None, "No current player!"
         self._state_machine.to_first_player()
 
+    @singledispatchmethod
     def handle_event(self, event: AppEvent) -> bool:
-        if isinstance(event, MoveSelectedEvent):
-            assert self._state_machine.current_state in (self._BoardStateMaschine.computer_thinking_state,
-                                                         self._BoardStateMaschine.human_thinking_state)
-            self._handle_move_selected(cast(MoveSelectedEvent, event))
-            return True
-        if isinstance(event, AnimationFinishedEvent):
-            assert self._state_machine.current_state == self._BoardStateMaschine.performing_animation_state
-            self._handle_animation_finished()
-            return True
         return False
 
-    def _handle_move_selected(self, event: MoveSelectedEvent) -> None:
+    @handle_event.register
+    def _(self, event: MoveSelectedEvent) -> bool:
+        assert self._state_machine.current_state in (self._BoardStateMaschine.computer_thinking_state,
+                                                     self._BoardStateMaschine.human_thinking_state)
         if self._model.current_player_nature == PlayerNature.HUMAN:
             _logger.info("Human is making move: %s", event.move)
         else:
             _logger.info("Computer is making move: %s", event.move)
         self._state_machine.to_animation()
         self._model.apply_move(event.move)
+        return True
 
-    def _handle_animation_finished(self) -> None:
+    @handle_event.register
+    def _(self, event: AnimationFinishedEvent) -> bool:  # pylint: disable=unused-argument
+        assert self._state_machine.current_state == self._BoardStateMaschine.performing_animation_state
         _logger.debug("Animation finished.")
         current_player_nature = self.model.current_player_nature
         if current_player_nature is not None:
@@ -136,3 +134,4 @@ class BoardController(Controller):
                 self._state_machine.to_artifial_player()
         else:
             self._state_machine.to_end_of_game()
+        return True
