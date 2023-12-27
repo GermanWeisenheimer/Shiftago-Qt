@@ -84,7 +84,7 @@ class BoardView(AppEventEmitter, QGraphicsView):
             _logger.debug("Model event occurred: %s", event)
             slot: Slot = event.slot
             colour = self._model.colour_at(slot)
-            assert colour, f"{slot} is not occupied!"
+            assert colour is not None, f"{slot} is not occupied!"
             marble = self.Marble(self._marble_pixmaps[colour], self.position_of(slot))
             self._marbles[slot] = marble
             marble.setOpacity(0.0)
