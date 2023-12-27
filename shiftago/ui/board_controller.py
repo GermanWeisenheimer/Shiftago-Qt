@@ -32,13 +32,15 @@ class BoardController(Controller):
 
             DELAY = 1.
 
-            def __init__(self, thread: QThread, model: ShiftagoExpressModel,
+            def __init__(self, model: ShiftagoExpressModel,
                          app_event_emitter: AppEventEmitter) -> None:
                 super().__init__()
                 self._model = model
                 self._app_event_emitter = app_event_emitter
-                self.moveToThread(thread)
-                thread.started.connect(self._think)
+                self._thread = QThread()
+                self._thread.setObjectName('ThinkingThread')
+                self.moveToThread(self._thread)
+                self._thread.started.connect(self._think)
 
             def _think(self) -> None:
                 _logger.debug("Computer is thinking...")
@@ -53,17 +55,15 @@ class BoardController(Controller):
             super().__init__()
             self._model = model
             self._view = view
-            self._thread = QThread()
-            self._thread.setObjectName('ThinkingThread')
-            self._computer_thinking_worker = self.ComputerThinkingWorker(self._thread, model, self)
+            self._computer_thinking_worker = self.ComputerThinkingWorker(model, self)
 
         @computer_thinking_state.enter
         def enter_computer_thinking(self) -> None:
-            self._thread.start()
+            self._computer_thinking_worker.thread().start()
 
         @computer_thinking_state.exit
         def exit_computer_thinking(self) -> None:
-            self._thread.quit()
+            self._computer_thinking_worker.thread().quit()
 
         @human_thinking_state.enter
         def enter_human_thinking(self) -> None:
