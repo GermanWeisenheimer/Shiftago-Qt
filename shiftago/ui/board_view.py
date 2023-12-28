@@ -55,7 +55,6 @@ class BoardView(AppEventEmitter, QGraphicsView):
             def paint(self, painter: QPainter,
                       option: QStyleOptionGraphicsItem,  # pylint: disable=unused-argument
                       widget: Optional[QWidget]) -> None:  # pylint: disable=unused-argument
-
                 painter.drawPixmap(0, 0, self._pixmap)
 
         def __init__(self, app_event_emitter: AppEventEmitter, model: BoardViewModel) -> None:
@@ -174,7 +173,7 @@ class BoardView(AppEventEmitter, QGraphicsView):
         self._model = model
         self._main_window_title = main_window_title
 
-        self._neutral_cursor = QCursor(Qt.CursorShape.ArrowCursor)  # pylint: disable=no-member
+        self._neutral_cursor = QCursor(Qt.CursorShape.ArrowCursor)
 
         cursor_hor_size = QSize(70, 122)
         cursor_ver_size = QSize(122, 70)
@@ -216,7 +215,7 @@ class BoardView(AppEventEmitter, QGraphicsView):
 
     def mousePressEvent(self, ev: QMouseEvent) -> None:  # pylint: disable=invalid-name
         if (self._move_selection_enabled and
-                ev.button() == Qt.MouseButton.LeftButton):  # pylint: disable=no-member
+                ev.button() == Qt.MouseButton.LeftButton):
             side, insert_pos = self._determine_move_args(ev.pos())
             if side is not None and insert_pos is not None:
                 self.emit(MoveSelectedEvent(Move(side, insert_pos)))
