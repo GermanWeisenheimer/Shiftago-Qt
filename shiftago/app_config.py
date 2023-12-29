@@ -3,6 +3,13 @@ from typing import NamedTuple
 from configparser import ConfigParser
 
 _CONFIG_FILE = 'shiftago-qt.cfg'
+
+_SECTION_LOGGIMG = 'logging'
+_OPT_LOG_LEVEL = 'level'
+
+_SECTION_AI_ENGINE = 'ai_engine'
+_OPT_MAX_DEPTH = 'max_depth'
+
 _logger = logging.getLogger(__name__)
 
 
@@ -11,32 +18,34 @@ class ShiftagoQtConfig(NamedTuple):
     ai_engine_max_depth: int
 
 
-def _parse_log_level(config_parser: ConfigParser, default_val: int) -> int:
+def _parse_log_level(config_parser: ConfigParser, fallback: int) -> int:
     try:
-        cfg_val = config_parser['logging']['level']
-        parsed_log_level = logging.getLevelName(cfg_val)
-        if isinstance(parsed_log_level, int):
-            return parsed_log_level
-        _logger.error("Config key 'logging.level' has illegal value: %s", cfg_val)
+        section_logging = config_parser[_SECTION_LOGGIMG]
+        str_val = section_logging.get(_OPT_LOG_LEVEL, logging.getLevelName(fallback))
+        int_val = logging.getLevelName(str_val)
+        if isinstance(int_val, int):
+            return int_val
+        _logger.error("Option '%s' in section '%s' has illegal value: %s",
+                      _OPT_LOG_LEVEL, _SECTION_LOGGIMG, str_val)
     except KeyError:
-        _logger.warning("Key 'logging.level' not present in configuration file.")
-    return default_val
+        _logger.warning("Section '%s' not present in configuration file.", _SECTION_LOGGIMG)
+    return fallback
 
 
-def _parse_ai_engine_max_depth(config_parser: ConfigParser, default_val: int) -> int:
+def _parse_ai_engine_max_depth(config_parser: ConfigParser, fallback: int) -> int:
     try:
-        cfg_val = config_parser['ai_engine']['max_depth']
+        section_ai_engine = config_parser[_SECTION_AI_ENGINE]
         try:
-            parsed_max_depth = int(cfg_val)
-            if 1 <= parsed_max_depth <= 4:
-                return parsed_max_depth
-            _logger.error("Config key 'ai_engine.max_depth' has illegal value %s (allowed range: 1..4).",
-                          cfg_val)
-        except ValueError:
-            _logger.error("Config key 'ai_engine.max_depth' has illegal value: %s", cfg_val)
+            val = section_ai_engine.getint(_OPT_MAX_DEPTH, fallback)
+            if 1 <= val <= 4:
+                return val
+            raise ValueError(f"{val} out of range [1..4]")
+        except ValueError as ve:
+            _logger.error("Option '%s' in section '%s' has illegal value: %s",
+                          _OPT_MAX_DEPTH, _SECTION_AI_ENGINE, ve)
     except KeyError:
-        _logger.warning("Key 'ai_engine.max_depth' not present in configuration file.")
-    return default_val
+        _logger.warning("Section '%s' not present in configuration file.", _SECTION_AI_ENGINE)
+    return fallback
 
 
 def read_config() -> ShiftagoQtConfig:
