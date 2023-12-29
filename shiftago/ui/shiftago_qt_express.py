@@ -1,5 +1,6 @@
 from PySide2.QtCore import QSize
 from PySide2.QtWidgets import QApplication, QMainWindow, QMessageBox
+from shiftago.app_config import ShiftagoQtConfig
 from shiftago.core import Colour
 from shiftago.core.express import ShiftagoExpress
 from .hmvc import Controller, AppEvent, AppEventEmitter
@@ -61,9 +62,9 @@ class _MainWindowController(Controller):
 
 class ShiftagoQtExpress(QApplication):
 
-    def __init__(self, argv: list[str]) -> None:
-        super().__init__(argv)
+    def __init__(self, app_config: ShiftagoQtConfig) -> None:
+        super().__init__()
         game_model = ShiftagoExpressModel(ShiftagoExpress((Colour.BLUE, Colour.ORANGE),
-                                                          current_player=Colour.BLUE))
+                                                          current_player=Colour.BLUE), app_config)
         self._main_window = _MainWindow(game_model)
         self._main_window_controller = _MainWindowController(self._main_window, game_model)

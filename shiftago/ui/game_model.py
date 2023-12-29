@@ -1,6 +1,7 @@
 from typing import Optional
 from enum import Enum
 from abc import ABC, abstractmethod
+from shiftago.app_config import ShiftagoQtConfig
 from shiftago.core import Colour, Slot, Side, Move, GameOverCondition, ShiftagoObserver
 from shiftago.core.express import ShiftagoExpress
 from shiftago.core.express_ai import AlphaBetaPruning
@@ -58,10 +59,10 @@ class BoardViewModel(AppEventEmitter, ABC, ShiftagoObserver):
 
 class ShiftagoExpressModel(BoardViewModel):
 
-    def __init__(self, core_model: ShiftagoExpress) -> None:
+    def __init__(self, core_model: ShiftagoExpress, app_config: ShiftagoQtConfig) -> None:
         super().__init__(core_model)
         self._core_model = core_model
-        self._ai_engine = AlphaBetaPruning()
+        self._ai_engine = AlphaBetaPruning(app_config.ai_engine_max_depth)
 
     def player_nature_of(self, colour: Colour) -> PlayerNature:
         return PlayerNature.HUMAN if colour == Colour.BLUE else PlayerNature.ARTIFICIAL

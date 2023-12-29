@@ -74,10 +74,11 @@ class _Node:
 
 class AlphaBetaPruning:
 
-    MAX_DEPTH = 3
-
-    def __init__(self) -> None:
-        self._player_strategies = dict()  # type: Dict[Colour, _MiniMaxStrategy]
+    def __init__(self, max_depth=3) -> None:
+        self._player_strategies = {}  # type: Dict[Colour, _MiniMaxStrategy]
+        if max_depth < 1 or max_depth > 4:
+            raise ValueError("Illegal max_depth: {0}".format(max_depth))
+        self._max_depth = max_depth
 
     def select_move(self, game_state: ShiftagoExpress) -> Move:
         assert len(game_state.players) == 2
@@ -131,7 +132,7 @@ class AlphaBetaPruning:
         return optimal_move, nodes[optimal_move], num_visited_nodes
 
     def _determine_max_depth(self, num_occupied_slots: int) -> int:
-        return 1 if num_occupied_slots < 6 else AlphaBetaPruning.MAX_DEPTH
+        return 1 if num_occupied_slots < 6 else self._max_depth
 
     def _eval_move(self, current_strategy: _MiniMaxStrategy, level: int, game_state: ShiftagoExpress,
                    move: Move) -> _Node:
