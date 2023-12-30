@@ -5,6 +5,7 @@ from typing import List, Dict, Tuple, Optional
 from abc import ABC, abstractmethod
 from random import randrange
 from .express import ShiftagoExpress, Colour, Move, GameOverCondition, WinningLine
+from .ai_engine import AIEngine, SkillLevel
 
 _logger = logging.getLogger(__name__)
 
@@ -72,13 +73,12 @@ class _Node:
         return self._is_leaf
 
 
-class AlphaBetaPruning:
+class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
 
-    def __init__(self, max_depth=3) -> None:
+    def __init__(self, skill_level=SkillLevel.ADVANCED) -> None:
+        super().__init__(skill_level)
         self._player_strategies = {}  # type: Dict[Colour, _MiniMaxStrategy]
-        if max_depth < 1 or max_depth > 4:
-            raise ValueError("Illegal max_depth: {0}".format(max_depth))
-        self._max_depth = max_depth
+        self._max_depth = 2 + skill_level.value
 
     def select_move(self, game_state: ShiftagoExpress) -> Move:
         assert len(game_state.players) == 2

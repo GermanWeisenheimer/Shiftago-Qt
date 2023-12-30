@@ -62,7 +62,7 @@ class ShiftagoExpressModel(BoardViewModel):
     def __init__(self, core_model: ShiftagoExpress, app_config: ShiftagoQtConfig) -> None:
         super().__init__(core_model)
         self._core_model = core_model
-        self._ai_engine = AlphaBetaPruning(app_config.ai_engine_max_depth)
+        self._ai_engine = AlphaBetaPruning(app_config.ai_engine_skill_level)
 
     def player_nature_of(self, colour: Colour) -> PlayerNature:
         return PlayerNature.HUMAN if colour == Colour.BLUE else PlayerNature.ARTIFICIAL
