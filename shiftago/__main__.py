@@ -28,8 +28,7 @@ def _configure_logging(*, logs_dir: str = './logs', filename_prefix: str = 'shif
                         handlers=handlers)
     return filename
 
-
-if __name__ == '__main__':
+def main() -> None:
     def handle_uncaught_exception(exc_type: type[BaseException], exc_value: BaseException,
                                   exc_traceback: TracebackType | None):
         if issubclass(exc_type, KeyboardInterrupt):
@@ -42,3 +41,6 @@ if __name__ == '__main__':
     app_config = read_config()
     print(f"Writing log file {_configure_logging(config=app_config)}")
     sys.exit(ShiftagoQtExpress(app_config).exec_())
+
+if __name__ == '__main__':
+    main()

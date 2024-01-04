@@ -10,6 +10,7 @@ packages = [{include = "shiftago_qt"}]
 python = ">=3.10,<3.11"
 python-statemachine = "^2.1.2"
 pyside2 = "^5.15.2.1"
+pyinstaller = "^6.3.0"
 
 
 [build-system]

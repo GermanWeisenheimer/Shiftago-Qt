@@ -2,3 +2,6 @@
 logs
 .history
 .venv
+build
+dist
+shiftago-qt.spec
