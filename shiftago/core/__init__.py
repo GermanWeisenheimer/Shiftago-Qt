@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from collections import namedtuple, defaultdict
 from functools import total_ordering
+import random
 import json
 from io import StringIO
 
@@ -200,12 +201,12 @@ class Shiftago(ABC):
         num_players = len(set(players))
         if num_players < len(players):
             raise ValueError("Argument 'players' contains duplicates: {0}".format(players))
-        if num_players >= 2 and num_players <= len(Colour):
+        if 2 <= num_players <= len(Colour):
             self._players = players
         else:
             raise ValueError("Illegal number of players!")
         if current_player is None:
-            self._current_player = players[0]
+            self._current_player = random.choice(players)
         else:
             if current_player in self._players:
                 self._current_player = current_player
