@@ -4,6 +4,7 @@ import math
 from typing import List, Dict, Tuple, Optional
 from abc import ABC, abstractmethod
 from random import randrange
+from functools import lru_cache
 from .express import ShiftagoExpress, Colour, Move, GameOverCondition, WinningLine
 from .ai_engine import AIEngine, SkillLevel
 
@@ -13,6 +14,11 @@ _logger = logging.getLogger(__name__)
 def _current_opponent(game_state: ShiftagoExpress) -> Colour:
     players = game_state.players
     return players[1 if players.index(game_state.current_player) == 0 else 0]
+
+
+@lru_cache(maxsize=10)
+def _pow10(exp: int) -> float:
+    return math.pow(10, exp)
 
 
 class _MiniMaxStrategy(ABC):
@@ -153,5 +159,5 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
             win_rating = current_strategy.win_rating
             for i in range(winning_line_length, 1, -1):
                 rating += (len(current_player_result[i]) - len(opponent_result[i])
-                           ) * math.pow(10, -(winning_line_length - i + 1)) * win_rating
+                           ) * _pow10(-(winning_line_length - i + 1)) * win_rating
         return _Node(cloned_game_state, is_leaf, level, rating)
