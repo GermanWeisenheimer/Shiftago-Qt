@@ -1,6 +1,6 @@
 from PySide2.QtCore import QSize
 from PySide2.QtWidgets import QApplication, QMainWindow, QMessageBox
-from shiftago.app_config import ShiftagoQtConfig
+from shiftago.app_config import ShiftagoConfig
 from shiftago.core import Colour
 from .hmvc import Controller, AppEvent, AppEventEmitter
 from .board_view import BoardView, BOARD_VIEW_SIZE
@@ -61,12 +61,12 @@ class _MainWindowController(Controller):
 
 class ShiftagoQtExpress(QApplication):
 
-    def __init__(self, app_config: ShiftagoQtConfig) -> None:
+    def __init__(self, config: ShiftagoConfig) -> None:
         super().__init__()
-        humans_colour = app_config.preferred_colour
+        humans_colour = config.preferred_colour
         computers_colour = Colour.ORANGE if humans_colour is Colour.BLUE else Colour.BLUE
         game_model = ShiftagoExpressModel((Player(humans_colour, PlayerNature.HUMAN),
                                            Player(computers_colour, PlayerNature.ARTIFICIAL)),
-                                           app_config)
+                                          config)
         self._main_window = _MainWindow(game_model)
         self._main_window_controller = _MainWindowController(self._main_window, game_model)

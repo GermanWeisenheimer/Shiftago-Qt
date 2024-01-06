@@ -1,7 +1,7 @@
 from typing import Optional, Tuple
 from enum import Enum
 from abc import ABC, abstractmethod
-from shiftago.app_config import ShiftagoQtConfig
+from shiftago.app_config import ShiftagoConfig
 from shiftago.core import Colour, Slot, Side, Move, GameOverCondition, ShiftagoObserver
 from shiftago.core.express import ShiftagoExpress
 from shiftago.core.express_ai import AlphaBetaPruning
@@ -70,12 +70,12 @@ class BoardViewModel(AppEventEmitter, ABC, ShiftagoObserver):
 
 class ShiftagoExpressModel(BoardViewModel):
 
-    def __init__(self, players: Tuple[Player, Player], app_config: ShiftagoQtConfig) -> None:
+    def __init__(self, players: Tuple[Player, Player], config: ShiftagoConfig) -> None:
         super().__init__(players)
         core_model = ShiftagoExpress((players[0].colour, players[1].colour))
         core_model.observer = self
         self._core_model = core_model
-        self._ai_engine = AlphaBetaPruning(app_config.ai_engine_skill_level)
+        self._ai_engine = AlphaBetaPruning(config.skill_level)
 
     @property
     def current_player(self) -> Optional[Player]:

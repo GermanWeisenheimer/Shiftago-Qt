@@ -4,14 +4,14 @@ from pathlib import Path
 from datetime import datetime
 from types import TracebackType
 from PySide2.QtCore import QThread
-from .app_config import read_config, ShiftagoQtConfig
+from .app_config import read_config, LoggingConfig
 from .ui.shiftago_qt_express import ShiftagoQtExpress
 
 _logger = logging.getLogger(__name__)
 
 
 def _configure_logging(*, logs_dir: str = './logs', filename_prefix: str = 'shiftago_qt',
-                       config: ShiftagoQtConfig) -> str:
+                       config: LoggingConfig) -> str:
     '''Adds the name of the current QThread as field 'threadName'.'''
     def thread_name_filter(record: logging.LogRecord):
         qthread_name = QThread.currentThread().objectName()
@@ -28,6 +28,7 @@ def _configure_logging(*, logs_dir: str = './logs', filename_prefix: str = 'shif
                         handlers=handlers)
     return filename
 
+
 def main() -> None:
     def handle_uncaught_exception(exc_type: type[BaseException], exc_value: BaseException,
                                   exc_traceback: TracebackType | None):
@@ -39,8 +40,9 @@ def main() -> None:
 
     sys.excepthook = handle_uncaught_exception
     app_config = read_config()
-    print(f"Writing log file {_configure_logging(config=app_config)}")
-    sys.exit(ShiftagoQtExpress(app_config).exec_())
+    print(f"Writing log file {_configure_logging(config=app_config.logging)}")
+    sys.exit(ShiftagoQtExpress(app_config.shiftago).exec_())
+
 
 if __name__ == '__main__':
     main()
