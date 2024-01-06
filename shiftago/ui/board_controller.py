@@ -108,8 +108,9 @@ class BoardController(Controller):
 
     @handle_event.register
     def _(self, event: ReadyForFirstMoveEvent) -> bool:  # pylint: disable=unused-argument
-        assert self.model.current_player is not None, "No current player!"
-        if self.model.current_player_nature is PlayerNature.HUMAN:
+        current_player = self._model.current_player
+        assert current_player is not None, "No current player!"
+        if current_player.nature is PlayerNature.HUMAN:
             self._state_machine.to_human_player()
         else:
             self._state_machine.to_artifial_player()
@@ -119,7 +120,9 @@ class BoardController(Controller):
     def _(self, event: MoveSelectedEvent) -> bool:
         assert self._state_machine.current_state in (self._BoardStateMaschine.computer_thinking_state,
                                                      self._BoardStateMaschine.human_thinking_state)
-        if self._model.current_player_nature == PlayerNature.HUMAN:
+        current_player = self._model.current_player
+        assert current_player is not None, "No current player!"
+        if current_player.nature is PlayerNature.HUMAN:
             _logger.info("Human is making move: %s", event.move)
         else:
             _logger.info("Computer is making move: %s", event.move)
@@ -131,9 +134,9 @@ class BoardController(Controller):
     def _(self, event: AnimationFinishedEvent) -> bool:  # pylint: disable=unused-argument
         assert self._state_machine.current_state == self._BoardStateMaschine.performing_animation_state
         _logger.debug("Animation finished.")
-        current_player_nature = self.model.current_player_nature
-        if current_player_nature is not None:
-            if current_player_nature == PlayerNature.HUMAN:
+        current_player = self._model.current_player
+        if current_player is not None:
+            if current_player.nature is PlayerNature.HUMAN:
                 self._state_machine.to_human_player()
             else:
                 self._state_machine.to_artifial_player()
