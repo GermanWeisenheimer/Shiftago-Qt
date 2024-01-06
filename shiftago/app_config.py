@@ -40,8 +40,7 @@ def _parse_prerred_colour(section: SectionProxy, fallback: Colour) -> Colour:
         colour = Colour[str_val]
         if colour in (Colour.BLUE, Colour.ORANGE):
             return colour
-        else:
-            _logger.error("Colour '%s' not yet supported.", colour.name)
+        _logger.error("Colour '%s' not yet supported.", colour.name)
     except KeyError:
         _logger.error("Option '%s' in section '%s' has illegal value: %s",
                       _OPT_PREFERRED_COLOUR, _SECTION_SHIFTAGO, str_val)
