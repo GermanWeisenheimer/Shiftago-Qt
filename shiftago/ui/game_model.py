@@ -21,6 +21,9 @@ class Player:
         self._colour = colour
         self._nature = nature
 
+    def __str__(self) -> str:
+        return f"Player(colour = {self._colour.name}, nature = {self.nature.name})"
+
     @property
     def colour(self) -> Colour:
         return self._colour

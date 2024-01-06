@@ -110,6 +110,8 @@ class BoardController(Controller):
     def _(self, event: ReadyForFirstMoveEvent) -> bool:  # pylint: disable=unused-argument
         current_player = self._model.current_player
         assert current_player is not None, "No current player!"
+        _logger.info("Starting player is %s (%s).", current_player.colour.name,
+                     'human' if current_player.nature is PlayerNature.HUMAN else 'computer')
         if current_player.nature is PlayerNature.HUMAN:
             self._state_machine.to_human_player()
         else:
