@@ -43,7 +43,7 @@ def _parse_prerred_colour(section: SectionProxy, fallback: Colour) -> Colour:
         _logger.error("Colour '%s' not yet supported.", colour.name)
     except KeyError:
         _logger.error("Option '%s' in section '%s' has illegal value: %s",
-                      _OPT_PREFERRED_COLOUR, _SECTION_SHIFTAGO, str_val)
+                      _OPT_PREFERRED_COLOUR, section.name, str_val)
     return fallback
 
 
@@ -53,7 +53,7 @@ def _parse_skill_level(section: SectionProxy, fallback: SkillLevel) -> SkillLeve
         return SkillLevel[str_val]
     except KeyError:
         _logger.error("Option '%s' in section '%s' has illegal value: %s",
-                      _OPT_SKILL_LEVEL, _SECTION_SHIFTAGO, str_val)
+                      _OPT_SKILL_LEVEL, section.name, str_val)
     return fallback
 
 
@@ -66,16 +66,16 @@ def _parse_section_shiftago(config_parser: ConfigParser, shiftago_cfg: ShiftagoC
         _logger.warning("Section '%s' not present in configuration file.", _SECTION_SHIFTAGO)
 
 
-def _parse_section_logging(config_parser: ConfigParser, section: LoggingConfig) -> None:
+def _parse_section_logging(config_parser: ConfigParser, logging_cfg: LoggingConfig) -> None:
     try:
-        parser_section = config_parser[_SECTION_LOGGIMG]
-        str_val = parser_section.get(_OPT_LOG_LEVEL, logging.getLevelName(section.log_level))
+        section = config_parser[_SECTION_LOGGIMG]
+        str_val = section.get(_OPT_LOG_LEVEL, logging.getLevelName(logging_cfg.log_level))
         int_val = logging.getLevelName(str_val)
         if isinstance(int_val, int):
-            section.log_level = int_val
+            logging_cfg.log_level = int_val
         else:
             _logger.error("Option '%s' in section '%s' has illegal value: %s",
-                          _OPT_LOG_LEVEL, _SECTION_LOGGIMG, str_val)
+                          _OPT_LOG_LEVEL, section.name, str_val)
     except KeyError:
         _logger.warning("Section '%s' not present in configuration file.", _SECTION_LOGGIMG)
 
