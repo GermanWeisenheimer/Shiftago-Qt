@@ -63,8 +63,10 @@ class ShiftagoQtExpress(QApplication):
 
     def __init__(self, app_config: ShiftagoQtConfig) -> None:
         super().__init__()
-        game_model = ShiftagoExpressModel((Player(Colour.BLUE, PlayerNature.HUMAN),
-                                           Player(Colour.ORANGE, PlayerNature.ARTIFICIAL)),
+        humans_colour = app_config.preferred_colour
+        computers_colour = Colour.ORANGE if humans_colour is Colour.BLUE else Colour.BLUE
+        game_model = ShiftagoExpressModel((Player(humans_colour, PlayerNature.HUMAN),
+                                           Player(computers_colour, PlayerNature.ARTIFICIAL)),
                                            app_config)
         self._main_window = _MainWindow(game_model)
         self._main_window_controller = _MainWindowController(self._main_window, game_model)

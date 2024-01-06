@@ -1,9 +1,13 @@
 import logging
 from configparser import ConfigParser
 from dataclasses import dataclass
+from .core import Colour
 from .core.ai_engine import SkillLevel
 
 _CONFIG_FILE = 'shiftago-qt.cfg'
+
+_SECTION_SHIFTAGO = 'shiftago'
+_OPT_PREFERRED_COLOUR = 'preferred_colour'
 
 _SECTION_LOGGIMG = 'logging'
 _OPT_LOG_LEVEL = 'level'
@@ -16,8 +20,26 @@ _logger = logging.getLogger(__name__)
 
 @dataclass
 class ShiftagoQtConfig:
+    preferred_colour = Colour.BLUE
     log_level = logging.INFO
     ai_engine_skill_level = SkillLevel.ADVANCED
+
+
+def _parse_preferred_colour(config_parser: ConfigParser, fallback: Colour) -> Colour:
+    try:
+        section_ai_engine = config_parser[_SECTION_SHIFTAGO]
+        str_val = section_ai_engine.get(_OPT_PREFERRED_COLOUR, fallback.name)
+        try:
+            colour = Colour[str_val]
+            if not colour in (Colour.BLUE, Colour.ORANGE):
+                _logger.error("Colour '%s' not yet supported.", colour.name)
+                return fallback
+        except KeyError:
+            _logger.error("Option '%s' in section '%s' has illegal value: %s",
+                          _OPT_PREFERRED_COLOUR, _SECTION_SHIFTAGO, str_val)
+    except KeyError:
+        _logger.warning("Section '%s' not present in configuration file.", _SECTION_SHIFTAGO)
+    return fallback
 
 
 def _parse_log_level(config_parser: ConfigParser, fallback: int) -> int:
@@ -52,6 +74,7 @@ def read_config() -> ShiftagoQtConfig:
     config_parser = ConfigParser()
     cfg = ShiftagoQtConfig()
     if config_parser.read(_CONFIG_FILE) == [_CONFIG_FILE]:
+        cfg.preferred_colour = _parse_preferred_colour(config_parser, cfg.preferred_colour)
         cfg.log_level = _parse_log_level(config_parser, cfg.log_level)
         cfg.ai_engine_skill_level = _parse_ai_engine_skill_level(config_parser,
                                                                  cfg.ai_engine_skill_level)
