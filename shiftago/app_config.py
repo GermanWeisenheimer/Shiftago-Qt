@@ -29,7 +29,7 @@ class LoggingConfig:
 
 
 @dataclass(frozen=True)
-class ShiftagoQtConfig:
+class ShiftagoAppConfig:
     shiftago = ShiftagoConfig()
     logging = LoggingConfig()
 
@@ -80,9 +80,9 @@ def _parse_section_logging(config_parser: ConfigParser, logging_cfg: LoggingConf
         _logger.warning("Section '%s' not present in configuration file.", _SECTION_LOGGIMG)
 
 
-def read_config() -> ShiftagoQtConfig:
+def read_config() -> ShiftagoAppConfig:
     config_parser = ConfigParser()
-    config = ShiftagoQtConfig()
+    config = ShiftagoAppConfig()
     if config_parser.read(_CONFIG_FILE) == [_CONFIG_FILE]:
         _parse_section_shiftago(config_parser, config.shiftago)
         _parse_section_logging(config_parser, config.logging)
