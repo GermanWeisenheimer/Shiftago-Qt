@@ -6,7 +6,7 @@ from statemachine import StateMachine, State
 from .hmvc import Controller, AppEvent, AppEventEmitter
 from .board_view import BoardView
 from .game_model import ShiftagoExpressModel, PlayerNature
-from .app_events import MoveSelectedEvent, AnimationFinishedEvent
+from .app_events import ReadyForFirstMoveEvent, MoveSelectedEvent, AnimationFinishedEvent
 
 _logger = logging.getLogger(__name__)
 
@@ -15,7 +15,7 @@ class BoardController(Controller):
 
     class _BoardStateMaschine(AppEventEmitter, StateMachine):
 
-        idle_state = State('Idle', initial=True)
+        start_player_notification_state = State('StartPlayerNotification', initial=True)
         computer_thinking_state = State('ComputerThinking')
         human_thinking_state = State('HumanThinking')
         performing_animation_state = State('PerformingAnimation')
@@ -23,9 +23,9 @@ class BoardController(Controller):
 
         to_animation = computer_thinking_state.to(performing_animation_state) | \
             human_thinking_state.to(performing_animation_state)
-        to_artifial_player = idle_state.to(computer_thinking_state) | \
+        to_artifial_player = start_player_notification_state.to(computer_thinking_state) | \
             performing_animation_state.to(computer_thinking_state)
-        to_human_player = idle_state.to(human_thinking_state) | \
+        to_human_player = start_player_notification_state.to(human_thinking_state) | \
             performing_animation_state.to(human_thinking_state)
         to_end_of_game = performing_animation_state.to(game_over_state)
 
@@ -100,15 +100,20 @@ class BoardController(Controller):
         return self._view
 
     def start_game(self) -> None:
+        self._view.show_starting_player()
+
+    @singledispatchmethod
+    def handle_event(self, event: AppEvent) -> bool:
+        return False
+
+    @handle_event.register
+    def _(self, event: ReadyForFirstMoveEvent) -> bool:  # pylint: disable=unused-argument
         assert self.model.current_player is not None, "No current player!"
         if self.model.current_player_nature is PlayerNature.HUMAN:
             self._state_machine.to_human_player()
         else:
             self._state_machine.to_artifial_player()
-
-    @singledispatchmethod
-    def handle_event(self, event: AppEvent) -> bool:
-        return False
+        return True
 
     @handle_event.register
     def _(self, event: MoveSelectedEvent) -> bool:

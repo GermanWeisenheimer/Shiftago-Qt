@@ -10,8 +10,9 @@ from PySide2.QtGui import QPixmap, QPainter, QMouseEvent, QCursor
 from shiftago.core import Colour, Slot, Side, Move
 import shiftago.ui.images
 from .hmvc import AppEvent, AppEventEmitter
-from .app_events import AnimationFinishedEvent, MoveSelectedEvent, MarbleInsertedEvent, MarbleShiftedEvent
-from .game_model import BoardViewModel
+from .app_events import ReadyForFirstMoveEvent, AnimationFinishedEvent, MoveSelectedEvent, MarbleInsertedEvent, \
+    MarbleShiftedEvent
+from .game_model import BoardViewModel, PlayerNature
 
 BOARD_VIEW_SIZE = QSize(700, 700)
 
@@ -243,3 +244,17 @@ class BoardView(AppEventEmitter, QGraphicsView):
             msg_box.setInformativeText("It has ended in a draw.")
         msg_box.setStandardButtons(QMessageBox.Ok)
         msg_box.exec_()
+
+    def show_starting_player(self):
+        msg_box = QMessageBox(self)
+        msg_box.setWindowTitle(self._main_window_title)
+        msg_box.setIcon(QMessageBox.Information)
+        assert self._model.current_player is not None and self._model.count_occupied_slots() == 0
+        msg_box.setText(f"Starting player: {self._model.current_player.name}")
+        if self._model.current_player_nature is PlayerNature.HUMAN:
+            msg_box.setInformativeText("That's you.")
+        else:
+            msg_box.setInformativeText("That's the computer.")
+        msg_box.setStandardButtons(QMessageBox.Ok)
+        msg_box.exec_()
+        self.emit(ReadyForFirstMoveEvent())

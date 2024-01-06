@@ -4,6 +4,11 @@ from .hmvc import AppEvent
 
 
 @dataclass(frozen=True)
+class ReadyForFirstMoveEvent(AppEvent):
+    """Emitted by view."""
+
+
+@dataclass(frozen=True)
 class MoveSelectedEvent(AppEvent):
     """Emitted by view and thinking worker."""
     move: Move
