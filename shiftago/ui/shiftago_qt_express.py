@@ -1,3 +1,4 @@
+import logging
 from PySide2.QtCore import QSize
 from PySide2.QtWidgets import QApplication, QMainWindow, QMessageBox
 from shiftago.app_config import ShiftagoConfig
@@ -7,6 +8,8 @@ from .board_view import BoardView, BOARD_VIEW_SIZE
 from .app_events import ExitRequestedEvent
 from .game_model import ShiftagoExpressModel, PlayerNature, Player
 from .board_controller import BoardController
+
+_logger = logging.getLogger(__name__)
 
 
 class _MainWindow(AppEventEmitter, QMainWindow):
@@ -52,6 +55,8 @@ class _MainWindowController(Controller):
         if isinstance(event, ExitRequestedEvent):
             if self.model.count_occupied_slots() > 0:
                 if self._main_window.confirm_exit():
+                    if self.model.game_over_condition is None:
+                        _logger.info("Current match aborted!")
                     QApplication.quit()
             else:
                 QApplication.quit()
