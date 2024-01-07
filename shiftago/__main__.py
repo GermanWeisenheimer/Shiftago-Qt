@@ -9,14 +9,6 @@ from .ui.shiftago_qt_express import ShiftagoQtExpress
 _logger = logging.getLogger(__name__)
 
 
-def _is_writable(file_path: str) -> bool:
-    try:
-        with open(file_path, "w"):  # pylint: disable=unspecified-encoding
-            return True
-    except OSError:
-        return False
-
-
 def _configure_logging(config: LoggingConfig, filename_prefix: str = 'shiftago_qt'):
     '''Adds the name of the current QThread as field 'threadName'.'''
     def thread_name_filter(record: logging.LogRecord):
@@ -26,11 +18,11 @@ def _configure_logging(config: LoggingConfig, filename_prefix: str = 'shiftago_q
         return True
     handlers: list[logging.Handler] = [logging.StreamHandler()]
     file_path = f"{config.logs_dir}/{filename_prefix}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log"
-    if _is_writable(file_path):
+    try:
         handlers.append(logging.FileHandler(file_path, mode='w'))
         print(f"Writing log file: {file_path}")
-    else:
-        print(f"Directory {config.logs_dir} is not writable!")
+    except OSError as e:
+        print(f"{e.strerror}: {e.filename}")
     for handler in handlers:
         handler.addFilter(thread_name_filter)
     logging.basicConfig(level=config.log_level,
