@@ -1,6 +1,5 @@
 import sys
 import logging
-from pathlib import Path
 from datetime import datetime
 from types import TracebackType
 from PySide2.QtCore import QThread
@@ -10,23 +9,33 @@ from .ui.shiftago_qt_express import ShiftagoQtExpress
 _logger = logging.getLogger(__name__)
 
 
-def _configure_logging(*, logs_dir: str = './logs', filename_prefix: str = 'shiftago_qt',
-                       config: LoggingConfig) -> str:
+def _is_writable(file_path: str) -> bool:
+    try:
+        with open(file_path, "w"):  # pylint: disable=unspecified-encoding
+            return True
+    except OSError:
+        return False
+
+
+def _configure_logging(config: LoggingConfig, filename_prefix: str = 'shiftago_qt'):
     '''Adds the name of the current QThread as field 'threadName'.'''
     def thread_name_filter(record: logging.LogRecord):
         qthread_name = QThread.currentThread().objectName()
         if qthread_name:
             record.threadName = qthread_name
         return True
-    Path(logs_dir).mkdir(exist_ok=True)
-    filename = f"{logs_dir}/{filename_prefix}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log"
-    handlers = [logging.StreamHandler(), logging.FileHandler(filename, mode='w')]
+    handlers: list[logging.Handler] = [logging.StreamHandler()]
+    file_path = f"{config.logs_dir}/{filename_prefix}_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log"
+    if _is_writable(file_path):
+        handlers.append(logging.FileHandler(file_path, mode='w'))
+        print(f"Writing log file: {file_path}")
+    else:
+        print(f"Directory {config.logs_dir} is not writable!")
     for handler in handlers:
         handler.addFilter(thread_name_filter)
     logging.basicConfig(level=config.log_level,
                         format='%(asctime)s [%(threadName)14s] %(name)s %(levelname)5s - %(message)s',
                         handlers=handlers)
-    return filename
 
 
 def main() -> None:
@@ -40,7 +49,7 @@ def main() -> None:
 
     sys.excepthook = handle_uncaught_exception
     app_config = read_config()
-    print(f"Writing log file {_configure_logging(config=app_config.logging)}")
+    _configure_logging(config=app_config.logging)
     sys.exit(ShiftagoQtExpress(app_config.shiftago).exec_())
 
 
