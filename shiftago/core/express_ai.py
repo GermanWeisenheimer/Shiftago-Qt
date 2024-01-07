@@ -1,9 +1,9 @@
 # pylint: disable=consider-using-f-string
 import logging
 import math
+import random
 from typing import Dict, Tuple, Optional
 from abc import ABC, abstractmethod
-from random import randrange
 from functools import lru_cache
 from .express import ShiftagoExpress, Colour, Move
 from .ai_engine import AIEngine, SkillLevel
@@ -35,8 +35,8 @@ class _MiniMaxStrategy(ABC):
 
     @property
     @abstractmethod
-    def reverse_order(self) -> bool:
-        raise NotImplementedError
+    def is_maximizing(self) -> bool:
+        pass
 
 
 class _Maximizer(_MiniMaxStrategy):
@@ -45,7 +45,7 @@ class _Maximizer(_MiniMaxStrategy):
         super().__init__(1.)
 
     @property
-    def reverse_order(self) -> bool:
+    def is_maximizing(self) -> bool:
         return True
 
 
@@ -55,7 +55,7 @@ class _Minimizer(_MiniMaxStrategy):
         super().__init__(-1.)
 
     @property
-    def reverse_order(self) -> bool:
+    def is_maximizing(self) -> bool:
         return False
 
 
@@ -105,9 +105,9 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
         nodes = {move: self._eval_move(current_strategy, level, game_state, move)
                  for move in possible_moves}
         if num_occupied_slots <= 1:
-            random_move = possible_moves[randrange(len(possible_moves))]
+            random_move = random.choice(possible_moves)
             return random_move, nodes[random_move], 1
-        possible_moves.sort(key=lambda m: nodes[m].rating, reverse=current_strategy.reverse_order)
+        possible_moves.sort(key=lambda m: nodes[m].rating, reverse=current_strategy.is_maximizing)
         max_depth = self._determine_max_depth(num_occupied_slots)
         num_visited_nodes = 0
         optimal_move = None  # type: Optional[Move]
@@ -121,14 +121,13 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
                 current_node.rating = child_node.rating
             else:
                 num_visited_nodes += 1
-            if isinstance(current_strategy, _Maximizer):
+            if current_strategy.is_maximizing:
                 if optimal_move is None or current_node.rating > alpha:
                     optimal_move = current_move
                     alpha = current_node.rating
                     if alpha >= beta or alpha == current_strategy.win_rating:
                         break  # cut-off!
             else:
-                assert isinstance(current_strategy, _Minimizer)
                 if optimal_move is None or current_node.rating < beta:
                     optimal_move = current_move
                     beta = current_node.rating
