@@ -44,8 +44,7 @@ class WinningLine:
     def __eq__(self, other) -> bool:
         if isinstance(other, WinningLine):
             return self._slots == other._slots
-        else:
-            return False
+        return False
 
     def __hash__(self) -> int:
         return hash(self._slots)
@@ -63,24 +62,24 @@ class WinningLine:
 
     @staticmethod
     def get_all(num_slots_in_line: int) -> List['WinningLine']:
-        all_winning_line_ups = list()  # type: List[WinningLine]
+        all_winning_line_ups = []  # type: List[WinningLine]
         for ver_pos in range(0, NUM_SLOTS_PER_SIDE):
             for hor_pos_from in range(0, NUM_SLOTS_PER_SIDE - num_slots_in_line + 1):
-                slots = list()  # type: List[Slot]
+                slots = []  # type: List[Slot]
                 for i in range(0, num_slots_in_line):
                     slots.append(Slot(hor_pos_from + i, ver_pos))
                 all_winning_line_ups.append(WinningLine(
                     LineOrientation.HORIZONTAL, num_slots_in_line, slots))
         for hor_pos in range(0, NUM_SLOTS_PER_SIDE):
             for ver_pos_from in range(0, NUM_SLOTS_PER_SIDE - num_slots_in_line + 1):
-                slots = list()  # type: List[Slot]
+                slots = []  # type: List[Slot]
                 for i in range(0, num_slots_in_line):
                     slots.append(Slot(hor_pos, ver_pos_from + i))
                 all_winning_line_ups.append(WinningLine(LineOrientation.VERTICAL, num_slots_in_line, slots))
         for ver_pos in range(0, NUM_SLOTS_PER_SIDE - num_slots_in_line + 1):
             hor_pos_from = 0
             for ver_pos_from in range(ver_pos, NUM_SLOTS_PER_SIDE - num_slots_in_line + 1):
-                slots = list()  # type: List[Slot]
+                slots = []  # type: List[Slot]
                 for i in range(0, num_slots_in_line):
                     slots.append(Slot(hor_pos_from + i, ver_pos_from + i))
                 all_winning_line_ups.append(WinningLine(LineOrientation.DIAGONAL, num_slots_in_line, slots))
@@ -88,7 +87,7 @@ class WinningLine:
         for ver_pos in range(num_slots_in_line - 1, NUM_SLOTS_PER_SIDE):
             hor_pos_from = 0
             for ver_pos_from in range(ver_pos, num_slots_in_line - 2, -1):
-                slots = list()  # type: List[Slot]
+                slots = []  # type: List[Slot]
                 for i in range(0, num_slots_in_line):
                     slots.append(Slot(hor_pos_from + i, ver_pos_from - i))
                 all_winning_line_ups.append(WinningLine(LineOrientation.DIAGONAL, num_slots_in_line, slots))
@@ -96,7 +95,7 @@ class WinningLine:
         for hor_pos in range(1, NUM_SLOTS_PER_SIDE - num_slots_in_line + 1):
             ver_pos_from = 0
             for hor_pos_from in range(hor_pos, NUM_SLOTS_PER_SIDE - num_slots_in_line + 1):
-                slots = list()  # type: List[Slot]
+                slots = []  # type: List[Slot]
                 for i in range(0, num_slots_in_line):
                     slots.append(Slot(hor_pos_from + i, ver_pos_from + i))
                 all_winning_line_ups.append(WinningLine(LineOrientation.DIAGONAL, num_slots_in_line, slots))
@@ -104,7 +103,7 @@ class WinningLine:
         for hor_pos in range(1, NUM_SLOTS_PER_SIDE - num_slots_in_line + 1):
             ver_pos_from = NUM_SLOTS_PER_SIDE - 1
             for hor_pos_from in range(hor_pos, NUM_SLOTS_PER_SIDE - num_slots_in_line + 1):
-                slots = list()  # type: List[Slot]
+                slots = []  # type: List[Slot]
                 for i in range(0, num_slots_in_line):
                     slots.append(Slot(hor_pos_from + i, ver_pos_from - i))
                 all_winning_line_ups.append(WinningLine(LineOrientation.DIAGONAL, num_slots_in_line, slots))

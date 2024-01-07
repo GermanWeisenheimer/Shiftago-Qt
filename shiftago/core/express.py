@@ -26,7 +26,7 @@ class BoardAnalyzer:
             self._winning_line_length = 5
         else:
             raise ValueError("Illegal number of players: {0}".format(num_players))
-        all_winning_line_ups = WinningLine.get_all(self._winning_line_length)  # type: List[WinningLine]
+        all_winning_line_ups = WinningLine.get_all(self._winning_line_length)
         self._slot_to_lines = {slot: set(filter(lambda wlu: slot in wlu.slots,  # pylint: disable=cell-var-from-loop
                                                 all_winning_line_ups))
                                for slot in [Slot(hor_pos, ver_pos) for ver_pos in range(NUM_SLOTS_PER_SIDE)
@@ -98,7 +98,7 @@ class ShiftagoExpress(Shiftago):
         if self.has_current_player_won():
             self._game_over_condition = GameOverCondition(self._current_player)
         else:
-            num_slots_per_colour = self.count_slots_per_colour()  # type: Dict[Colour, int]
+            num_slots_per_colour = self.count_slots_per_colour()
             # check if there is a free slot left
             if sum(num_slots_per_colour.values()) < NUM_SLOTS_PER_SIDE * NUM_SLOTS_PER_SIDE:
                 next_player = self._select_next_player()

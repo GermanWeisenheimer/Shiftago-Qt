@@ -1,11 +1,11 @@
 # pylint: disable=consider-using-f-string
 import logging
 import math
-from typing import List, Dict, Tuple, Optional
+from typing import Dict, Tuple, Optional
 from abc import ABC, abstractmethod
 from random import randrange
 from functools import lru_cache
-from .express import ShiftagoExpress, Colour, Move, GameOverCondition, WinningLine
+from .express import ShiftagoExpress, Colour, Move
 from .ai_engine import AIEngine, SkillLevel
 
 _logger = logging.getLogger(__name__)
@@ -24,7 +24,7 @@ def _pow10(exp: int) -> float:
 class _MiniMaxStrategy(ABC):
 
     def __init__(self, win_rating: float) -> None:
-        if win_rating == 1. or win_rating == -1.:
+        if win_rating in (-1., 1.):
             self._win_rating = win_rating
         else:
             raise ValueError("Illegal win rating: {0}".format(win_rating))
@@ -100,19 +100,19 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
                         alpha: float, beta: float) -> Tuple[Move, _Node, int]:
         num_occupied_slots = game_state.count_occupied_slots()
         assert game_state.current_player, "No current player!"
-        current_strategy = self._player_strategies[game_state.current_player]  # type: _MiniMaxStrategy
+        current_strategy = self._player_strategies[game_state.current_player]
         possible_moves = game_state.detect_all_possible_moves()
         nodes = {move: self._eval_move(current_strategy, level, game_state, move)
-                 for move in possible_moves}  # type: Dict[Move, _Node]
+                 for move in possible_moves}
         if num_occupied_slots <= 1:
             random_move = possible_moves[randrange(len(possible_moves))]
             return random_move, nodes[random_move], 1
         possible_moves.sort(key=lambda m: nodes[m].rating, reverse=current_strategy.reverse_order)
-        max_depth = self._determine_max_depth(num_occupied_slots)  # type: int
-        num_visited_nodes = 0  # type: int
+        max_depth = self._determine_max_depth(num_occupied_slots)
+        num_visited_nodes = 0
         optimal_move = None  # type: Optional[Move]
         for current_move in possible_moves:
-            current_node = nodes[current_move]  # type: _Node
+            current_node = nodes[current_move]
             if not current_node.is_leaf and level < max_depth:
                 _, child_node, child_num_visited = self._apply_mini_max(current_node.new_game_state, level + 1,
                                                                         alpha, beta)
@@ -142,16 +142,16 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
 
     def _eval_move(self, current_strategy: _MiniMaxStrategy, level: int, game_state: ShiftagoExpress,
                    move: Move) -> _Node:
-        is_leaf = False  # type: bool
-        rating = 0.0  # type: float
-        cloned_game_state = game_state.clone()  # type: ShiftagoExpress
-        game_end_condition = cloned_game_state.apply_move(move)  # type: Optional[GameOverCondition]
+        is_leaf = False
+        rating = 0.0
+        cloned_game_state = game_state.clone()
+        game_end_condition = cloned_game_state.apply_move(move)
         if game_end_condition is not None:
             is_leaf = True
             if game_end_condition.winner is not None:
                 rating = current_strategy.win_rating
         else:
-            player_results = cloned_game_state.analyze()  # type: Dict[Colour, Dict[int, List[WinningLine]]]
+            player_results = cloned_game_state.analyze()
             assert game_state.current_player, "No current player!"
             current_player_result = player_results[game_state.current_player]
             opponent_result = player_results[_current_opponent(game_state)]

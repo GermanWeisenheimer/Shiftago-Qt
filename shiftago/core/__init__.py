@@ -36,12 +36,12 @@ class Side(Enum):
 
     # ignore the first param since it's already set by __new__
     def __init__(self, _: int, position: int, is_horizontal: bool, shift_direction: int):
-        if position == 0 or position == NUM_SLOTS_PER_SIDE - 1:
+        if position in (0, NUM_SLOTS_PER_SIDE - 1):
             self._position = position
         else:
             raise ValueError("Illegal position: {0}".format(position))
         self._is_horizontal = is_horizontal
-        if shift_direction == -1 or shift_direction == 1:
+        if shift_direction in (-1, 1):
             self._shift_direction = shift_direction
         else:
             raise ValueError("Illegal shift direction: {0}".format(shift_direction))
@@ -213,7 +213,7 @@ class Shiftago(ABC):
             else:
                 raise ValueError("Argument 'current_player' is illegal: {0}".format(current_player))
         if board is None:
-            self._board = dict()  # type: Dict[Slot, Colour]
+            self._board = {}  # type: Dict[Slot, Colour]
         else:
             self._board = board
         self.observer = self._DEFAULT_OBSERVER
@@ -308,7 +308,7 @@ class Shiftago(ABC):
         return len(self._board)
 
     def detect_all_possible_moves(self) -> List[Move]:
-        results = list()  # type: List[Move]
+        results = []  # type: List[Move]
         for hor_pos in range(NUM_SLOTS_PER_SIDE):
             if self.find_first_empty_slot(Side.TOP, hor_pos) is not None:
                 results.append(Move(Side.TOP, hor_pos))
@@ -321,7 +321,7 @@ class Shiftago(ABC):
 
     @staticmethod
     def deserialize_board(board_dict: Dict) -> Dict[Slot, Colour]:
-        board = dict()  # type: Dict[Slot, Colour]
+        board = {}  # type: Dict[Slot, Colour]
         for ver_pos, row in enumerate(board_dict):
             for hor_pos, colour_symbol in enumerate(row):
                 if colour_symbol is not None:
