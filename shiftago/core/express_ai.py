@@ -62,10 +62,10 @@ class _Minimizer(_MiniMaxStrategy):
 class _Node:
 
     def __init__(self, new_game_state: ShiftagoExpress, is_leaf: bool, level: int, rating: float) -> None:
-        self._new_game_state = new_game_state  # type: ShiftagoExpress
-        self._is_leaf = is_leaf  # type: bool
-        self.level = level  # type: int
-        self.rating = rating  # type: float
+        self._new_game_state = new_game_state
+        self._is_leaf = is_leaf
+        self.level = level
+        self.rating = rating
 
     def __str__(self) -> str:
         return "(level: {0}, is_leaf: {1}, rating: {2})".format(self.level, self.is_leaf, self.rating)

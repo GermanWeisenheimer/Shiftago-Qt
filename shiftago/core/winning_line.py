@@ -31,7 +31,7 @@ class WinningLine:
             elif orientation == LineOrientation.DIAGONAL:
                 if delta_hor_pos != 1:
                     raise ValueError("Slots not in a diagonal line!")
-                if delta_ver_pos != 1 and delta_ver_pos != -1:
+                if delta_ver_pos not in (1, -1):
                     raise ValueError("Slots not in a vertical line!")
                 for i in range(NUM_SLOTS_PER_SIDE, num_slots_in_line):
                     if (slots[i].hor_pos - slots[i - 1].hor_pos != delta_hor_pos or
