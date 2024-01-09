@@ -250,7 +250,7 @@ class BoardView(AppEventEmitter, QGraphicsView):
         msg_box.setWindowTitle(self._main_window_title)
         msg_box.setIcon(QMessageBox.Information)
         current_player = self._model.current_player
-        assert current_player is not None and self._model.count_occupied_slots() == 0
+        assert self._model.count_occupied_slots() == 0
         msg_box.setText(f"Starting player: {current_player.colour.name}")
         if current_player.nature is PlayerNature.HUMAN:
             msg_box.setInformativeText("That's you.")

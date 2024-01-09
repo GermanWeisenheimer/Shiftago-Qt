@@ -52,7 +52,7 @@ class BoardViewModel(AppEventEmitter, ABC, ShiftagoObserver):
 
     @property
     @abstractmethod
-    def current_player(self) -> Optional[Player]:
+    def current_player(self) -> Player:
         pass
 
     @property
