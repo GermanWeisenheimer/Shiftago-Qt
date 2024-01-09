@@ -1,5 +1,5 @@
 # pylint: disable=consider-using-f-string
-from typing import Tuple, List, Dict, Set, Sequence, Optional, Callable, TextIO
+from typing import List, Dict, Set, Sequence, Optional, Callable, TextIO
 from collections import defaultdict, deque, OrderedDict
 import json
 from shiftago.core import NUM_MARBLES_PER_COLOUR, NUM_SLOTS_PER_SIDE
@@ -39,7 +39,7 @@ class BoardAnalyzer:
     def winning_lines_at(self, slot: Slot) -> Set[WinningLine]:
         return self._slot_to_lines[slot]
 
-    def analyze(self, players: Tuple[Colour, ...],
+    def analyze(self, players: Sequence[Colour],
                 colour_at: Callable[[Slot], Optional[Colour]]) -> Dict[Colour, Dict[int, List[WinningLine]]]:
         intermediate_results = {}  # type: Dict[Colour, Dict[WinningLine, int]]
         for p in players:

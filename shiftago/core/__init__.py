@@ -223,8 +223,8 @@ class Shiftago(ABC):
         json.dump(self, output_stream, indent=4, cls=JSONEncoder)
 
     @property
-    def players(self) -> Tuple[Colour, ...]:
-        return tuple(self._players)
+    def players(self) -> Sequence[Colour]:
+        return self._players
 
     @property
     def current_player(self) -> Colour:
