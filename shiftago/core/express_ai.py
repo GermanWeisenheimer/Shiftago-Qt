@@ -77,44 +77,31 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
                 return False
 
         def __init__(self, max_depth: int, num_occupied_slots: int) -> None:
-            self._max_depth = max_depth
-            self._current_depth = 1
-            self._num_occupied_slots = num_occupied_slots
+            self._max_depth = max_depth if num_occupied_slots >= 6 else 1
             self._maximizer = self.Maximizer()
             self._minimizer = self.Minimizer()
 
-        @property
-        def current_strategy(self) -> _MiniMaxStrategy:
-            return self._maximizer if self._current_depth % 2 == 1 else self._minimizer
-
-        def _down(self):
-            self._current_depth += 1
-            self._num_occupied_slots += 1
-
-        def _up(self):
-            self._current_depth -= 1
-            self._num_occupied_slots -= 1
+        def current_strategy(self, depth: int) -> _MiniMaxStrategy:
+            return self._maximizer if depth % 2 == 1 else self._minimizer
 
         def _should_recurse(self, node: _Node) -> bool:
-            return not node.is_leaf and node.depth < self._max_depth and self._num_occupied_slots >= 6
+            return not node.is_leaf and node.depth < self._max_depth
 
-        def apply(self, game_state: ShiftagoExpress, alpha: float, beta: float) -> Tuple[Move, _Node, int]:
+        def apply(self, game_state: ShiftagoExpress, depth: int, alpha: float, beta: float) \
+                -> Tuple[Move, _Node, int]:
             assert game_state.current_player, "No current player!"
-            current_strategy = self.current_strategy
+            current_strategy = self.current_strategy(depth)
             possible_moves = game_state.detect_all_possible_moves()
-            nodes = {move: self._eval_move(game_state, move) for move in possible_moves}
-            if self._num_occupied_slots <= 1:
-                random_move = random.choice(possible_moves)
-                return random_move, nodes[random_move], 1
+            nodes = {move: self._eval_move(depth, current_strategy.win_rating, game_state, move)
+                     for move in possible_moves}
             possible_moves.sort(key=lambda m: nodes[m].rating, reverse=current_strategy.is_maximizing)
             num_visited_nodes = 0
             optimal_move = None  # type: Optional[Move]
             for current_move in possible_moves:
                 current_node = nodes[current_move]
-                if self._should_recurse(current_node):
-                    self._down()
-                    _, child_node, child_num_visited = self.apply(current_node.new_game_state, alpha, beta)
-                    self._up()
+                if not current_node.is_leaf and depth < self._max_depth:
+                    _, child_node, child_num_visited = self.apply(current_node.new_game_state,
+                                                                  depth + 1, alpha, beta)
                     num_visited_nodes += child_num_visited
                     current_node.depth = child_node.depth
                     current_node.rating = child_node.rating
@@ -135,7 +122,7 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
             assert optimal_move is not None
             return optimal_move, nodes[optimal_move], num_visited_nodes
 
-        def _eval_move(self, game_state: ShiftagoExpress, move: Move) -> _Node:
+        def _eval_move(self, depth: int, win_rating: float, game_state: ShiftagoExpress, move: Move) -> _Node:
             is_leaf = False
             rating = 0.0
             cloned_game_state = game_state.clone()
@@ -143,18 +130,17 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
             if game_end_condition is not None:
                 is_leaf = True
                 if game_end_condition.winner is not None:
-                    rating = self.current_strategy.win_rating
+                    rating = win_rating
             else:
                 player_results = cloned_game_state.analyze()
                 assert game_state.current_player, "No current player!"
                 current_player_result = player_results[game_state.current_player]
                 opponent_result = player_results[self._current_opponent(game_state)]
                 winning_line_length = game_state.winning_line_length
-                win_rating = self.current_strategy.win_rating
                 for i in range(winning_line_length, 1, -1):
                     rating += (len(current_player_result[i]) - len(opponent_result[i])
                                ) * _pow10(-(winning_line_length - i + 1)) * win_rating
-            return _Node(cloned_game_state, is_leaf, self._current_depth, rating)
+            return _Node(cloned_game_state, is_leaf, depth, rating)
 
         def _current_opponent(self, game_state: ShiftagoExpress) -> Colour:
             players = game_state.players
@@ -167,8 +153,13 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
     def select_move(self, game_state: ShiftagoExpress) -> Move:
         assert len(game_state.players) == 2
         assert game_state.current_player, "No current player!"
-        move, node, num_visited_nodes = self._MiniMax(
-            self._max_depth, game_state.count_occupied_slots()).apply(game_state, -math.inf, math.inf)
-        _logger.debug("Selected move: %s (depth = %d, rating = %f, num_visited_nodes = %d)",
-                      move, node.depth, node.rating, num_visited_nodes)
+        num_occupied_slots = game_state.count_occupied_slots()
+        if num_occupied_slots > 1:
+            move, node, num_visited_nodes = self._MiniMax(
+                self._max_depth, num_occupied_slots).apply(game_state, 1, -math.inf, math.inf)
+            _logger.debug("Selected move: %s (depth = %d, rating = %f, num_visited_nodes = %d)",
+                          move, node.depth, node.rating, num_visited_nodes)
+            return move
+        move = random.choice(game_state.detect_all_possible_moves())
+        _logger.debug("Selected random move: %s")
         return move
