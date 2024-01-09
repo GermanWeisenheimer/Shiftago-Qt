@@ -316,9 +316,13 @@ class Shiftago(ABC):
         return results
 
     @staticmethod
-    def deserialize_board(board_dict: Dict) -> Dict[Slot, Colour]:
+    def deserialize_players(json_dict: dict) -> Sequence[Colour]:
+        return [Colour(p) for p in json_dict[JSONEncoder.KEY_PLAYERS]]
+
+    @staticmethod
+    def deserialize_board(json_dict: Dict) -> Dict[Slot, Colour]:
         board = {}  # type: Dict[Slot, Colour]
-        for ver_pos, row in enumerate(board_dict):
+        for ver_pos, row in enumerate(json_dict[JSONEncoder.KEY_BOARD]):
             for hor_pos, colour_symbol in enumerate(row):
                 if colour_symbol is not None:
                     board[Slot(hor_pos, ver_pos)] = Colour(colour_symbol)
@@ -326,8 +330,7 @@ class Shiftago(ABC):
 
     @classmethod
     def deserialize(cls, input_stream: TextIO) -> 'Shiftago':
-        """Deserializes a JSON input stream to a Board object"""
+        """Deserializes a JSON input stream to a Shiftago instance"""
         def object_hook(json_dict: Dict) -> 'Shiftago':
-            return cls([Colour(p) for p in json_dict[JSONEncoder.KEY_PLAYERS]],
-                       board=Shiftago.deserialize_board(json_dict[JSONEncoder.KEY_BOARD]))
+            return cls(cls.deserialize_players(json_dict), cls.deserialize_board(json_dict))
         return json.load(input_stream, object_hook=object_hook)
