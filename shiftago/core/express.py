@@ -1,6 +1,6 @@
 # pylint: disable=consider-using-f-string
 from typing import List, Dict, Set, Sequence, Optional, Callable, TextIO
-from collections import defaultdict, deque, OrderedDict
+from collections import defaultdict, OrderedDict
 import json
 from shiftago.core import NUM_MARBLES_PER_COLOUR, NUM_SLOTS_PER_SIDE
 from shiftago.core import Slot, Colour, Shiftago, Move, GameOverCondition, JSONEncoder
@@ -125,6 +125,6 @@ class ShiftagoExpress(Shiftago):
     def deserialize(cls, input_stream: TextIO) -> 'ShiftagoExpress':
         """Deserializes a JSON input stream to a ShiftagoExpress instance"""
         def object_hook(json_dict: Dict) -> 'ShiftagoExpress':
-            return cls(deque(Colour(p) for p in json_dict[JSONEncoder.KEY_PLAYERS]),
+            return cls([Colour(p) for p in json_dict[JSONEncoder.KEY_PLAYERS]],
                        board=cls.deserialize_board(json_dict[JSONEncoder.KEY_BOARD]))
         return json.load(input_stream, object_hook=object_hook)

@@ -328,6 +328,6 @@ class Shiftago(ABC):
     def deserialize(cls, input_stream: TextIO) -> 'Shiftago':
         """Deserializes a JSON input stream to a Board object"""
         def object_hook(json_dict: Dict) -> 'Shiftago':
-            return cls(deque(Colour(p) for p in json_dict[JSONEncoder.KEY_PLAYERS]),
+            return cls([Colour(p) for p in json_dict[JSONEncoder.KEY_PLAYERS]],
                        board=Shiftago.deserialize_board(json_dict[JSONEncoder.KEY_BOARD]))
         return json.load(input_stream, object_hook=object_hook)
