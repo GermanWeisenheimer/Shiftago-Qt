@@ -1,5 +1,5 @@
 # pylint: disable=consider-using-f-string
-from typing import List, Tuple, Dict, Deque, Optional, TextIO
+from typing import List, Tuple, Dict,  Sequence, Optional, TextIO
 from abc import ABC, abstractmethod
 from enum import Enum
 from collections import namedtuple, defaultdict, deque
@@ -193,12 +193,12 @@ class Shiftago(ABC):
 
     _DEFAULT_OBSERVER = ShiftagoObserver()
 
-    def __init__(self, players: Deque[Colour], board: Optional[Dict[Slot, Colour]] = None) -> None:
+    def __init__(self, players: Sequence[Colour], board: Optional[Dict[Slot, Colour]] = None) -> None:
         num_players = len(set(players))
         if num_players < len(players):
             raise ValueError("Argument 'players' contains duplicates: {0}".format(players))
         if 2 <= num_players <= len(Colour):
-            self._players = players
+            self._players = deque(players)
         else:
             raise ValueError("Illegal number of players!")
         if board is None:

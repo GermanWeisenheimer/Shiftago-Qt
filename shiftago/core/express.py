@@ -1,5 +1,5 @@
 # pylint: disable=consider-using-f-string
-from typing import Tuple, List, Dict, Set, Deque, Optional, Callable, TextIO
+from typing import Tuple, List, Dict, Set, Sequence, Optional, Callable, TextIO
 from collections import defaultdict, deque, OrderedDict
 import json
 from shiftago.core import NUM_MARBLES_PER_COLOUR, NUM_SLOTS_PER_SIDE
@@ -75,7 +75,7 @@ class BoardAnalyzer:
 
 class ShiftagoExpress(Shiftago):
 
-    def __init__(self, players: Deque[Colour], board: Optional[Dict[Slot, Colour]] = None) -> None:
+    def __init__(self, players: Sequence[Colour], board: Optional[Dict[Slot, Colour]] = None) -> None:
         super().__init__(players, board=board)
         self._board_analyzer = BoardAnalyzer(len(self.players))
         self._game_over_condition = None  # type: Optional[GameOverCondition]
@@ -89,7 +89,7 @@ class ShiftagoExpress(Shiftago):
         return self._game_over_condition
 
     def clone(self) -> 'ShiftagoExpress':
-        return ShiftagoExpress(deque(self._players), board=self._board.copy())
+        return ShiftagoExpress(self._players, board=self._board.copy())
 
     def apply_move(self, move: Move) -> Optional[GameOverCondition]:
         self._insert_marble(move.side, move.position)
