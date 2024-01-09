@@ -1,6 +1,6 @@
 # pylint: disable=consider-using-f-string
-from typing import Tuple, List, Dict, Set, Optional, Callable, TextIO
-from collections import defaultdict, OrderedDict
+from typing import Tuple, List, Dict, Set, Deque, Optional, Callable, TextIO
+from collections import defaultdict, deque, OrderedDict
 import json
 from shiftago.core import NUM_MARBLES_PER_COLOUR, NUM_SLOTS_PER_SIDE
 from shiftago.core import Slot, Colour, Shiftago, Move, GameOverCondition, JSONEncoder
@@ -49,7 +49,7 @@ class BoardAnalyzer:
                 slot = Slot(hor_pos, ver_pos)
                 c = colour_at(slot)
                 if c is not None:
-                    wl_dict = intermediate_results[c]  # type: Dict[WinningLine, int]
+                    wl_dict = intermediate_results[c]
                     for wl in self.winning_lines_at(slot):
                         wl_dict[wl] += 1
         results = {}  # type: Dict[Colour, Dict[int, List[WinningLine]]]
@@ -75,9 +75,8 @@ class BoardAnalyzer:
 
 class ShiftagoExpress(Shiftago):
 
-    def __init__(self, players: Tuple[Colour, ...], *, current_player: Optional[Colour] = None,
-                 board: Optional[Dict[Slot, Colour]] = None) -> None:
-        super().__init__(players, current_player=current_player, board=board)
+    def __init__(self, players: Deque[Colour], board: Optional[Dict[Slot, Colour]] = None) -> None:
+        super().__init__(players, board=board)
         self._board_analyzer = BoardAnalyzer(len(self.players))
         self._game_over_condition = None  # type: Optional[GameOverCondition]
 
@@ -90,51 +89,42 @@ class ShiftagoExpress(Shiftago):
         return self._game_over_condition
 
     def clone(self) -> 'ShiftagoExpress':
-        return ShiftagoExpress(self._players, current_player=self._current_player, board=self._board.copy())
+        return ShiftagoExpress(deque(self._players), board=self._board.copy())
 
     def apply_move(self, move: Move) -> Optional[GameOverCondition]:
         self._insert_marble(move.side, move.position)
 
-        if self.has_current_player_won():
-            self._game_over_condition = GameOverCondition(self._current_player)
+        if self._has_current_player_won():
+            self._game_over_condition = GameOverCondition(self._players[0])
         else:
             num_slots_per_colour = self.count_slots_per_colour()
             # check if there is a free slot left
             if sum(num_slots_per_colour.values()) < NUM_SLOTS_PER_SIDE * NUM_SLOTS_PER_SIDE:
                 next_player = self._select_next_player()
                 # check if selected player has one available marble at least
-                if num_slots_per_colour[next_player] < NUM_MARBLES_PER_COLOUR:
-                    self._current_player = next_player
-                else:
+                if num_slots_per_colour[next_player] == NUM_MARBLES_PER_COLOUR:
                     self._game_over_condition = GameOverCondition()
             else:
                 # all slots are occupied
                 self._game_over_condition = GameOverCondition()
         if self._game_over_condition is not None:
-            self._current_player = None
             self.observer.notify_game_over()
         return self._game_over_condition
 
+    def _has_current_player_won(self) -> bool:
+        return len(self._board_analyzer.detect_winning_lines(self._players[0], self.colour_at)) > 0
+
     def _select_next_player(self) -> Colour:
-        current_player_index = self._players.index(self._current_player)
-        if current_player_index + 1 < len(self._players):
-            next_player_index = current_player_index + 1
-        else:
-            next_player_index = 0
-        return self._players[next_player_index]
+        self._players.rotate(-1)
+        return self._players[0]
 
     def analyze(self) -> Dict[Colour, Dict[int, List[WinningLine]]]:
         return self._board_analyzer.analyze(self.players, self.colour_at)
-
-    def has_current_player_won(self) -> bool:
-        assert self._current_player
-        return len(self._board_analyzer.detect_winning_lines(self._current_player, self.colour_at)) > 0
 
     @classmethod
     def deserialize(cls, input_stream: TextIO) -> 'ShiftagoExpress':
         """Deserializes a JSON input stream to a ShiftagoExpress instance"""
         def object_hook(json_dict: Dict) -> 'ShiftagoExpress':
-            return cls(tuple(Colour(p) for p in json_dict[JSONEncoder.KEY_PLAYERS]),
-                       current_player=Colour(json_dict[JSONEncoder.KEY_CURRENT_PLAYER]),
+            return cls(deque(Colour(p) for p in json_dict[JSONEncoder.KEY_PLAYERS]),
                        board=cls.deserialize_board(json_dict[JSONEncoder.KEY_BOARD]))
         return json.load(input_stream, object_hook=object_hook)

@@ -5,7 +5,7 @@ import random
 from typing import Tuple, Optional
 from abc import ABC, abstractmethod
 from functools import lru_cache
-from .express import ShiftagoExpress, Colour, Move
+from .express import ShiftagoExpress, Move
 from .ai_engine import AIEngine, SkillLevel
 
 _logger = logging.getLogger(__name__)
@@ -89,7 +89,6 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
 
         def apply(self, game_state: ShiftagoExpress, depth: int, alpha: float, beta: float) \
                 -> Tuple[Move, _Node, int]:
-            assert game_state.current_player, "No current player!"
             current_strategy = self.current_strategy(depth)
             possible_moves = game_state.detect_all_possible_moves()
             nodes = {move: self._eval_move(depth, current_strategy.win_rating, game_state, move)
@@ -135,16 +134,12 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
                 player_results = cloned_game_state.analyze()
                 assert game_state.current_player, "No current player!"
                 current_player_result = player_results[game_state.current_player]
-                opponent_result = player_results[self._current_opponent(game_state)]
+                opponent_result = player_results[game_state.current_opponent]
                 winning_line_length = game_state.winning_line_length
                 for i in range(winning_line_length, 1, -1):
                     rating += (len(current_player_result[i]) - len(opponent_result[i])
                                ) * _pow10(-(winning_line_length - i + 1)) * win_rating
             return _Node(cloned_game_state, is_leaf, depth, rating)
-
-        def _current_opponent(self, game_state: ShiftagoExpress) -> Colour:
-            players = game_state.players
-            return players[1 if players.index(game_state.current_player) == 0 else 0]
 
     def __init__(self, skill_level=SkillLevel.ADVANCED) -> None:
         super().__init__(skill_level)

@@ -1,6 +1,8 @@
+import random
 from typing import Optional, Tuple
 from enum import Enum
 from abc import ABC, abstractmethod
+from collections import deque
 from shiftago.app_config import ShiftagoConfig
 from shiftago.core import Colour, Slot, Side, Move, GameOverCondition, ShiftagoObserver
 from shiftago.core.express import ShiftagoExpress
@@ -75,15 +77,16 @@ class ShiftagoExpressModel(BoardViewModel):
 
     def __init__(self, players: Tuple[Player, Player], config: ShiftagoConfig) -> None:
         super().__init__(players)
-        core_model = ShiftagoExpress((players[0].colour, players[1].colour))
+        colours = deque((players[0].colour, players[1].colour))
+        colours.rotate(random.randint(0, len(players) - 1))  # draw starting player
+        core_model = ShiftagoExpress(colours)
         core_model.observer = self
         self._core_model = core_model
         self._ai_engine = AlphaBetaPruning(config.skill_level)
 
     @property
-    def current_player(self) -> Optional[Player]:
-        current_colour = self._core_model.current_player
-        return self.player_of(current_colour) if current_colour is not None else None
+    def current_player(self) -> Player:
+        return self.player_of(self._core_model.current_player)
 
     @property
     def game_over_condition(self) -> Optional[GameOverCondition]:

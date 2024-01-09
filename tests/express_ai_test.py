@@ -1,5 +1,6 @@
 import unittest
 import logging
+from collections import deque
 from shiftago.core import Colour, Side, Move
 from shiftago.core.express import ShiftagoExpress
 from shiftago.core.express_ai import AlphaBetaPruning
@@ -16,7 +17,7 @@ class AlphaBetaPruningTest(unittest.TestCase):
                             handlers=[logging.StreamHandler()])
 
     def test_alpha_beta_pruning_empty_board(self):
-        express_game = ShiftagoExpress((Colour.BLUE, Colour.ORANGE))
+        express_game = ShiftagoExpress(deque((Colour.BLUE, Colour.ORANGE)))
         move = AlphaBetaPruning().select_move(express_game)
         express_game.apply_move(move)
         print(express_game)

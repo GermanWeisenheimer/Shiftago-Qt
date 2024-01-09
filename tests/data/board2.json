@@ -64,10 +64,9 @@
             null
         ]
     ],
-    "current_player": "G",
     "players": [
-        "B",
         "G",
-        "O"
+        "O",
+        "B"
     ]
 }

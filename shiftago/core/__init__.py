@@ -1,10 +1,9 @@
 # pylint: disable=consider-using-f-string
-from typing import List, Tuple, Dict, Optional, TextIO
+from typing import List, Tuple, Dict, Deque, Optional, TextIO
 from abc import ABC, abstractmethod
 from enum import Enum
-from collections import namedtuple, defaultdict
+from collections import namedtuple, defaultdict, deque
 from functools import total_ordering
-import random
 import json
 from io import StringIO
 
@@ -165,14 +164,12 @@ class InvalidMoveException(Exception):
 class JSONEncoder(json.JSONEncoder):
 
     KEY_PLAYERS = 'players'
-    KEY_CURRENT_PLAYER = 'current_player'
     KEY_BOARD = "board"
 
     def default(self, o):
         if isinstance(o, Colour):
             return str(o)
         return {JSONEncoder.KEY_PLAYERS: o.players,
-                JSONEncoder.KEY_CURRENT_PLAYER: o.current_player,
                 JSONEncoder.KEY_BOARD: [[o.colour_at(Slot(hor_pos, ver_pos)) for hor_pos in range(NUM_SLOTS_PER_SIDE)]
                                         for ver_pos in range(NUM_SLOTS_PER_SIDE)]}
 
@@ -196,8 +193,7 @@ class Shiftago(ABC):
 
     _DEFAULT_OBSERVER = ShiftagoObserver()
 
-    def __init__(self, players: Tuple[Colour, ...], current_player: Optional[Colour] = None,
-                 board: Optional[Dict[Slot, Colour]] = None) -> None:
+    def __init__(self, players: Deque[Colour], board: Optional[Dict[Slot, Colour]] = None) -> None:
         num_players = len(set(players))
         if num_players < len(players):
             raise ValueError("Argument 'players' contains duplicates: {0}".format(players))
@@ -205,13 +201,6 @@ class Shiftago(ABC):
             self._players = players
         else:
             raise ValueError("Illegal number of players!")
-        if current_player is None:
-            self._current_player = random.choice(players)
-        else:
-            if current_player in self._players:
-                self._current_player = current_player
-            else:
-                raise ValueError("Argument 'current_player' is illegal: {0}".format(current_player))
         if board is None:
             self._board = {}  # type: Dict[Slot, Colour]
         else:
@@ -235,11 +224,20 @@ class Shiftago(ABC):
 
     @property
     def players(self) -> Tuple[Colour, ...]:
-        return self._players
+        return tuple(self._players)
 
     @property
-    def current_player(self) -> Optional[Colour]:
-        return self._current_player
+    def current_player(self) -> Colour:
+        return self._players[0]
+
+    @property
+    def current_opponent(self) -> Colour:
+        return self._players[-1]
+
+    @property
+    @abstractmethod
+    def game_over_condition(self) -> Optional[GameOverCondition]:
+        pass
 
     def colour_at(self, position: Slot) -> Optional[Colour]:
         return self._board.get(position)
@@ -252,12 +250,11 @@ class Shiftago(ABC):
 
     @abstractmethod
     def clone(self) -> 'Shiftago':
-        raise NotImplementedError
+        pass
 
     def __eq__(self, other) -> bool:
         if isinstance(other, Shiftago):
-            return (self._players == other._players and self._current_player == other._current_player and
-                    self._board == other._board)
+            return (self._players == other._players and self._board == other._board)
         return False
 
     @abstractmethod
@@ -265,7 +262,6 @@ class Shiftago(ABC):
         raise NotImplementedError
 
     def _insert_marble(self, side: Side, position: int) -> Slot:
-        assert self._current_player is not None
         first_empty_slot = self.find_first_empty_slot(side, position)  # type: Optional[Slot]
         if first_empty_slot is None:
             raise InvalidMoveException("No empty slot!")
@@ -281,7 +277,7 @@ class Shiftago(ABC):
                 self._board[Slot(position, ver_pos)] = self.colour_of_occupied_slot(occupied)
                 self.observer.notify_marble_shifted(occupied, side.opposite)
             insert_slot = Slot(position, side.position)
-        self._board[insert_slot] = self._current_player
+        self._board[insert_slot] = self._players[0]
         self.observer.notify_marble_inserted(insert_slot)
         return insert_slot
 
@@ -332,7 +328,6 @@ class Shiftago(ABC):
     def deserialize(cls, input_stream: TextIO) -> 'Shiftago':
         """Deserializes a JSON input stream to a Board object"""
         def object_hook(json_dict: Dict) -> 'Shiftago':
-            return cls(tuple(Colour(p) for p in json_dict[JSONEncoder.KEY_PLAYERS]),
-                       current_player=Colour(json_dict[JSONEncoder.KEY_CURRENT_PLAYER]),
+            return cls(deque(Colour(p) for p in json_dict[JSONEncoder.KEY_PLAYERS]),
                        board=Shiftago.deserialize_board(json_dict[JSONEncoder.KEY_BOARD]))
         return json.load(input_stream, object_hook=object_hook)
