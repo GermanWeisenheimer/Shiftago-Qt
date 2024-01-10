@@ -1,5 +1,5 @@
 # pylint: disable=consider-using-f-string
-from typing import List, Tuple, Dict,  Sequence, Optional, TextIO
+from typing import List, Tuple, Dict,  Sequence, Optional, TextIO,  Type, TypeVar, Generic
 from abc import ABC, abstractmethod
 from enum import Enum
 from collections import namedtuple, defaultdict, deque
@@ -188,6 +188,33 @@ class ShiftagoObserver:
     def notify_game_over(self):
         pass
 
+_S = TypeVar("_S", bound='Shiftago')
+
+class ShiftagoDeser(Generic[_S]):
+
+    def __init__(self, stype: Type[_S]) -> None:
+        self._type = stype
+
+    @property
+    def type(self) -> Type[_S]:
+        return self._type
+
+    def _deserialize_players(self, json_dict: dict) -> Sequence[Colour]:
+        return [Colour(p) for p in json_dict[JSONEncoder.KEY_PLAYERS]]
+
+    def _deserialize_board(self, json_dict: Dict) -> Dict[Slot, Colour]:
+        board = {}  # type: Dict[Slot, Colour]
+        for ver_pos, row in enumerate(json_dict[JSONEncoder.KEY_BOARD]):
+            for hor_pos, colour_symbol in enumerate(row):
+                if colour_symbol is not None:
+                    board[Slot(hor_pos, ver_pos)] = Colour(colour_symbol)
+        return board
+
+    def deserialize(self, input_stream: TextIO) -> _S:
+        def object_hook(json_dict: Dict) -> 'Shiftago':
+            return self._type(self._deserialize_players(json_dict), self._deserialize_board(json_dict))
+        return json.load(input_stream, object_hook=object_hook)
+
 
 class Shiftago(ABC):
 
@@ -315,22 +342,7 @@ class Shiftago(ABC):
                 results.append(Move(Side.RIGHT, ver_pos))
         return results
 
-    @staticmethod
-    def deserialize_players(json_dict: dict) -> Sequence[Colour]:
-        return [Colour(p) for p in json_dict[JSONEncoder.KEY_PLAYERS]]
-
-    @staticmethod
-    def deserialize_board(json_dict: Dict) -> Dict[Slot, Colour]:
-        board = {}  # type: Dict[Slot, Colour]
-        for ver_pos, row in enumerate(json_dict[JSONEncoder.KEY_BOARD]):
-            for hor_pos, colour_symbol in enumerate(row):
-                if colour_symbol is not None:
-                    board[Slot(hor_pos, ver_pos)] = Colour(colour_symbol)
-        return board
-
     @classmethod
     def deserialize(cls, input_stream: TextIO) -> 'Shiftago':
         """Deserializes a JSON input stream to a Shiftago instance"""
-        def object_hook(json_dict: Dict) -> 'Shiftago':
-            return cls(cls.deserialize_players(json_dict), cls.deserialize_board(json_dict))
-        return json.load(input_stream, object_hook=object_hook)
+        return ShiftagoDeser(cls).deserialize(input_stream)

@@ -10,10 +10,10 @@ class SkillLevel(Enum):
     EXPERT = 2
 
 
-S = TypeVar("S", bound=Shiftago)
+_S = TypeVar("_S", bound=Shiftago)
 
 
-class AIEngine(ABC, Generic[S]):
+class AIEngine(ABC, Generic[_S]):
 
     def __init__(self, skill_level: SkillLevel) -> None:
         self._skill_level = skill_level
@@ -23,5 +23,5 @@ class AIEngine(ABC, Generic[S]):
         return self._skill_level
 
     @abstractmethod
-    def select_move(self, game_state: S) -> Move:
+    def select_move(self, game_state: _S) -> Move:
         raise NotImplementedError
