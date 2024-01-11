@@ -157,5 +157,5 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
                           move, node.depth, node.rating, num_visited_nodes)
             return move
         move = random.choice(game_state.detect_all_possible_moves())
-        _logger.debug("Selected random move: %s")
+        _logger.debug("Selected random move: %s", move)
         return move
