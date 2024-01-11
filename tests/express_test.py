@@ -1,4 +1,5 @@
 from typing import List, Dict
+import copy
 import unittest
 from shiftago.core import NUM_SLOTS_PER_SIDE, Colour, Slot, Move, Side
 from shiftago.core.express import ShiftagoExpress, BoardAnalyzer
@@ -18,9 +19,9 @@ class BoardAnalyzerTest(unittest.TestCase):
 
 class ShiftagoExpressTest(unittest.TestCase):
 
-    def test_clone(self):
+    def test_copy(self):
         with TestDataLoader(ShiftagoExpress, 'board1.json') as express_game:
-            express_game2 = express_game.clone()  # type: ShiftagoExpress
+            express_game2 = copy.copy(express_game)
             self.assertTrue(express_game2 is not express_game)
             self.assertEqual(express_game2.players, express_game.players)
             self.assertEqual(express_game2.current_player, express_game.current_player)

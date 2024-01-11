@@ -188,7 +188,9 @@ class ShiftagoObserver:
     def notify_game_over(self):
         pass
 
+
 _S = TypeVar("_S", bound='Shiftago')
+
 
 class ShiftagoDeser(Generic[_S]):
 
@@ -274,10 +276,6 @@ class Shiftago(ABC):
         if c is None:
             raise ValueError("Slot {0} is not occupied!".format(position))
         return c
-
-    @abstractmethod
-    def clone(self) -> 'Shiftago':
-        pass
 
     def __eq__(self, other) -> bool:
         if isinstance(other, Shiftago):

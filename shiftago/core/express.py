@@ -61,7 +61,8 @@ class BoardAnalyzer:
                     p_value[match_count].append(winning_line)
         return results
 
-    def detect_winning_lines(self, player: Colour, colour_at: Callable[[Slot], Optional[Colour]]) -> Set[WinningLine]:
+    def detect_winning_lines(self, player: Colour, colour_at: Callable[[Slot], Optional[Colour]]) \
+            -> Set[WinningLine]:
         wl_dict = defaultdict(lambda: 0)
         for ver_pos in range(NUM_SLOTS_PER_SIDE):
             for hor_pos in range(NUM_SLOTS_PER_SIDE):
@@ -87,7 +88,7 @@ class ShiftagoExpress(Shiftago):
     def game_over_condition(self) -> Optional[GameOverCondition]:
         return self._game_over_condition
 
-    def clone(self) -> 'ShiftagoExpress':
+    def __copy__(self) -> 'ShiftagoExpress':
         return ShiftagoExpress(self._players, board=self._board.copy())
 
     def apply_move(self, move: Move) -> Optional[GameOverCondition]:

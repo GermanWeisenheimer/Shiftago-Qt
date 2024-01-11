@@ -2,6 +2,7 @@
 import logging
 import math
 import random
+import copy
 from typing import Tuple, Optional
 from abc import ABC, abstractmethod
 from functools import lru_cache
@@ -124,7 +125,7 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
         def _eval_move(self, depth: int, win_rating: float, game_state: ShiftagoExpress, move: Move) -> _Node:
             is_leaf = False
             rating = 0.0
-            cloned_game_state = game_state.clone()
+            cloned_game_state = copy.copy(game_state)
             game_end_condition = cloned_game_state.apply_move(move)
             if game_end_condition is not None:
                 is_leaf = True
