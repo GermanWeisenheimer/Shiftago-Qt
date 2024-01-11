@@ -26,10 +26,10 @@ class BoardAnalyzer:
         else:
             raise ValueError("Illegal number of players: {0}".format(num_players))
         all_winning_line_ups = WinningLine.get_all(self._winning_line_length)
-        self._slot_to_lines = {slot: set(filter(lambda wlu: slot in wlu.slots,  # pylint: disable=cell-var-from-loop
-                                                all_winning_line_ups))
-                               for slot in [Slot(hor_pos, ver_pos) for ver_pos in range(NUM_SLOTS_PER_SIDE)
-                                            for hor_pos in range(NUM_SLOTS_PER_SIDE)]}
+        self._slot_to_lines = defaultdict(set)
+        for wl in all_winning_line_ups:
+            for slot in wl.slots:
+                self._slot_to_lines[slot].add(wl)
 
     @property
     def winning_line_length(self) -> int:
