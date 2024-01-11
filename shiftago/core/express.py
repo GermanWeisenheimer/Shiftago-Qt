@@ -1,5 +1,5 @@
 # pylint: disable=consider-using-f-string
-from typing import List, Dict, Set, Sequence, Optional, Callable, TextIO
+from typing import Dict, Set, Sequence, Optional, Callable, TextIO
 from collections import defaultdict, OrderedDict
 from shiftago.core import NUM_MARBLES_PER_COLOUR, NUM_SLOTS_PER_SIDE
 from shiftago.core import ShiftagoDeser, Slot, Colour, Shiftago, Move, GameOverCondition
@@ -39,7 +39,7 @@ class BoardAnalyzer:
         return self._slot_to_lines[slot]
 
     def analyze(self, players: Sequence[Colour],
-                colour_at: Callable[[Slot], Optional[Colour]]) -> Dict[Colour, Dict[int, List[WinningLine]]]:
+                colour_at: Callable[[Slot], Optional[Colour]]) -> Dict[Colour, Dict[int, Set[WinningLine]]]:
         intermediate_results = {}  # type: Dict[Colour, Dict[WinningLine, int]]
         for p in players:
             intermediate_results[p] = defaultdict(lambda: 0)
@@ -51,14 +51,14 @@ class BoardAnalyzer:
                     wl_dict = intermediate_results[c]
                     for wl in self.winning_lines_at(slot):
                         wl_dict[wl] += 1
-        results = {}  # type: Dict[Colour, Dict[int, List[WinningLine]]]
+        results = {}  # type: Dict[Colour, Dict[int, Set[WinningLine]]]
         for p in players:
-            results[p] = p_value = OrderedDict()  # Dict[int, List[WinningLine]]
+            results[p] = p_value = OrderedDict()  # Dict[int, Set[WinningLine]]
             for i in range(self._winning_line_length, 1, -1):
-                p_value[i] = []
+                p_value[i] = set()
             for winning_line, match_count in intermediate_results[p].items():
                 if match_count > 1:
-                    p_value[match_count].append(winning_line)
+                    p_value[match_count].add(winning_line)
         return results
 
     def detect_winning_lines(self, player: Colour, colour_at: Callable[[Slot], Optional[Colour]]) \
@@ -118,7 +118,7 @@ class ShiftagoExpress(Shiftago):
         self._players.rotate(-1)
         return self._players[0]
 
-    def analyze(self) -> Dict[Colour, Dict[int, List[WinningLine]]]:
+    def analyze(self) -> Dict[Colour, Dict[int, Set[WinningLine]]]:
         return self._board_analyzer.analyze(self.players, self.colour_at)
 
     @classmethod
