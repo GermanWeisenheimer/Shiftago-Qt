@@ -133,9 +133,9 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
                     rating = win_rating
             else:
                 player_results = cloned_game_state.analyze()
-                assert game_state.current_player, "No current player!"
-                current_player_result = player_results[game_state.current_player]
-                opponent_result = player_results[game_state.current_opponent]
+                current_player, current_opponent = game_state.players
+                current_player_result = player_results[current_player]
+                opponent_result = player_results[current_opponent]
                 winning_line_length = game_state.winning_line_length
                 for i in range(winning_line_length, 1, -1):
                     rating += (len(current_player_result[i]) - len(opponent_result[i])
@@ -148,7 +148,6 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
 
     def select_move(self, game_state: ShiftagoExpress) -> Move:
         assert len(game_state.players) == 2
-        assert game_state.current_player, "No current player!"
         num_occupied_slots = game_state.count_occupied_slots()
         if num_occupied_slots > 1:
             move, node, num_visited_nodes = self._MiniMax(

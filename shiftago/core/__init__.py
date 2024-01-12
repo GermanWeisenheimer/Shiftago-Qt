@@ -157,8 +157,14 @@ class GameOverCondition:
         return self._winner
 
 
-class InvalidMoveException(Exception):
-    pass
+class GameOverException(Exception):
+
+    def __init__(self, game_over_condition: GameOverCondition) -> None:
+        self._game_over_condition = game_over_condition
+
+    @property
+    def game_over_condition(self) -> GameOverCondition:
+        return self._game_over_condition
 
 
 class JSONEncoder(json.JSONEncoder):
@@ -257,11 +263,9 @@ class Shiftago(ABC):
 
     @property
     def current_player(self) -> Colour:
+        if self.game_over_condition is not None:
+            raise GameOverException(self.game_over_condition)
         return self._players[0]
-
-    @property
-    def current_opponent(self) -> Colour:
-        return self._players[-1]
 
     @property
     @abstractmethod
@@ -286,10 +290,9 @@ class Shiftago(ABC):
     def apply_move(self, move: Move) -> Optional[GameOverCondition]:
         raise NotImplementedError
 
-    def _insert_marble(self, side: Side, position: int) -> Slot:
+    def _insert_marble(self, side: Side, position: int) -> None:
         first_empty_slot = self.find_first_empty_slot(side, position)  # type: Optional[Slot]
-        if first_empty_slot is None:
-            raise InvalidMoveException("No empty slot!")
+        assert first_empty_slot is not None, "No empty slot!"
         if side.is_vertical:
             for hor_pos in range(first_empty_slot.hor_pos, side.position, -side.shift_direction):
                 occupied = Slot(hor_pos - side.shift_direction, position)
@@ -304,7 +307,6 @@ class Shiftago(ABC):
             insert_slot = Slot(position, side.position)
         self._board[insert_slot] = self._players[0]
         self.observer.notify_marble_inserted(insert_slot)
-        return insert_slot
 
     def find_first_empty_slot(self, side: Side, insert_pos: int) -> Optional[Slot]:
         if side.is_vertical:

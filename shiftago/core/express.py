@@ -2,7 +2,7 @@
 from typing import Dict, Set, Sequence, Optional, Callable, TextIO
 from collections import defaultdict, OrderedDict
 from shiftago.core import NUM_MARBLES_PER_COLOUR, NUM_SLOTS_PER_SIDE
-from shiftago.core import ShiftagoDeser, Slot, Colour, Shiftago, Move, GameOverCondition
+from shiftago.core import ShiftagoDeser, Slot, Colour, Shiftago, Move, GameOverCondition, GameOverException
 from .winning_line import WinningLine
 
 
@@ -92,6 +92,9 @@ class ShiftagoExpress(Shiftago):
         return ShiftagoExpress(self._players, board=self._board.copy())
 
     def apply_move(self, move: Move) -> Optional[GameOverCondition]:
+        if self._game_over_condition is not None:
+            raise GameOverException(self._game_over_condition)
+
         self._insert_marble(move.side, move.position)
 
         if self._has_current_player_won():
