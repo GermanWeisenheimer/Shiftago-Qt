@@ -1,9 +1,8 @@
-from typing import List, Dict
+# pylint: disable=consider-using-f-string
 import copy
 import unittest
 from shiftago.core import NUM_SLOTS_PER_SIDE, Colour, Slot, Move, Side
 from shiftago.core.express import ShiftagoExpress, BoardAnalyzer
-from shiftago.core.winning_line import WinningLine
 from tests import TestDataLoader
 
 
@@ -64,7 +63,7 @@ class ShiftagoExpressTest(unittest.TestCase):
 
     def test_analyze(self):
         with TestDataLoader(ShiftagoExpress, 'board3.json') as express_game:
-            analyzer_result = express_game.analyze()  # type: Dict[Colour, Dict[int, List[WinningLine]]]
+            analyzer_result = express_game.analyze()
             blue_winning_line_matches = analyzer_result[Colour.BLUE]
             print("\nBLUE:")
             for match_count in blue_winning_line_matches:
