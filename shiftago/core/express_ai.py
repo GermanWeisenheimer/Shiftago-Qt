@@ -42,7 +42,7 @@ class _MiniMaxStrategy(ABC):
     def __init__(self, alpha: float, beta: float) -> None:
         self._alpha = alpha
         self._beta = beta
-        self._optimal_move: Optional[Move] = None
+        self._optimal_move = None  # type: Optional[Move]
 
     @property
     def alpha(self) -> float:
