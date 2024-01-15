@@ -78,7 +78,7 @@ class ShiftagoExpressModel(BoardViewModel):
         super().__init__(players)
         colours = [players[0].colour, players[1].colour]
         random.shuffle(colours)  # draw starting player
-        core_model = ShiftagoExpress(colours)
+        core_model = ShiftagoExpress(players=colours)
         core_model.observer = self
         self._core_model = core_model
         self._ai_engine = AlphaBetaPruning(config.skill_level)

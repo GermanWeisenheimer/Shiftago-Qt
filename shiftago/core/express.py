@@ -75,10 +75,18 @@ class BoardAnalyzer:
 
 class ShiftagoExpress(Shiftago):
 
-    def __init__(self, players: Sequence[Colour], board: Optional[Dict[Slot, Colour]] = None) -> None:
-        super().__init__(players, board=board)
-        self._board_analyzer = BoardAnalyzer(len(self.players))
-        self._game_over_condition = None  # type: Optional[GameOverCondition]
+    def __init__(self, *, orig: Optional['ShiftagoExpress'] = None, players: Optional[Sequence[Colour]] = None,
+                 board: Optional[Dict[Slot, Colour]] = None) -> None:
+        super().__init__(orig=orig, players=players, board=board)
+        if orig is not None:
+            self._board_analyzer = orig._board_analyzer
+            self._game_over_condition = orig._game_over_condition
+        else:
+            if players is None:
+                raise ValueError("Parameters 'players' is mandatory if 'orig' is None!")
+            self._board_analyzer = BoardAnalyzer(len(players))
+            self._game_over_condition = None
+
 
     @property
     def winning_line_length(self) -> int:
@@ -89,7 +97,7 @@ class ShiftagoExpress(Shiftago):
         return self._game_over_condition
 
     def __copy__(self) -> 'ShiftagoExpress':
-        return ShiftagoExpress(self._players, board=self._board.copy())
+        return ShiftagoExpress(orig=self)
 
     def apply_move(self, move: Move) -> Optional[GameOverCondition]:
         if self._game_over_condition is not None:

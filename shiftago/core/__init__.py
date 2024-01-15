@@ -220,7 +220,8 @@ class ShiftagoDeser(Generic[_S]):
 
     def deserialize(self, input_stream: TextIO) -> _S:
         def object_hook(json_dict: Dict) -> 'Shiftago':
-            return self._type(self._deserialize_players(json_dict), self._deserialize_board(json_dict))
+            return self._type(players=self._deserialize_players(json_dict),
+                              board=self._deserialize_board(json_dict))
         return json.load(input_stream, object_hook=object_hook)
 
 
@@ -228,18 +229,29 @@ class Shiftago(ABC):
 
     _DEFAULT_OBSERVER = ShiftagoObserver()
 
-    def __init__(self, players: Sequence[Colour], board: Optional[Dict[Slot, Colour]] = None) -> None:
-        num_players = len(set(players))
-        if num_players < len(players):
-            raise ValueError("Argument 'players' contains duplicates: {0}".format(players))
-        if 2 <= num_players <= len(Colour):
-            self._players = deque(players)
+    def __init__(self, *, orig: Optional['Shiftago'] = None, players: Optional[Sequence[Colour]] = None,
+                 board: Optional[Dict[Slot, Colour]] = None) -> None:
+        if orig is not None:
+            self._players = orig._players.copy()
+            self._board = orig._board.copy()
+            if players is not None:
+                raise ValueError("Parameters 'orig' and 'players' exclude each other!")
+            if board is not None:
+                raise ValueError("Parameters 'orig' and 'board' exclude each other!")
         else:
-            raise ValueError("Illegal number of players!")
-        if board is None:
-            self._board = {}  # type: Dict[Slot, Colour]
-        else:
-            self._board = board
+            if players is None:
+                raise ValueError("Parameters 'players' is mandatory if 'orig' is None!")
+            num_players = len(set(players))
+            if num_players < len(players):
+                raise ValueError("Argument 'players' contains duplicates: {0}".format(players))
+            if 2 <= num_players <= len(Colour):
+                self._players = deque(players)
+            else:
+                raise ValueError("Illegal number of players!")
+            if board is None:
+                self._board = {}  # type: Dict[Slot, Colour]
+            else:
+                self._board = board
         self.observer = self._DEFAULT_OBSERVER
 
     def __str__(self) -> str:
