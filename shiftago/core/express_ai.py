@@ -105,8 +105,7 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
         assert len(game_state.players) == 2
         num_occupied_slots = game_state.count_occupied_slots()
         if num_occupied_slots > 1:
-            self._max_depth = 2 + self._skill_level.value if num_occupied_slots >= 6 else 1
-            move, node, num_visited_nodes = self.apply(game_state, 1, -math.inf, math.inf)
+            move, node, num_visited_nodes = self._apply(game_state, 1, -math.inf, math.inf)
             _logger.debug("Selected move: %s (depth = %d, rating = %f, num_visited_nodes = %d)",
                           move, node.depth, node.rating, num_visited_nodes)
             return move
@@ -114,7 +113,7 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
         _logger.debug("Selected random move: %s", move)
         return move
 
-    def apply(self, game_state: ShiftagoExpress, depth: int, alpha: float, beta: float) \
+    def _apply(self, game_state: ShiftagoExpress, depth: int, alpha: float, beta: float) \
             -> Tuple[Move, _Node, int]:
         current_strategy = self._Maximizer(alpha, beta) if depth % 2 == 1 else self._Minimizer(alpha, beta)
         possible_moves = game_state.detect_all_possible_moves()
@@ -129,7 +128,7 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
         for current_move in possible_moves:
             current_node = nodes[current_move]
             if not current_node.is_leaf and depth < max_depth:
-                _, child_node, child_num_visited = self.apply(current_node.new_game_state, depth + 1,
+                _, child_node, child_num_visited = self._apply(current_node.new_game_state, depth + 1,
                                                               current_strategy.alpha, current_strategy.beta)
                 num_visited_nodes += child_num_visited
                 current_node.depth = child_node.depth

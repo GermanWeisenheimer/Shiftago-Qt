@@ -8,16 +8,6 @@ from .winning_line import WinningLine
 
 class BoardAnalyzer:
 
-    _instances = {}  # type: Dict[int, BoardAnalyzer]
-
-    def __new__(cls, num_players: int) -> 'BoardAnalyzer':
-        instance = cls._instances.get(num_players, None)
-        if instance is None:
-            instance = super(BoardAnalyzer, cls).__new__(cls)
-            instance.__init__(num_players)
-            cls._instances[num_players] = instance
-        return instance
-
     def __init__(self, num_players: int) -> None:
         if 3 <= num_players <= 4:
             self._winning_line_length = 4
@@ -86,7 +76,6 @@ class ShiftagoExpress(Shiftago):
                 raise ValueError("Parameters 'players' is mandatory if 'orig' is None!")
             self._board_analyzer = BoardAnalyzer(len(players))
             self._game_over_condition = None
-
 
     @property
     def winning_line_length(self) -> int:
