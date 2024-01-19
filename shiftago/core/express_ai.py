@@ -60,6 +60,26 @@ class _MiniMaxStrategy(ABC):
     def win_rating(self) -> float:
         return 1 if self.is_maximizing else -1
 
+    def eval_move(self, depth: int, game_state: ShiftagoExpress, move: Move) -> _Node:
+        is_leaf = False
+        rating = 0.0
+        cloned_game_state = copy.copy(game_state)
+        game_end_condition = cloned_game_state.apply_move(move)
+        if game_end_condition is not None:
+            is_leaf = True
+            if game_end_condition.winner is not None:
+                rating = self.win_rating
+        else:
+            player_results = cloned_game_state.analyze()
+            current_player, current_opponent = game_state.players
+            current_player_result = player_results[current_player]
+            opponent_result = player_results[current_opponent]
+            winning_line_length = game_state.winning_line_length
+            for i in range(winning_line_length, 1, -1):
+                rating += (len(current_player_result[i]) - len(opponent_result[i])) * \
+                    _pow10(-(winning_line_length - i + 1)) * self.win_rating
+        return _Node(cloned_game_state, is_leaf, depth, rating)
+
     @property
     @abstractmethod
     def is_maximizing(self) -> bool:
@@ -117,7 +137,7 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
             -> Tuple[Move, _Node, int]:
         current_strategy = self._Maximizer(alpha, beta) if depth % 2 == 1 else self._Minimizer(alpha, beta)
         possible_moves = game_state.detect_all_possible_moves()
-        nodes = {move: self._eval_move(depth, current_strategy.win_rating, game_state, move)
+        nodes = {move: current_strategy.eval_move(depth, game_state, move)
                  for move in possible_moves}
         possible_moves.sort(key=lambda m: nodes[m].rating, reverse=current_strategy.is_maximizing)
         num_visited_nodes = 0
@@ -136,23 +156,3 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
         optimal_move = current_strategy.optimal_move
         assert optimal_move is not None
         return optimal_move, nodes[optimal_move], num_visited_nodes
-
-    def _eval_move(self, depth: int, win_rating: float, game_state: ShiftagoExpress, move: Move) -> _Node:
-        is_leaf = False
-        rating = 0.0
-        cloned_game_state = copy.copy(game_state)
-        game_end_condition = cloned_game_state.apply_move(move)
-        if game_end_condition is not None:
-            is_leaf = True
-            if game_end_condition.winner is not None:
-                rating = win_rating
-        else:
-            player_results = cloned_game_state.analyze()
-            current_player, current_opponent = game_state.players
-            current_player_result = player_results[current_player]
-            opponent_result = player_results[current_opponent]
-            winning_line_length = game_state.winning_line_length
-            for i in range(winning_line_length, 1, -1):
-                rating += (len(current_player_result[i]) - len(opponent_result[i])) * \
-                    _pow10(-(winning_line_length - i + 1)) * win_rating
-        return _Node(cloned_game_state, is_leaf, depth, rating)
