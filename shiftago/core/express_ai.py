@@ -145,7 +145,7 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
             current_node = nodes[current_move]
             if not current_node.is_leaf and depth < self._max_depth:
                 _, child_node, child_num_visited = self._apply(current_node.new_game_state, depth + 1,
-                                                              current_strategy.alpha, current_strategy.beta)
+                                                               current_strategy.alpha, current_strategy.beta)
                 num_visited_nodes += child_num_visited
                 current_node.depth = child_node.depth
                 current_node.rating = child_node.rating

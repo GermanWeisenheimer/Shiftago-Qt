@@ -8,6 +8,7 @@ class SkillLevel(Enum):
     ROOKIE = 0
     ADVANCED = 1
     EXPERT = 2
+    GRANDMASTER = 3
 
 
 _S = TypeVar("_S", bound=Shiftago)
