@@ -121,13 +121,9 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
                  for move in possible_moves}
         possible_moves.sort(key=lambda m: nodes[m].rating, reverse=current_strategy.is_maximizing)
         num_visited_nodes = 0
-        if depth == 1:
-            max_depth = self._max_depth if game_state.count_occupied_slots() >= 6 else 1
-        else:
-            max_depth = self._max_depth
         for current_move in possible_moves:
             current_node = nodes[current_move]
-            if not current_node.is_leaf and depth < max_depth:
+            if not current_node.is_leaf and depth < self._max_depth:
                 _, child_node, child_num_visited = self._apply(current_node.new_game_state, depth + 1,
                                                               current_strategy.alpha, current_strategy.beta)
                 num_visited_nodes += child_num_visited
