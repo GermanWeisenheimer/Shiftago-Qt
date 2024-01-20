@@ -47,6 +47,7 @@ class _MiniMaxStrategy(ABC):
         self._alpha = alpha
         self._beta = beta
         self._optimal_move = None  # type: Optional[Move]
+        self._optimal_rating = -math.inf if self.is_maximizing else math.inf
 
     @property
     def alpha(self) -> float:
@@ -63,6 +64,10 @@ class _MiniMaxStrategy(ABC):
     @property
     def win_rating(self) -> float:
         return 1 if self.is_maximizing else -1
+
+    def should_cut_off(self) -> bool:
+        return self._alpha >= self._beta
+
 
     def eval_move(self, depth: int, game_state: ShiftagoExpress, move: Move) -> _Node:
         node = _Node(game_state, move, depth)
@@ -100,10 +105,13 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
             return True
 
         def update(self, move: Move, rating: float) -> bool:
-            if self._optimal_move is None or rating > self._alpha:
+            if rating > self._optimal_rating:
                 self._optimal_move = move
-                self._alpha = rating
-            return self._alpha >= self._beta or self._alpha == self.win_rating
+                self._optimal_rating = rating
+                if self._optimal_rating > self._alpha:
+                    self._alpha = self._optimal_rating
+                return True
+            return False
 
     class _Minimizer(_MiniMaxStrategy):
 
@@ -112,10 +120,13 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
             return False
 
         def update(self, move: Move, rating: float) -> bool:
-            if self._optimal_move is None or rating < self._beta:
+            if rating < self._optimal_rating:
                 self._optimal_move = move
-                self._beta = rating
-            return self._beta <= self._alpha or self._beta == self.win_rating
+                self._optimal_rating = rating
+                if self._optimal_rating < self._beta:
+                    self._beta = self._optimal_rating
+                return True
+            return False
 
     def __init__(self, skill_level=SkillLevel.ADVANCED) -> None:
         super().__init__(skill_level)
@@ -141,7 +152,7 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
         nodes = {move: current_strategy.eval_move(depth, game_state, move)
                  for move in possible_moves}
         possible_moves.sort(key=lambda m: nodes[m].rating, reverse=current_strategy.is_maximizing)
-        num_visited_nodes = 0
+        num_visited_nodes = len(possible_moves)
         for current_move in possible_moves:
             current_node = nodes[current_move]
             if not current_node.is_leaf and depth < self._max_depth:
@@ -150,10 +161,8 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
                 num_visited_nodes += child_num_visited
                 current_node.depth = child_node.depth
                 current_node.rating = child_node.rating
-            else:
-                num_visited_nodes += 1
-            if current_strategy.update(current_move, current_node.rating):
-                break  # cut-off!
+            if current_strategy.update(current_move, current_node.rating) and current_strategy.should_cut_off():
+                break
         optimal_move = current_strategy.optimal_move
         assert optimal_move is not None
         return optimal_move, nodes[optimal_move], num_visited_nodes
