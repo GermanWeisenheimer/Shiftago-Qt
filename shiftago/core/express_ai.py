@@ -87,7 +87,7 @@ class _MiniMaxStrategy(ABC):
         pass
 
     @abstractmethod
-    def compare(self, other_move: Move, other_rating: float) -> bool:
+    def update(self, move: Move, rating: float) -> bool:
         pass
 
 
@@ -99,10 +99,10 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
         def is_maximizing(self) -> bool:
             return True
 
-        def compare(self, other_move: Move, other_rating: float) -> bool:
-            if self._optimal_move is None or other_rating > self._alpha:
-                self._optimal_move = other_move
-                self._alpha = other_rating
+        def update(self, move: Move, rating: float) -> bool:
+            if self._optimal_move is None or rating > self._alpha:
+                self._optimal_move = move
+                self._alpha = rating
             return self._alpha >= self._beta or self._alpha == self.win_rating
 
     class _Minimizer(_MiniMaxStrategy):
@@ -111,10 +111,10 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
         def is_maximizing(self) -> bool:
             return False
 
-        def compare(self, other_move: Move, other_rating: float) -> bool:
-            if self._optimal_move is None or other_rating < self._beta:
-                self._optimal_move = other_move
-                self._beta = other_rating
+        def update(self, move: Move, rating: float) -> bool:
+            if self._optimal_move is None or rating < self._beta:
+                self._optimal_move = move
+                self._beta = rating
             return self._beta <= self._alpha or self._beta == self.win_rating
 
     def __init__(self, skill_level=SkillLevel.ADVANCED) -> None:
@@ -152,7 +152,7 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
                 current_node.rating = child_node.rating
             else:
                 num_visited_nodes += 1
-            if current_strategy.compare(current_move, current_node.rating):
+            if current_strategy.update(current_move, current_node.rating):
                 break  # cut-off!
         optimal_move = current_strategy.optimal_move
         assert optimal_move is not None
