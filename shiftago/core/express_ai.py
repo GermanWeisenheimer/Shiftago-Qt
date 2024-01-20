@@ -6,7 +6,7 @@ import copy
 from typing import Tuple, Optional
 from abc import ABC, abstractmethod
 from functools import lru_cache
-from .express import ShiftagoExpress, Move
+from .express import ShiftagoExpress, Move, GameOverCondition
 from .ai_engine import AIEngine, SkillLevel
 
 _logger = logging.getLogger(__name__)
@@ -19,22 +19,26 @@ def _pow10(exp: int) -> float:
 
 class _Node:
 
-    def __init__(self, new_game_state: ShiftagoExpress, is_leaf: bool, depth: int, rating: float) -> None:
-        self._new_game_state = new_game_state
-        self._is_leaf = is_leaf
+    def __init__(self, from_game_state: ShiftagoExpress, move: Move, depth: int) -> None:
+        self._target_game_state = copy.copy(from_game_state)
+        self._game_over_condition = self._target_game_state.apply_move(move)
         self.depth = depth
-        self.rating = rating
+        self.rating = 0.
 
     def __str__(self) -> str:
         return "(depth: {0}, is_leaf: {1}, rating: {2})".format(self.depth, self.is_leaf, self.rating)
 
     @property
-    def new_game_state(self) -> ShiftagoExpress:
-        return self._new_game_state
+    def target_game_state(self) -> ShiftagoExpress:
+        return self._target_game_state
+
+    @property
+    def game_over_condition(self) -> Optional[GameOverCondition]:
+        return self._game_over_condition
 
     @property
     def is_leaf(self) -> bool:
-        return self._is_leaf
+        return self._game_over_condition is not None
 
 
 class _MiniMaxStrategy(ABC):
@@ -61,24 +65,21 @@ class _MiniMaxStrategy(ABC):
         return 1 if self.is_maximizing else -1
 
     def eval_move(self, depth: int, game_state: ShiftagoExpress, move: Move) -> _Node:
-        is_leaf = False
-        rating = 0.0
-        cloned_game_state = copy.copy(game_state)
-        game_end_condition = cloned_game_state.apply_move(move)
-        if game_end_condition is not None:
-            is_leaf = True
-            if game_end_condition.winner is not None:
-                rating = self.win_rating
-        else:
-            player_results = cloned_game_state.analyze()
-            current_player, current_opponent = game_state.players
-            current_player_result = player_results[current_player]
-            opponent_result = player_results[current_opponent]
-            winning_line_length = game_state.winning_line_length
-            for i in range(winning_line_length, 1, -1):
-                rating += (len(current_player_result[i]) - len(opponent_result[i])) * \
-                    _pow10(-(winning_line_length - i + 1)) * self.win_rating
-        return _Node(cloned_game_state, is_leaf, depth, rating)
+        node = _Node(game_state, move, depth)
+        game_over_condition = node.game_over_condition
+        if game_over_condition is not None:
+            if game_over_condition.winner is not None:
+                node.rating = self.win_rating
+            return node
+        player_results = node.target_game_state.analyze()
+        current_player, current_opponent = game_state.players
+        current_player_result = player_results[current_player]
+        opponent_result = player_results[current_opponent]
+        winning_line_length = game_state.winning_line_length
+        for i in range(winning_line_length, 1, -1):
+            node.rating += (len(current_player_result[i]) - len(opponent_result[i])) * \
+                _pow10(-(winning_line_length - i + 1)) * self.win_rating
+        return node
 
     @property
     @abstractmethod
@@ -144,7 +145,7 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
         for current_move in possible_moves:
             current_node = nodes[current_move]
             if not current_node.is_leaf and depth < self._max_depth:
-                _, child_node, child_num_visited = self._apply(current_node.new_game_state, depth + 1,
+                _, child_node, child_num_visited = self._apply(current_node.target_game_state, depth + 1,
                                                                current_strategy.alpha, current_strategy.beta)
                 num_visited_nodes += child_num_visited
                 current_node.depth = child_node.depth
