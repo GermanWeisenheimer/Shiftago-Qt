@@ -96,7 +96,7 @@ class _MiniMaxStrategy(ABC):
         pass
 
     @abstractmethod
-    def update(self, move: Move, rating: float) -> bool:
+    def update_optimal_move(self, move: Move, rating: float) -> bool:
         pass
 
 
@@ -108,7 +108,7 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
         def is_maximizing(self) -> bool:
             return True
 
-        def update(self, move: Move, rating: float) -> bool:
+        def update_optimal_move(self, move: Move, rating: float) -> bool:
             if rating > self._optimal_rating:
                 self._optimal_move = move
                 self._optimal_rating = rating
@@ -123,7 +123,7 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
         def is_maximizing(self) -> bool:
             return False
 
-        def update(self, move: Move, rating: float) -> bool:
+        def update_optimal_move(self, move: Move, rating: float) -> bool:
             if rating < self._optimal_rating:
                 self._optimal_move = move
                 self._optimal_rating = rating
@@ -164,6 +164,6 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
                 _, current_rating, child_num_visited = self._apply(current_node.target_game_state, depth + 1,
                                                                    strategy.alpha, strategy.beta)
                 num_visited_nodes += child_num_visited
-            if strategy.update(current_move, current_rating) and strategy.should_cut_off():
+            if strategy.update_optimal_move(current_move, current_rating) and strategy.should_cut_off():
                 break
         return strategy.optimal_move, strategy.optimal_rating, num_visited_nodes
