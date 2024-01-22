@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from shiftago.app_config import ShiftagoConfig
 from shiftago.core import Colour, Slot, Side, Move, GameOverCondition, ShiftagoObserver
 from shiftago.core.express import ShiftagoExpress
-from shiftago.core.express_ai import AlphaBetaPruning
+from shiftago.core.express_ai import SkillLevel, AlphaBetaPruning
 from .hmvc import AppEventEmitter
 from .app_events import MarbleShiftedEvent, MarbleInsertedEvent
 
@@ -86,6 +86,10 @@ class ShiftagoExpressModel(BoardViewModel):
     @property
     def current_player(self) -> Player:
         return self.player_of(self._core_model.current_player)
+
+    @property
+    def skill_level(self) -> SkillLevel:
+        return self._ai_engine.skill_level
 
     @property
     def game_over_condition(self) -> Optional[GameOverCondition]:

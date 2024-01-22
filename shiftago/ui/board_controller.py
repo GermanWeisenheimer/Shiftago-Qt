@@ -111,6 +111,7 @@ class BoardController(Controller):
         current_player = self._model.current_player
         _logger.info("Starting player is %s (%s).", current_player.colour.name,
                      'human' if current_player.nature is PlayerNature.HUMAN else 'computer')
+        _logger.info("Skill level: %s", self._model.skill_level.name)
         if current_player.nature is PlayerNature.HUMAN:
             self._state_machine.to_human_player()
         else:
