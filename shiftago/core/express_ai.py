@@ -20,12 +20,17 @@ def _pow10(exp: int) -> float:
 class _Node:
 
     def __init__(self, from_game_state: ShiftagoExpress, move: Move) -> None:
+        self._move = move
         self._target_game_state = copy.copy(from_game_state)
         self._game_over_condition = self._target_game_state.apply_move(move)
         self.rating = 0.
 
     def __str__(self) -> str:
         return "(is_leaf: {0}, rating: {1})".format(self.is_leaf, self.rating)
+
+    @property
+    def move(self) -> Move:
+        return self._move
 
     @property
     def target_game_state(self) -> ShiftagoExpress:
@@ -45,7 +50,6 @@ class _MiniMaxStrategy(ABC):
     def __init__(self, alpha: float, beta: float) -> None:
         self._alpha = alpha
         self._beta = beta
-        self._optimal_move = None  # type: Optional[Move]
         if self.is_maximizing:
             self._win_rating = 1
             self._optimal_rating = -math.inf
@@ -62,18 +66,13 @@ class _MiniMaxStrategy(ABC):
         return self._beta
 
     @property
-    def optimal_move(self) -> Move:
-        assert self._optimal_move is not None
-        return self._optimal_move
-
-    @property
     def optimal_rating(self) -> float:
         return self._optimal_rating
 
-    def should_cut_off(self) -> bool:
+    def can_cut_off(self) -> bool:
         return self._alpha >= self._beta
 
-    def eval_move(self, game_state: ShiftagoExpress, move: Move) -> _Node:
+    def build_node(self, game_state: ShiftagoExpress, move: Move) -> _Node:
         node = _Node(game_state, move)
         game_over_condition = node.game_over_condition
         if game_over_condition is not None:
@@ -96,7 +95,7 @@ class _MiniMaxStrategy(ABC):
         pass
 
     @abstractmethod
-    def update_optimal_move(self, move: Move, rating: float) -> bool:
+    def check_optimal(self, rating: float) -> bool:
         pass
 
 
@@ -108,9 +107,8 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
         def is_maximizing(self) -> bool:
             return True
 
-        def update_optimal_move(self, move: Move, rating: float) -> bool:
+        def check_optimal(self, rating: float) -> bool:
             if rating > self._optimal_rating:
-                self._optimal_move = move
                 self._optimal_rating = rating
                 if self._optimal_rating > self._alpha:
                     self._alpha = self._optimal_rating
@@ -123,9 +121,8 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
         def is_maximizing(self) -> bool:
             return False
 
-        def update_optimal_move(self, move: Move, rating: float) -> bool:
+        def check_optimal(self, rating: float) -> bool:
             if rating < self._optimal_rating:
-                self._optimal_move = move
                 self._optimal_rating = rating
                 if self._optimal_rating < self._beta:
                     self._beta = self._optimal_rating
@@ -134,7 +131,6 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
 
     def __init__(self, skill_level=SkillLevel.ADVANCED) -> None:
         super().__init__(skill_level)
-        self._skill_level = skill_level
         self._max_depth = 2 + skill_level.value
 
     def select_move(self, game_state: ShiftagoExpress) -> Move:
@@ -152,20 +148,22 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
     def _apply(self, game_state: ShiftagoExpress, depth: int, alpha: float, beta: float) \
             -> Tuple[Move, float, int]:
         strategy = self._Maximizer(alpha, beta) if depth % 2 == 1 else self._Minimizer(alpha, beta)
-        possible_moves = game_state.detect_all_possible_moves()
-        nodes = {move: strategy.eval_move(game_state, move) for move in possible_moves}
-        possible_moves.sort(key=lambda m: nodes[m].rating, reverse=strategy.is_maximizing)
+        nodes = [strategy.build_node(game_state, move) for move in game_state.detect_all_possible_moves()]
+        nodes.sort(key=lambda n: n.rating, reverse=strategy.is_maximizing)
         num_visited_nodes = len(nodes)
         if depth == self._max_depth:
-            optimal_move = possible_moves[0]
-            return optimal_move, nodes[optimal_move].rating, num_visited_nodes
-        for current_move in possible_moves:
-            current_node = nodes[current_move]
+            optimal_node = nodes[0]
+            return optimal_node.move, optimal_node.rating, num_visited_nodes
+        optimal_move = None  # type: Optional[Move]
+        for current_node in nodes:
             current_rating = current_node.rating
             if not current_node.is_leaf:
                 _, current_rating, child_num_visited = self._apply(current_node.target_game_state, depth + 1,
                                                                    strategy.alpha, strategy.beta)
                 num_visited_nodes += child_num_visited
-            if strategy.update_optimal_move(current_move, current_rating) and strategy.should_cut_off():
-                break
-        return strategy.optimal_move, strategy.optimal_rating, num_visited_nodes
+            if strategy.check_optimal(current_rating):
+                optimal_move = current_node.move
+                if strategy.can_cut_off():
+                    break
+        assert optimal_move is not None
+        return optimal_move, strategy.optimal_rating, num_visited_nodes
