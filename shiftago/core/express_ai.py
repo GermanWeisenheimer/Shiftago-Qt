@@ -155,12 +155,14 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
         possible_moves = game_state.detect_all_possible_moves()
         nodes = {move: strategy.eval_move(game_state, move) for move in possible_moves}
         possible_moves.sort(key=lambda m: nodes[m].rating, reverse=strategy.is_maximizing)
-        num_visited_nodes = 0
+        num_visited_nodes = len(nodes)
+        if depth == self._max_depth:
+            optimal_move = possible_moves[0]
+            return optimal_move, nodes[optimal_move].rating, num_visited_nodes
         for current_move in possible_moves:
-            num_visited_nodes += 1
             current_node = nodes[current_move]
             current_rating = current_node.rating
-            if not current_node.is_leaf and depth < self._max_depth:
+            if not current_node.is_leaf:
                 _, current_rating, child_num_visited = self._apply(current_node.target_game_state, depth + 1,
                                                                    strategy.alpha, strategy.beta)
                 num_visited_nodes += child_num_visited
