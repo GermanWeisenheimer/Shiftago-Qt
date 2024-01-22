@@ -47,9 +47,8 @@ class _Node:
 
 class _MiniMaxStrategy(ABC):
 
-    def __init__(self, alpha: float, beta: float) -> None:
-        self._alpha = alpha
-        self._beta = beta
+    def __init__(self, alpha_beta: Tuple[float, float]) -> None:
+        self._alpha, self._beta = alpha_beta
         if self.is_maximizing:
             self._win_rating = 1
             self._optimal_rating = -math.inf
@@ -58,12 +57,8 @@ class _MiniMaxStrategy(ABC):
             self._optimal_rating = math.inf
 
     @property
-    def alpha(self) -> float:
-        return self._alpha
-
-    @property
-    def beta(self) -> float:
-        return self._beta
+    def alpha_beta(self) -> Tuple[float, float]:
+        return self._alpha, self._beta
 
     def can_cut_off(self) -> bool:
         return self._alpha >= self._beta
@@ -133,7 +128,7 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
         assert len(game_state.players) == 2
         num_occupied_slots = game_state.count_occupied_slots()
         if num_occupied_slots > 1:
-            move, rating, num_visited_nodes = self._apply(game_state, 1, -math.inf, math.inf)
+            move, rating, num_visited_nodes = self._apply(game_state, 1, (-math.inf, math.inf))
             _logger.debug("Selected move: %s (rating = %f, num_visited_nodes = %d)",
                           move, rating, num_visited_nodes)
             return move
@@ -141,9 +136,9 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
         _logger.debug("Selected random move: %s", move)
         return move
 
-    def _apply(self, game_state: ShiftagoExpress, depth: int, alpha: float, beta: float) \
+    def _apply(self, game_state: ShiftagoExpress, depth: int, alpha_beta: Tuple[float, float]) \
             -> Tuple[Move, float, int]:
-        strategy = self._Maximizer(alpha, beta) if depth % 2 == 1 else self._Minimizer(alpha, beta)
+        strategy = self._Maximizer(alpha_beta) if depth % 2 == 1 else self._Minimizer(alpha_beta)
         nodes = [strategy.build_node(game_state, move) for move in game_state.detect_all_possible_moves()]
         nodes.sort(key=lambda n: n.rating, reverse=strategy.is_maximizing)
         num_visited_nodes = len(nodes)
@@ -154,7 +149,7 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
             for each_node in nodes:
                 if not each_node.is_leaf:
                     _, each_node.rating, child_num_visited = self._apply(each_node.target_game_state,
-                                                                         depth + 1, strategy.alpha, strategy.beta)
+                                                                         depth + 1, strategy.alpha_beta)
                     num_visited_nodes += child_num_visited
                 if strategy.check_optimal(each_node):
                     optimal_node = each_node
