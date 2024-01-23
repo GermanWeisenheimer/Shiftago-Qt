@@ -15,9 +15,8 @@ class BoardAnalyzer:
             self._winning_line_length = 5
         else:
             raise ValueError("Illegal number of players: {0}".format(num_players))
-        all_winning_line_ups = WinningLine.get_all(self._winning_line_length)
         self._slot_to_lines = defaultdict(set)
-        for wl in all_winning_line_ups:
+        for wl in WinningLine.get_all(self._winning_line_length):
             for slot in wl.slots:
                 self._slot_to_lines[slot].add(wl)
 
