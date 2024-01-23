@@ -44,6 +44,20 @@ class _Node:
     def is_leaf(self) -> bool:
         return self._game_over_condition is not None
 
+    def evaluate(self, win_rating: float):
+        if self._game_over_condition is not None:
+            if self._game_over_condition.winner is not None:
+                self.rating = win_rating
+            return
+        player_results = self._target_game_state.analyze()
+        current_opponent, current_player = self._target_game_state.players
+        current_player_result = player_results[current_player]
+        opponent_result = player_results[current_opponent]
+        winning_line_length = self._target_game_state.winning_line_length
+        for i in range(winning_line_length, 1, -1):
+            self.rating += (len(current_player_result[i]) - len(opponent_result[i])) * \
+                _pow10(-(winning_line_length - i + 1)) * win_rating
+
 
 class _MiniMaxStrategy(ABC):
 
@@ -60,25 +74,12 @@ class _MiniMaxStrategy(ABC):
     def alpha_beta(self) -> Tuple[float, float]:
         return self._alpha, self._beta
 
+    @property
+    def win_rating(self) -> float:
+        return self._win_rating
+
     def can_cut_off(self) -> bool:
         return self._alpha >= self._beta
-
-    def build_node(self, game_state: ShiftagoExpress, move: Move) -> _Node:
-        node = _Node(game_state, move)
-        game_over_condition = node.game_over_condition
-        if game_over_condition is not None:
-            if game_over_condition.winner is not None:
-                node.rating = self._win_rating
-            return node
-        player_results = node.target_game_state.analyze()
-        current_player, current_opponent = game_state.players
-        current_player_result = player_results[current_player]
-        opponent_result = player_results[current_opponent]
-        winning_line_length = game_state.winning_line_length
-        for i in range(winning_line_length, 1, -1):
-            node.rating += (len(current_player_result[i]) - len(opponent_result[i])) * \
-                _pow10(-(winning_line_length - i + 1)) * self._win_rating
-        return node
 
     @property
     @abstractmethod
@@ -139,21 +140,25 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
     def _apply(self, game_state: ShiftagoExpress, depth: int, alpha_beta: Tuple[float, float]) \
             -> Tuple[Move, float, int]:
         strategy = self._Maximizer(alpha_beta) if depth % 2 == 1 else self._Minimizer(alpha_beta)
-        nodes = [strategy.build_node(game_state, move) for move in game_state.detect_all_possible_moves()]
-        nodes.sort(key=lambda n: n.rating, reverse=strategy.is_maximizing)
-        num_visited_nodes = len(nodes)
-        optimal_node = None  # type: Optional[_Node]
-        if depth == self._max_depth:
-            optimal_node = nodes[0]
-        else:
+        nodes = [_Node(game_state, move) for move in game_state.detect_all_possible_moves()]
+        if depth < self._max_depth:
             for each_node in nodes:
-                if not each_node.is_leaf:
-                    _, each_node.rating, child_num_visited = self._apply(each_node.target_game_state,
-                                                                         depth + 1, strategy.alpha_beta)
-                    num_visited_nodes += child_num_visited
-                if strategy.check_optimal(each_node):
-                    optimal_node = each_node
-                    if strategy.can_cut_off():
-                        break
+                each_node.evaluate(strategy.win_rating)
+            # pre-sorting massively increases the efficiency of pruning!
+            nodes.sort(key=lambda n: n.rating, reverse=strategy.is_maximizing)
+        num_visited_nodes = 0
+        optimal_node = None  # type: Optional[_Node]
+        for each_node in nodes:
+            if depth == self._max_depth:
+                each_node.evaluate(strategy.win_rating)
+                num_visited_nodes += 1
+            elif not each_node.is_leaf:
+                _, each_node.rating, child_num_visited = self._apply(each_node.target_game_state,
+                                                                     depth + 1, strategy.alpha_beta)
+                num_visited_nodes += child_num_visited
+            if strategy.check_optimal(each_node):
+                optimal_node = each_node
+                if strategy.can_cut_off():
+                    break
         assert optimal_node is not None
         return optimal_node.move, optimal_node.rating, num_visited_nodes
