@@ -2,18 +2,18 @@
 import copy
 import unittest
 from shiftago.core import NUM_SLOTS_PER_SIDE, Colour, Slot, Move, Side
-from shiftago.core.express import ShiftagoExpress, BoardAnalyzer
+from shiftago.core.express import ShiftagoExpress, ScoreAnalyzer
 from tests import TestDataLoader
 
 
-class BoardAnalyzerTest(unittest.TestCase):
+class ScoreAnalyzerTest(unittest.TestCase):
 
     def test_winning_lines_at(self):
-        board_analyzer = BoardAnalyzer(2)
-        self.assertEqual(3, len(board_analyzer.winning_lines_at(Slot(0, 0))))
-        self.assertEqual(4, len(board_analyzer.winning_lines_at(Slot(0, 3))))
-        self.assertEqual(12, len(board_analyzer.winning_lines_at(Slot(3, 3))))
-        self.assertEqual(5, len(board_analyzer.winning_lines_at(Slot(6, 2))))
+        score_analyzer = ScoreAnalyzer(2)
+        self.assertEqual(3, len(score_analyzer.winning_lines_at(Slot(0, 0))))
+        self.assertEqual(4, len(score_analyzer.winning_lines_at(Slot(0, 3))))
+        self.assertEqual(12, len(score_analyzer.winning_lines_at(Slot(3, 3))))
+        self.assertEqual(5, len(score_analyzer.winning_lines_at(Slot(6, 2))))
 
 
 class ShiftagoExpressTest(unittest.TestCase):
@@ -61,14 +61,12 @@ class ShiftagoExpressTest(unittest.TestCase):
             self.assertEqual(Colour.GREEN, express_game.colour_at(Slot(2, 3)))
             self.assertEqual(Colour.GREEN, express_game.colour_at(Slot(3, 3)))
 
-    def test_analyze(self):
+    def test_analyze_line_match_scores(self):
         with TestDataLoader(ShiftagoExpress, 'board3.json') as express_game:
-            blue_winning_line_matches, orange_winning_line_matches = express_game.analyze()
+            blue_winning_line_matches, orange_winning_line_matches = express_game.analyze_line_match_scores()
             print("\nBLUE:")
-            for match_count in blue_winning_line_matches:
-                for index, wl in enumerate(blue_winning_line_matches[match_count]):
-                    print("{0},{1}: {2}".format(match_count, index, wl))
+            for match_count, score in blue_winning_line_matches.items():
+                print("{0}: {1}".format(match_count, score))
             print("ORANGE:")
-            for match_count in orange_winning_line_matches:
-                for index, wl in enumerate(orange_winning_line_matches[match_count]):
-                    print("{0},{1}: {2}".format(match_count, index, wl))
+            for match_count, score in orange_winning_line_matches.items():
+                print("{0}: {1}".format(match_count, score))

@@ -6,7 +6,7 @@ from shiftago.core import ShiftagoDeser, Slot, Colour, Shiftago, Move, GameOverC
 from .winning_line import WinningLine
 
 
-class BoardAnalyzer:
+class ScoreAnalyzer:
 
     def __init__(self, num_players: int) -> None:
         if 3 <= num_players <= 4:
@@ -27,25 +27,27 @@ class BoardAnalyzer:
     def winning_lines_at(self, slot: Slot) -> Set[WinningLine]:
         return self._slot_to_lines[slot]
 
-    def analyze(self, players: Sequence[Colour],
-                colour_at: Callable[[Slot], Optional[Colour]]) -> Sequence[Dict[int, Set[WinningLine]]]:
-        intermediate_results = \
+    def analyze_line_match_scores(self, players: Sequence[Colour],
+                                  colour_at: Callable[[Slot], Optional[Colour]]) -> Sequence[Dict[int, int]]:
+        winning_line_matches = \
             {p: defaultdict(lambda: 0) for p in players}  # type: Dict[Colour, Dict[WinningLine, int]]
         for ver_pos in range(NUM_SLOTS_PER_SIDE):
             for hor_pos in range(NUM_SLOTS_PER_SIDE):
                 slot = Slot(hor_pos, ver_pos)
                 c = colour_at(slot)
                 if c is not None:
-                    wl_dict = intermediate_results[c]
+                    line_match_dict = winning_line_matches[c]
                     for wl in self.winning_lines_at(slot):
-                        wl_dict[wl] += 1
-        results = tuple(OrderedDict() for _ in players)  # type: Sequence[Dict[int, Set[WinningLine]]]
+                        line_match_dict[wl] += 1
+        player_scores = tuple(OrderedDict() for _ in players)  # type: Sequence[Dict[int, int]]
         for i, player in enumerate(players):
-            wl_dict = intermediate_results[player]
-            for j in range(self._winning_line_length, 1, -1):
-                results[i][j] = {winning_line for winning_line, match_count in
-                                 wl_dict.items() if match_count == j}
-        return results
+            score_dict = player_scores[i]
+            for match_count in range(self._winning_line_length, 1, -1):
+                score_dict[match_count] = 0
+            for match_count in winning_line_matches[player].values():
+                if match_count > 1:
+                    score_dict[match_count] = score_dict[match_count] + 1
+        return player_scores
 
     def detect_winning_lines(self, player: Colour, colour_at: Callable[[Slot], Optional[Colour]]) \
             -> Set[WinningLine]:
@@ -65,17 +67,17 @@ class ShiftagoExpress(Shiftago):
                  board: Optional[Dict[Slot, Colour]] = None) -> None:
         super().__init__(orig=orig, players=players, board=board)
         if orig is not None:
-            self._board_analyzer = orig._board_analyzer
+            self._score_analyzer = orig._score_analyzer
             self._game_over_condition = orig._game_over_condition
         else:
             if players is None:
                 raise ValueError("Parameters 'players' is mandatory if 'orig' is None!")
-            self._board_analyzer = BoardAnalyzer(len(players))
+            self._score_analyzer = ScoreAnalyzer(len(players))
             self._game_over_condition = None
 
     @property
     def winning_line_length(self) -> int:
-        return self._board_analyzer.winning_line_length
+        return self._score_analyzer.winning_line_length
 
     @property
     def game_over_condition(self) -> Optional[GameOverCondition]:
@@ -108,14 +110,14 @@ class ShiftagoExpress(Shiftago):
         return self._game_over_condition
 
     def _has_current_player_won(self) -> bool:
-        return len(self._board_analyzer.detect_winning_lines(self._players[0], self.colour_at)) > 0
+        return len(self._score_analyzer.detect_winning_lines(self._players[0], self.colour_at)) > 0
 
     def _select_next_player(self) -> Colour:
         self._players.rotate(-1)
         return self._players[0]
 
-    def analyze(self) -> Sequence[Dict[int, Set[WinningLine]]]:
-        return self._board_analyzer.analyze(self.players, self.colour_at)
+    def analyze_line_match_scores(self) -> Sequence[Dict[int, int]]:
+        return self._score_analyzer.analyze_line_match_scores(self.players, self.colour_at)
 
     @classmethod
     def deserialize(cls, input_stream: TextIO) -> 'ShiftagoExpress':
