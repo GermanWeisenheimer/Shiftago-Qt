@@ -63,13 +63,11 @@ class ShiftagoExpressTest(unittest.TestCase):
 
     def test_analyze(self):
         with TestDataLoader(ShiftagoExpress, 'board3.json') as express_game:
-            analyzer_result = express_game.analyze()
-            blue_winning_line_matches = analyzer_result[Colour.BLUE]
+            blue_winning_line_matches, orange_winning_line_matches = express_game.analyze()
             print("\nBLUE:")
             for match_count in blue_winning_line_matches:
                 for index, wl in enumerate(blue_winning_line_matches[match_count]):
                     print("{0},{1}: {2}".format(match_count, index, wl))
-            orange_winning_line_matches = analyzer_result[Colour.ORANGE]
             print("ORANGE:")
             for match_count in orange_winning_line_matches:
                 for index, wl in enumerate(orange_winning_line_matches[match_count]):

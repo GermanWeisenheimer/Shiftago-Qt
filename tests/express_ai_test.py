@@ -36,3 +36,11 @@ class AlphaBetaPruningTest(unittest.TestCase):
                 move = AlphaBetaPruning(skill_level).select_move(express_game)
                 self.assertIn(move, (Move(Side.TOP, 1), Move(Side.TOP, 4)))
                 print("Move: {0}".format(move))
+
+    def test_3_alpha_beta_pruning(self):
+        with TestDataLoader(ShiftagoExpress, 'express_ai_test3.json') as express_game:
+            print("\n{0}".format(express_game))
+            for skill_level in (SkillLevel.ROOKIE, SkillLevel.GRANDMASTER):
+                move = AlphaBetaPruning(skill_level).select_move(express_game)
+                self.assertIn(move, (Move(Side.TOP, 0), Move(Side.LEFT, 0)))
+                print("Move: {0}".format(move))

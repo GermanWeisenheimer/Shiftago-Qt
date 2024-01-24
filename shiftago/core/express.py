@@ -28,10 +28,9 @@ class BoardAnalyzer:
         return self._slot_to_lines[slot]
 
     def analyze(self, players: Sequence[Colour],
-                colour_at: Callable[[Slot], Optional[Colour]]) -> Dict[Colour, Dict[int, Set[WinningLine]]]:
-        intermediate_results = {}  # type: Dict[Colour, Dict[WinningLine, int]]
-        for p in players:
-            intermediate_results[p] = defaultdict(lambda: 0)
+                colour_at: Callable[[Slot], Optional[Colour]]) -> Sequence[Dict[int, Set[WinningLine]]]:
+        intermediate_results = \
+            {p: defaultdict(lambda: 0) for p in players}  # type: Dict[Colour, Dict[WinningLine, int]]
         for ver_pos in range(NUM_SLOTS_PER_SIDE):
             for hor_pos in range(NUM_SLOTS_PER_SIDE):
                 slot = Slot(hor_pos, ver_pos)
@@ -40,14 +39,11 @@ class BoardAnalyzer:
                     wl_dict = intermediate_results[c]
                     for wl in self.winning_lines_at(slot):
                         wl_dict[wl] += 1
-        results = {}  # type: Dict[Colour, Dict[int, Set[WinningLine]]]
-        for p in players:
-            results[p] = p_value = OrderedDict()  # Dict[int, Set[WinningLine]]
-            for i in range(self._winning_line_length, 1, -1):
-                p_value[i] = set()
-            for winning_line, match_count in intermediate_results[p].items():
-                if match_count > 1:
-                    p_value[match_count].add(winning_line)
+        results = [OrderedDict() for _ in players]  # type: Sequence[Dict[int, Set[WinningLine]]]
+        for i, player in enumerate(players):
+            for j in range(self._winning_line_length, 1, -1):
+                results[i][j] = {winning_line for winning_line, match_count in
+                                 intermediate_results[player].items() if match_count == j}
         return results
 
     def detect_winning_lines(self, player: Colour, colour_at: Callable[[Slot], Optional[Colour]]) \
@@ -117,7 +113,7 @@ class ShiftagoExpress(Shiftago):
         self._players.rotate(-1)
         return self._players[0]
 
-    def analyze(self) -> Dict[Colour, Dict[int, Set[WinningLine]]]:
+    def analyze(self) -> Sequence[Dict[int, Set[WinningLine]]]:
         return self._board_analyzer.analyze(self.players, self.colour_at)
 
     @classmethod
