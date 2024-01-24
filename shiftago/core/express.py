@@ -1,6 +1,6 @@
 # pylint: disable=consider-using-f-string
 from typing import Dict, Set, Sequence, Optional, Callable, TextIO
-from collections import defaultdict, OrderedDict
+from collections import defaultdict
 from shiftago.core import NUM_MARBLES_PER_COLOUR, NUM_SLOTS_PER_SIDE
 from shiftago.core import ShiftagoDeser, Slot, Colour, Shiftago, Move, GameOverCondition, GameOverException
 from .winning_line import WinningLine
@@ -39,11 +39,9 @@ class ScoreAnalyzer:
                     line_match_dict = winning_line_matches[c]
                     for wl in self.winning_lines_at(slot):
                         line_match_dict[wl] += 1
-        player_scores = tuple(OrderedDict() for _ in players)  # type: Sequence[Dict[int, int]]
+        player_scores = tuple(defaultdict(lambda: 0) for _ in players)  # type: Sequence[Dict[int, int]]
         for i, player in enumerate(players):
             score_dict = player_scores[i]
-            for match_count in range(self._winning_line_length, 1, -1):
-                score_dict[match_count] = 0
             for match_count in winning_line_matches[player].values():
                 if match_count > 1:
                     score_dict[match_count] = score_dict[match_count] + 1
