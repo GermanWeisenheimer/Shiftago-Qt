@@ -39,11 +39,12 @@ class BoardAnalyzer:
                     wl_dict = intermediate_results[c]
                     for wl in self.winning_lines_at(slot):
                         wl_dict[wl] += 1
-        results = [OrderedDict() for _ in players]  # type: Sequence[Dict[int, Set[WinningLine]]]
+        results = tuple(OrderedDict() for _ in players)  # type: Sequence[Dict[int, Set[WinningLine]]]
         for i, player in enumerate(players):
+            wl_dict = intermediate_results[player]
             for j in range(self._winning_line_length, 1, -1):
                 results[i][j] = {winning_line for winning_line, match_count in
-                                 intermediate_results[player].items() if match_count == j}
+                                 wl_dict.items() if match_count == j}
         return results
 
     def detect_winning_lines(self, player: Colour, colour_at: Callable[[Slot], Optional[Colour]]) \
