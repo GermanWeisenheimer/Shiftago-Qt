@@ -63,10 +63,20 @@ class ShiftagoExpressTest(unittest.TestCase):
 
     def test_analyze_line_match_scores(self):
         with TestDataLoader(ShiftagoExpress, 'board3.json') as express_game:
-            blue_winning_line_matches, orange_winning_line_matches = express_game.analyze_line_match_scores()
+            blue_score, orange_score = express_game.analyze_line_match_scores()
             print("\nBLUE:")
-            for match_count, score in blue_winning_line_matches.items():
+            for match_count, score in blue_score.items():
                 print("{0}: {1}".format(match_count, score))
+            self.assertEqual(0, blue_score[5])
+            self.assertEqual(1, blue_score[4])
+            self.assertEqual(1, blue_score[3])
+            self.assertEqual(1, blue_score[2])
+            self.assertEqual(0, blue_score[1])
             print("ORANGE:")
-            for match_count, score in orange_winning_line_matches.items():
+            for match_count, score in orange_score.items():
                 print("{0}: {1}".format(match_count, score))
+            self.assertEqual(0, orange_score[5])
+            self.assertEqual(2, orange_score[4])
+            self.assertEqual(1, orange_score[3])
+            self.assertEqual(0, orange_score[2])
+            self.assertEqual(0, orange_score[1])
