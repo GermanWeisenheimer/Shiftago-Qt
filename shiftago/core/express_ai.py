@@ -57,10 +57,10 @@ class _Node:
             if self._game_over_condition.winner is not None:
                 rating = win_rating
             return rating
-        opponent_score, current_player_score = self._target_game_state.analyze_line_match_scores()
+        of_opponent, of_current_player = self._target_game_state.analyze_colour_placements()
         winning_line_length = self._target_game_state.winning_line_length
         for i in range(winning_line_length, 1, -1):
-            rating += (current_player_score[i] - opponent_score[i]) * \
+            rating += (of_current_player[i] - of_opponent[i]) * \
                 _pow10(-(winning_line_length - i + 1)) * win_rating
         return rating
 
