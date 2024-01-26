@@ -3,7 +3,8 @@ import logging
 import math
 import random
 import copy
-from typing import Tuple, Optional
+from collections import defaultdict
+from typing import Tuple, Optional, Sequence, Dict
 from abc import ABC, abstractmethod
 from functools import lru_cache
 from .express import ShiftagoExpress, Move, GameOverCondition
@@ -15,6 +16,15 @@ _logger = logging.getLogger(__name__)
 @lru_cache(maxsize=10)
 def _pow10(exp: int) -> float:
     return math.pow(10, exp)
+
+
+def analyze_colour_placements(game_state: ShiftagoExpress) -> Sequence[Dict[int, int]]:
+    winning_line_matches = game_state.detect_winning_lines(2)
+    results = tuple(defaultdict(lambda: 0) for _ in winning_line_matches)  # type: Sequence[Dict[int, int]]
+    for player_idx, match_groups_of_player in enumerate(results):
+        for match_group_index in winning_line_matches[player_idx].values():
+            match_groups_of_player[match_group_index] = match_groups_of_player[match_group_index] + 1
+    return results
 
 
 class _Node:
@@ -57,7 +67,7 @@ class _Node:
             if self._game_over_condition.winner is not None:
                 rating = win_rating
             return rating
-        of_opponent, of_current_player = self._target_game_state.analyze_colour_placements()
+        of_opponent, of_current_player = analyze_colour_placements(self._target_game_state)
         winning_line_length = self._target_game_state.winning_line_length
         for i in range(winning_line_length, 1, -1):
             rating += (of_current_player[i] - of_opponent[i]) * \
@@ -133,8 +143,7 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
 
     def select_move(self, game_state: ShiftagoExpress) -> Move:
         assert len(game_state.players) == 2
-        num_occupied_slots = game_state.count_occupied_slots()
-        if num_occupied_slots > 1:
+        if game_state.count_occupied_slots() > 1:
             move, rating, num_visited_nodes = self._apply(game_state, 1, (-math.inf, math.inf))
             _logger.debug("Selected move: %s (rating = %f, num_visited_nodes = %d)",
                           move, rating, num_visited_nodes)
@@ -154,7 +163,7 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
         else:
             ratings = {}
         num_visited_nodes = 0
-        optimal_node = None  # type: Optional[_Node]
+        optimal_node = None
         for each_node in nodes:
             num_visited_nodes += 1
             if depth == self._max_depth:
