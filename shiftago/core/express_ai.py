@@ -4,7 +4,7 @@ import math
 import random
 import copy
 from collections import defaultdict
-from typing import Tuple, Optional, Sequence, Dict
+from typing import List, Tuple, Optional, Sequence, Dict
 from abc import ABC, abstractmethod
 from functools import lru_cache
 from .express import ShiftagoExpress, Move, GameOverCondition
@@ -29,8 +29,7 @@ def analyze_colour_placements(game_state: ShiftagoExpress) -> Sequence[Dict[int,
 
 class _Node:
 
-    def __init__(self, depth: int, from_game_state: ShiftagoExpress, move: Move) -> None:
-        self.depth = depth
+    def __init__(self, from_game_state: ShiftagoExpress, move: Move) -> None:
         self._move = move
         self._target_game_state = copy.copy(from_game_state)
         self._game_over_condition = self._target_game_state.apply_move(move)
@@ -78,8 +77,7 @@ class _Node:
 
 class _MiniMaxStrategy(ABC):
 
-    def __init__(self, depth: int, alpha_beta: Tuple[float, float]) -> None:
-        self._depth = depth
+    def __init__(self, alpha_beta: Tuple[float, float]) -> None:
         self._alpha, self._beta = alpha_beta
         if self.is_maximizing:
             self._win_rating = 1
@@ -87,10 +85,7 @@ class _MiniMaxStrategy(ABC):
         else:
             self._win_rating = -1
             self._optimal_rating = math.inf
-
-    @property
-    def depth(self) -> int:
-        return self._depth
+        self._optimal_depth = 0
 
     @property
     def alpha_beta(self) -> Tuple[float, float]:
@@ -99,6 +94,18 @@ class _MiniMaxStrategy(ABC):
     @property
     def win_rating(self) -> float:
         return self._win_rating
+
+    @property
+    def optimal_rating(self) -> float:
+        return self._optimal_rating
+
+    @property
+    def optimal_depth(self) -> int:
+        return self._optimal_depth
+
+    def sort_nodes(self, nodes: List) -> None:
+        ratings = {node: node.evaluate(self._win_rating) for node in nodes}
+        nodes.sort(key=lambda n: ratings[n], reverse=self.is_maximizing)
 
     def can_prune(self) -> bool:
         return self._alpha >= self._beta
@@ -124,13 +131,13 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
         def check_optimal(self, rating: float, depth: int) -> bool:
             if rating > self._optimal_rating:
                 self._optimal_rating = rating
-                self._depth = depth
+                self._optimal_depth = depth
                 if self._optimal_rating > self._alpha:
                     self._alpha = self._optimal_rating
                 return True
             if rating == self._optimal_rating:
-                if depth < self._depth if rating > 0. else depth > self._depth:
-                    self._depth = depth
+                if depth < self._optimal_depth if rating > 0. else depth > self._optimal_depth:
+                    self._optimal_depth = depth
                     return True
             return False
 
@@ -143,13 +150,13 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
         def check_optimal(self, rating: float, depth: int) -> bool:
             if rating < self._optimal_rating:
                 self._optimal_rating = rating
-                self._depth = depth
+                self._optimal_depth = depth
                 if self._optimal_rating < self._beta:
                     self._beta = self._optimal_rating
                 return True
             if rating == self._optimal_rating:
-                if depth < self._depth if rating < 0. else depth > self._depth:
-                    self._depth = depth
+                if depth < self._optimal_depth if rating < 0. else depth > self._optimal_depth:
+                    self._optimal_depth = depth
                     return True
             return False
 
@@ -160,37 +167,31 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
     def select_move(self, game_state: ShiftagoExpress) -> Move:
         assert len(game_state.players) == 2
         if game_state.count_occupied_slots() > 1:
-            move, rating, depth, num_visited_nodes = self._apply(game_state, 1, (-math.inf, math.inf))
-            _logger.debug("Selected move: %s (rating = %f, depth = %d, num_visited_nodes = %d)",
-                          move, rating, depth, num_visited_nodes)
+            move, rating, depth = self._apply(game_state, 1, (-math.inf, math.inf))
+            _logger.debug("Selected move: %s (rating = %f, depth = %d)", move, rating, depth)
             return move
         move = random.choice(game_state.detect_all_possible_moves())
         _logger.debug("Selected random move: %s", move)
         return move
 
     def _apply(self, game_state: ShiftagoExpress, depth: int, alpha_beta: Tuple[float, float]) \
-            -> Tuple[Move, float, int, int]:
-        strategy = self._Maximizer(depth, alpha_beta) if depth % 2 == 1 else self._Minimizer(depth, alpha_beta)
-        nodes = [_Node(depth, game_state, move) for move in game_state.detect_all_possible_moves()]
+            -> Tuple[Move, float, int]:
+        strategy = self._Maximizer(alpha_beta) if depth % 2 == 1 else self._Minimizer(alpha_beta)
+        nodes = [_Node(game_state, move) for move in game_state.detect_all_possible_moves()]
         if depth < self._max_depth:
-            ratings = {node: node.evaluate(strategy.win_rating) for node in nodes}
             # pre-sorting massively increases the efficiency of pruning!
-            nodes.sort(key=lambda n: ratings[n], reverse=strategy.is_maximizing)
-        else:
-            ratings = {}
-        num_visited_nodes = 0
-        optimal_node = None
+            strategy.sort_nodes(nodes)
+        optimal_move = None
         for each_node in nodes:
-            num_visited_nodes += 1
-            if depth == self._max_depth:
-                ratings[each_node] = each_node.evaluate(strategy.win_rating)
-            elif not each_node.is_leaf:
-                _, ratings[each_node], each_node.depth, child_num_visited = \
+            if each_node.is_leaf or depth == self._max_depth:
+                current_rating = each_node.evaluate(strategy.win_rating)
+                current_depth = depth
+            else:
+                _, current_rating, current_depth = \
                     self._apply(each_node.target_game_state, depth + 1, strategy.alpha_beta)
-                num_visited_nodes += child_num_visited
-            if strategy.check_optimal(ratings[each_node], each_node.depth):
-                optimal_node = each_node
+            if strategy.check_optimal(current_rating, current_depth):
+                optimal_move = each_node.move
                 if strategy.can_prune():
                     break
-        assert optimal_node is not None
-        return optimal_node.move, ratings[optimal_node], optimal_node.depth, num_visited_nodes
+        assert optimal_move is not None
+        return optimal_move, strategy.optimal_rating, strategy.optimal_depth
