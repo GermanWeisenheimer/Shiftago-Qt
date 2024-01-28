@@ -80,22 +80,22 @@ class _MiniMaxStrategy(ABC):
         assert self._optimal_rating is not None
         return self._optimal_rating
 
-    def sort_nodes(self, depth: int, nodes: List) -> None:
-        ratings = {node: self.evaluate(depth, node) for node in nodes}
-        nodes.sort(key=lambda n: ratings[n].value, reverse=self.is_maximizing)
+    def sort_nodes(self, nodes: List) -> None:
+        ratings = {node: self.evaluate(node) for node in nodes}
+        nodes.sort(key=lambda n: ratings[n], reverse=self.is_maximizing)
 
-    def evaluate(self, depth: int, node: _Node) -> Rating:
+    def evaluate(self, node: _Node) -> float:
         if node.game_over_condition is not None:
             if node.game_over_condition.winner is not None:
-                return Rating(self._win_rating_value, depth)
-            return Rating(0., depth)  # game ends in a draw
+                return self._win_rating_value
+            return 0.  # game ends in a draw
         opponent_placements, current_player_placements = analyze_colour_placements(node.target_game_state)
         winning_line_length = node.target_game_state.winning_line_length
         rating_value = 0.
         for i in range(winning_line_length, 1, -1):
             rating_value += (current_player_placements[i] - opponent_placements[i]) * \
                 self._pow10(-(winning_line_length - i + 1)) * self._win_rating_value
-        return Rating(rating_value, depth)
+        return rating_value
 
     @staticmethod
     @lru_cache(maxsize=10)
@@ -175,11 +175,11 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
         nodes = [_Node(game_state, move) for move in game_state.detect_all_possible_moves()]
         if depth < self._max_depth:
             # pre-sorting massively increases the efficiency of pruning!
-            strategy.sort_nodes(depth, nodes)
+            strategy.sort_nodes(nodes)
         optimal_move = None
         for each_node in nodes:
             if each_node.is_leaf or depth == self._max_depth:
-                current_rating = strategy.evaluate(depth, each_node)
+                current_rating = Rating(strategy.evaluate(each_node), depth)
             else:
                 _, current_rating = \
                     self._apply(each_node.target_game_state, depth + 1, strategy.alpha_beta)
