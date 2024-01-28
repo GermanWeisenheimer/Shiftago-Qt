@@ -2,8 +2,7 @@ import logging
 from configparser import ConfigParser, SectionProxy
 from dataclasses import dataclass
 from pathlib import Path
-from .core import Colour
-from .core.ai_engine import SkillLevel
+from .core import Colour, SkillLevel
 
 _CONFIG_FILE = 'shiftago-qt.cfg'
 

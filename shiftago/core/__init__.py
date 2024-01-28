@@ -1,5 +1,5 @@
 # pylint: disable=consider-using-f-string
-from typing import List, Tuple, Dict,  Sequence, Optional, TextIO,  Type, TypeVar, Generic
+from typing import List, Dict,  Sequence, Optional, TextIO,  Type, TypeVar, Generic
 from abc import ABC, abstractmethod
 from enum import Enum
 from collections import namedtuple, defaultdict, deque
@@ -358,3 +358,24 @@ class Shiftago(ABC):
     def deserialize(cls, input_stream: TextIO) -> 'Shiftago':
         """Deserializes a JSON input stream to a Shiftago instance"""
         return ShiftagoDeser(cls).deserialize(input_stream)
+
+
+class SkillLevel(Enum):
+    ROOKIE = 0
+    ADVANCED = 1
+    EXPERT = 2
+    GRANDMASTER = 3
+
+
+class AIEngine(ABC, Generic[_S]):
+
+    def __init__(self, skill_level: SkillLevel) -> None:
+        self._skill_level = skill_level
+
+    @property
+    def skill_level(self) -> SkillLevel:
+        return self._skill_level
+
+    @abstractmethod
+    def select_move(self, game_state: _S) -> Move:
+        raise NotImplementedError

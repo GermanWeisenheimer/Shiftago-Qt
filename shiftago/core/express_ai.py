@@ -7,8 +7,8 @@ from collections import defaultdict, namedtuple
 from typing import List, Tuple, Optional, Sequence, Dict
 from abc import ABC, abstractmethod
 from functools import lru_cache
+from shiftago.core import AIEngine, SkillLevel
 from .express import ShiftagoExpress, Move, GameOverCondition
-from .ai_engine import AIEngine, SkillLevel
 
 _logger = logging.getLogger(__name__)
 
@@ -22,7 +22,7 @@ def analyze_colour_placements(game_state: ShiftagoExpress) -> Sequence[Dict[int,
     return results
 
 
-class Rating(namedtuple('Rating', 'value depth')):
+class _Rating(namedtuple('Rating', 'value depth')):
     pass
 
 
@@ -69,14 +69,14 @@ class _MiniMaxStrategy(ABC):
             self._win_rating_value = 1
         else:
             self._win_rating_value = -1
-        self._optimal_rating = None  # type: Optional[Rating]
+        self._optimal_rating = None  # type: Optional[_Rating]
 
     @property
     def alpha_beta(self) -> Tuple[float, float]:
         return self._alpha, self._beta
 
     @property
-    def optimal_rating(self) -> Rating:
+    def optimal_rating(self) -> _Rating:
         assert self._optimal_rating is not None
         return self._optimal_rating
 
@@ -111,7 +111,7 @@ class _MiniMaxStrategy(ABC):
         pass
 
     @abstractmethod
-    def check_optimal(self, rating: Rating) -> bool:
+    def check_optimal(self, rating: _Rating) -> bool:
         pass
 
 
@@ -123,7 +123,7 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
         def is_maximizing(self) -> bool:
             return True
 
-        def check_optimal(self, rating: Rating) -> bool:
+        def check_optimal(self, rating: _Rating) -> bool:
             if self._optimal_rating is None or rating.value > self._optimal_rating.value:
                 self._optimal_rating = rating
                 if self._optimal_rating.value > self._alpha:
@@ -142,7 +142,7 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
         def is_maximizing(self) -> bool:
             return False
 
-        def check_optimal(self, rating: Rating) -> bool:
+        def check_optimal(self, rating: _Rating) -> bool:
             if self._optimal_rating is None or rating.value < self._optimal_rating.value:
                 self._optimal_rating = rating
                 if self._optimal_rating.value < self._beta:
@@ -170,7 +170,7 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
         return move
 
     def _apply(self, game_state: ShiftagoExpress, depth: int, alpha_beta: Tuple[float, float]) \
-            -> Tuple[Move, Rating]:
+            -> Tuple[Move, _Rating]:
         strategy = self._Maximizer(alpha_beta) if depth % 2 == 1 else self._Minimizer(alpha_beta)
         nodes = [_Node(game_state, move) for move in game_state.detect_all_possible_moves()]
         if depth < self._max_depth:
@@ -179,7 +179,7 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
         optimal_move = None
         for each_node in nodes:
             if each_node.is_leaf or depth == self._max_depth:
-                current_rating = Rating(strategy.evaluate(each_node), depth)
+                current_rating = _Rating(strategy.evaluate(each_node), depth)
             else:
                 _, current_rating = \
                     self._apply(each_node.target_game_state, depth + 1, strategy.alpha_beta)
