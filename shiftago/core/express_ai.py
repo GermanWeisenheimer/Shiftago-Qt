@@ -3,7 +3,7 @@ import logging
 import math
 import random
 import copy
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 from typing import List, Tuple, Optional, Sequence, Dict
 from abc import ABC, abstractmethod
 from functools import lru_cache
@@ -13,11 +13,6 @@ from .ai_engine import AIEngine, SkillLevel
 _logger = logging.getLogger(__name__)
 
 
-@lru_cache(maxsize=10)
-def _pow10(exp: int) -> float:
-    return math.pow(10, exp)
-
-
 def analyze_colour_placements(game_state: ShiftagoExpress) -> Sequence[Dict[int, int]]:
     winning_line_matches = game_state.detect_winning_lines(2)
     results = tuple(defaultdict(lambda: 0) for _ in winning_line_matches)  # type: Sequence[Dict[int, int]]
@@ -25,6 +20,10 @@ def analyze_colour_placements(game_state: ShiftagoExpress) -> Sequence[Dict[int,
         for match_group_index in winning_line_matches[player_idx].values():
             match_groups_of_player[match_group_index] = match_groups_of_player[match_group_index] + 1
     return results
+
+
+class Rating(namedtuple('Rating', 'value depth')):
+    pass
 
 
 class _Node:
@@ -61,51 +60,51 @@ class _Node:
     def is_leaf(self) -> bool:
         return self._game_over_condition is not None
 
-    def evaluate(self, win_rating: float) -> float:
-        rating = 0.
-        if self._game_over_condition is not None:
-            if self._game_over_condition.winner is not None:
-                rating = win_rating
-            return rating
-        of_opponent, of_current_player = analyze_colour_placements(self._target_game_state)
-        winning_line_length = self._target_game_state.winning_line_length
-        for i in range(winning_line_length, 1, -1):
-            rating += (of_current_player[i] - of_opponent[i]) * \
-                _pow10(-(winning_line_length - i + 1)) * win_rating
-        return rating
-
 
 class _MiniMaxStrategy(ABC):
 
     def __init__(self, alpha_beta: Tuple[float, float]) -> None:
         self._alpha, self._beta = alpha_beta
         if self.is_maximizing:
-            self._win_rating = 1
-            self._optimal_rating = -math.inf
+            self._win_rating_value = 1
         else:
-            self._win_rating = -1
-            self._optimal_rating = math.inf
-        self._optimal_depth = 0
+            self._win_rating_value = -1
+        self._optimal_rating = None  # type: Optional[Rating]
 
     @property
     def alpha_beta(self) -> Tuple[float, float]:
         return self._alpha, self._beta
 
     @property
-    def win_rating(self) -> float:
-        return self._win_rating
+    def win_rating_value(self) -> float:
+        return self._win_rating_value
 
     @property
-    def optimal_rating(self) -> float:
+    def optimal_rating(self) -> Rating:
+        assert self._optimal_rating is not None
         return self._optimal_rating
 
-    @property
-    def optimal_depth(self) -> int:
-        return self._optimal_depth
+    def sort_nodes(self, depth: int, nodes: List) -> None:
+        ratings = {node: self.evaluate(depth, node) for node in nodes}
+        nodes.sort(key=lambda n: ratings[n].value, reverse=self.is_maximizing)
 
-    def sort_nodes(self, nodes: List) -> None:
-        ratings = {node: node.evaluate(self._win_rating) for node in nodes}
-        nodes.sort(key=lambda n: ratings[n], reverse=self.is_maximizing)
+    def evaluate(self, depth: int, node: _Node) -> Rating:
+        if node.game_over_condition is not None:
+            if node.game_over_condition.winner is not None:
+                return Rating(self._win_rating_value, depth)
+            return Rating(0., depth)  # game ends in a draw
+        opponent_placements, current_player_placements = analyze_colour_placements(node.target_game_state)
+        winning_line_length = node.target_game_state.winning_line_length
+        rating_value = 0.
+        for i in range(winning_line_length, 1, -1):
+            rating_value += (current_player_placements[i] - opponent_placements[i]) * \
+                self._pow10(-(winning_line_length - i + 1)) * self._win_rating_value
+        return Rating(rating_value, depth)
+
+    @staticmethod
+    @lru_cache(maxsize=10)
+    def _pow10(exp: int) -> float:
+        return math.pow(10, exp)
 
     def can_prune(self) -> bool:
         return self._alpha >= self._beta
@@ -116,7 +115,7 @@ class _MiniMaxStrategy(ABC):
         pass
 
     @abstractmethod
-    def check_optimal(self, rating: float, depth: int) -> bool:
+    def check_optimal(self, rating: Rating) -> bool:
         pass
 
 
@@ -128,16 +127,16 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
         def is_maximizing(self) -> bool:
             return True
 
-        def check_optimal(self, rating: float, depth: int) -> bool:
-            if rating > self._optimal_rating:
+        def check_optimal(self, rating: Rating) -> bool:
+            if self._optimal_rating is None or rating.value > self._optimal_rating.value:
                 self._optimal_rating = rating
-                self._optimal_depth = depth
-                if self._optimal_rating > self._alpha:
-                    self._alpha = self._optimal_rating
+                if self._optimal_rating.value > self._alpha:
+                    self._alpha = self._optimal_rating.value
                 return True
-            if rating == self._optimal_rating:
-                if depth < self._optimal_depth if rating > 0. else depth > self._optimal_depth:
-                    self._optimal_depth = depth
+            if rating.value == self._optimal_rating.value:
+                if rating.depth < self._optimal_rating.depth if rating.value > 0. else \
+                        rating. depth > self._optimal_rating.depth:
+                    self._optimal_rating = rating
                     return True
             return False
 
@@ -147,16 +146,16 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
         def is_maximizing(self) -> bool:
             return False
 
-        def check_optimal(self, rating: float, depth: int) -> bool:
-            if rating < self._optimal_rating:
+        def check_optimal(self, rating: Rating) -> bool:
+            if self._optimal_rating is None or rating.value < self._optimal_rating.value:
                 self._optimal_rating = rating
-                self._optimal_depth = depth
-                if self._optimal_rating < self._beta:
-                    self._beta = self._optimal_rating
+                if self._optimal_rating.value < self._beta:
+                    self._beta = self._optimal_rating.value
                 return True
             if rating == self._optimal_rating:
-                if depth < self._optimal_depth if rating < 0. else depth > self._optimal_depth:
-                    self._optimal_depth = depth
+                if rating.depth < self._optimal_rating.depth if rating.value < 0. else \
+                        rating.depth > self._optimal_rating.depth:
+                    self._optimal_rating = rating
                     return True
             return False
 
@@ -167,31 +166,30 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
     def select_move(self, game_state: ShiftagoExpress) -> Move:
         assert len(game_state.players) == 2
         if game_state.count_occupied_slots() > 1:
-            move, rating, depth = self._apply(game_state, 1, (-math.inf, math.inf))
-            _logger.debug("Selected move: %s (rating = %f, depth = %d)", move, rating, depth)
+            move, rating = self._apply(game_state, 1, (-math.inf, math.inf))
+            _logger.debug("Selected move: %s (%s)", move, rating)
             return move
         move = random.choice(game_state.detect_all_possible_moves())
         _logger.debug("Selected random move: %s", move)
         return move
 
     def _apply(self, game_state: ShiftagoExpress, depth: int, alpha_beta: Tuple[float, float]) \
-            -> Tuple[Move, float, int]:
+            -> Tuple[Move, Rating]:
         strategy = self._Maximizer(alpha_beta) if depth % 2 == 1 else self._Minimizer(alpha_beta)
         nodes = [_Node(game_state, move) for move in game_state.detect_all_possible_moves()]
         if depth < self._max_depth:
             # pre-sorting massively increases the efficiency of pruning!
-            strategy.sort_nodes(nodes)
+            strategy.sort_nodes(depth, nodes)
         optimal_move = None
         for each_node in nodes:
             if each_node.is_leaf or depth == self._max_depth:
-                current_rating = each_node.evaluate(strategy.win_rating)
-                current_depth = depth
+                current_rating = strategy.evaluate(depth, each_node)
             else:
-                _, current_rating, current_depth = \
+                _, current_rating = \
                     self._apply(each_node.target_game_state, depth + 1, strategy.alpha_beta)
-            if strategy.check_optimal(current_rating, current_depth):
+            if strategy.check_optimal(current_rating):
                 optimal_move = each_node.move
                 if strategy.can_prune():
                     break
         assert optimal_move is not None
-        return optimal_move, strategy.optimal_rating, strategy.optimal_depth
+        return optimal_move, strategy.optimal_rating
