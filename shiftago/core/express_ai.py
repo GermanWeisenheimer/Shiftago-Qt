@@ -148,7 +148,7 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
                 if self._optimal_rating.value < self._beta:
                     self._beta = self._optimal_rating.value
                 return True
-            if rating == self._optimal_rating:
+            if rating.value == self._optimal_rating.value:
                 if rating.depth < self._optimal_rating.depth if rating.value < 0. else \
                         rating.depth > self._optimal_rating.depth:
                     self._optimal_rating = rating
