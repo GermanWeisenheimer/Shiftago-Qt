@@ -76,10 +76,6 @@ class _MiniMaxStrategy(ABC):
         return self._alpha, self._beta
 
     @property
-    def win_rating_value(self) -> float:
-        return self._win_rating_value
-
-    @property
     def optimal_rating(self) -> Rating:
         assert self._optimal_rating is not None
         return self._optimal_rating
