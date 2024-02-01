@@ -8,41 +8,49 @@ from shiftago.core import ShiftagoDeser, Slot, Colour, LineOrientation, Shiftago
 
 class WinningLine:
 
-    def __init__(self, orientation: LineOrientation, num_slots_in_line: int, slots: List[Slot]) -> None:
+    def __init__(self, orientation: LineOrientation, slots: List[Slot]) -> None:
         self._orientation = orientation
-        if len(slots) == num_slots_in_line:
-            delta_hor_pos = slots[1].hor_pos - slots[0].hor_pos
-            delta_ver_pos = slots[1].ver_pos - slots[0].ver_pos
-            if orientation == LineOrientation.HORIZONTAL:
-                if delta_hor_pos != 1:
-                    raise ValueError("Slots not in a horizontal line!")
-                if delta_ver_pos != 0:
-                    raise ValueError("Slots not in a horizontal line!")
-                for i in range(NUM_SLOTS_PER_SIDE - num_slots_in_line, num_slots_in_line):
-                    if (slots[i].hor_pos - slots[i - 1].hor_pos != delta_hor_pos or
-                            slots[i].ver_pos - slots[i - 1].ver_pos != delta_ver_pos):
-                        raise ValueError("Slots not in a horizontal line!")
-            elif orientation == LineOrientation.VERTICAL:
-                if delta_hor_pos != 0:
-                    raise ValueError("Slots not in a vertical line!")
-                if delta_ver_pos != 1:
-                    raise ValueError("Slots not in a vertical line!")
-                for i in range(NUM_SLOTS_PER_SIDE - num_slots_in_line, num_slots_in_line):
-                    if (slots[i].hor_pos - slots[i - 1].hor_pos != delta_hor_pos or
-                            slots[i].ver_pos - slots[i - 1].ver_pos != delta_ver_pos):
-                        raise ValueError("Slots not in a vertical line!")
-            elif orientation == LineOrientation.DIAGONAL:
-                if delta_hor_pos != 1:
-                    raise ValueError("Slots not in a diagonal line!")
-                if delta_ver_pos not in (1, -1):
-                    raise ValueError("Slots not in a vertical line!")
-                for i in range(NUM_SLOTS_PER_SIDE, num_slots_in_line):
-                    if (slots[i].hor_pos - slots[i - 1].hor_pos != delta_hor_pos or
-                            slots[i].ver_pos - slots[i - 1].ver_pos != delta_ver_pos):
-                        raise ValueError("Slots not in a diagonal line!")
-            self._slots = tuple(slots)
-        else:
-            raise ValueError("Illegal number of slot positions: {0}".format(len(slots)))
+        if orientation == LineOrientation.HORIZONTAL:
+            self._validate_horizontal_line(slots)
+        elif orientation == LineOrientation.VERTICAL:
+            self._validate_vertical_line(slots)
+        elif orientation == LineOrientation.DIAGONAL:
+            self._validate_diagonal_line(slots)
+        self._slots = tuple(slots)
+
+    @staticmethod
+    def _delta_pos(slots: List[Slot]) -> Tuple[int, int]:
+        return slots[1].hor_pos - slots[0].hor_pos, slots[1].ver_pos - slots[0].ver_pos
+
+    @staticmethod
+    def _validate_horizontal_line(slots: List[Slot]) -> None:
+        delta_hor_pos, delta_ver_pos = WinningLine._delta_pos(slots)
+        if delta_hor_pos != 1 or delta_ver_pos != 0:
+            raise ValueError("Slots not in a horizontal line!")
+        for i, slot in enumerate(slots[0:-1]):
+            if (slots[i + 1].hor_pos - slot.hor_pos != delta_hor_pos or
+                    slots[i + 1].ver_pos - slot.ver_pos != delta_ver_pos):
+                raise ValueError("Slots not in a horizontal line!")
+
+    @staticmethod
+    def _validate_vertical_line(slots: List[Slot]) -> None:
+        delta_hor_pos, delta_ver_pos = WinningLine._delta_pos(slots)
+        if delta_hor_pos != 0 or delta_ver_pos != 1:
+            raise ValueError("Slots not in a vertical line!")
+        for i, slot in enumerate(slots[0:-1]):
+            if (slots[i + 1].hor_pos - slot.hor_pos != delta_hor_pos or
+                    slots[i + 1].ver_pos - slot.ver_pos != delta_ver_pos):
+                raise ValueError("Slots not in a vertical line!")
+
+    @staticmethod
+    def _validate_diagonal_line(slots: List[Slot]) -> None:
+        delta_hor_pos, delta_ver_pos = WinningLine._delta_pos(slots)
+        if delta_hor_pos != 1 or delta_ver_pos not in (1, -1):
+            raise ValueError("Slots not in a diagonal line!")
+        for i, slot in enumerate(slots[0:-1]):
+            if (slots[i + 1].hor_pos - slot.hor_pos != delta_hor_pos or
+                    slots[i + 1].ver_pos - slot.ver_pos != delta_ver_pos):
+                raise ValueError("Slots not in a diagonal line!")
 
     def __eq__(self, other) -> bool:
         if isinstance(other, WinningLine):
@@ -70,34 +78,34 @@ class WinningLine:
             for hor_pos_from in range(0, NUM_SLOTS_PER_SIDE - num_slots_in_line + 1):
                 slots = [Slot(hor_pos_from + i, ver_pos) for i in range(0, num_slots_in_line)]
                 all_winning_line_ups.append(WinningLine(
-                    LineOrientation.HORIZONTAL, num_slots_in_line, slots))
+                    LineOrientation.HORIZONTAL, slots))
         for hor_pos in range(0, NUM_SLOTS_PER_SIDE):
             for ver_pos_from in range(0, NUM_SLOTS_PER_SIDE - num_slots_in_line + 1):
                 slots = [Slot(hor_pos, ver_pos_from + i) for i in range(0, num_slots_in_line)]
-                all_winning_line_ups.append(WinningLine(LineOrientation.VERTICAL, num_slots_in_line, slots))
+                all_winning_line_ups.append(WinningLine(LineOrientation.VERTICAL, slots))
         for ver_pos in range(0, NUM_SLOTS_PER_SIDE - num_slots_in_line + 1):
             hor_pos_from = 0
             for ver_pos_from in range(ver_pos, NUM_SLOTS_PER_SIDE - num_slots_in_line + 1):
                 slots = [Slot(hor_pos_from + i, ver_pos_from + i) for i in range(0, num_slots_in_line)]
-                all_winning_line_ups.append(WinningLine(LineOrientation.DIAGONAL, num_slots_in_line, slots))
+                all_winning_line_ups.append(WinningLine(LineOrientation.DIAGONAL, slots))
                 hor_pos_from += 1
         for ver_pos in range(num_slots_in_line - 1, NUM_SLOTS_PER_SIDE):
             hor_pos_from = 0
             for ver_pos_from in range(ver_pos, num_slots_in_line - 2, -1):
                 slots = [Slot(hor_pos_from + i, ver_pos_from - i) for i in range(0, num_slots_in_line)]
-                all_winning_line_ups.append(WinningLine(LineOrientation.DIAGONAL, num_slots_in_line, slots))
+                all_winning_line_ups.append(WinningLine(LineOrientation.DIAGONAL, slots))
                 hor_pos_from += 1
         for hor_pos in range(1, NUM_SLOTS_PER_SIDE - num_slots_in_line + 1):
             ver_pos_from = 0
             for hor_pos_from in range(hor_pos, NUM_SLOTS_PER_SIDE - num_slots_in_line + 1):
                 slots = [Slot(hor_pos_from + i, ver_pos_from + i) for i in range(0, num_slots_in_line)]
-                all_winning_line_ups.append(WinningLine(LineOrientation.DIAGONAL, num_slots_in_line, slots))
+                all_winning_line_ups.append(WinningLine(LineOrientation.DIAGONAL, slots))
                 ver_pos_from += 1
         for hor_pos in range(1, NUM_SLOTS_PER_SIDE - num_slots_in_line + 1):
             ver_pos_from = NUM_SLOTS_PER_SIDE - 1
             for hor_pos_from in range(hor_pos, NUM_SLOTS_PER_SIDE - num_slots_in_line + 1):
                 slots = [Slot(hor_pos_from + i, ver_pos_from - i) for i in range(0, num_slots_in_line)]
-                all_winning_line_ups.append(WinningLine(LineOrientation.DIAGONAL, num_slots_in_line, slots))
+                all_winning_line_ups.append(WinningLine(LineOrientation.DIAGONAL, slots))
                 ver_pos_from -= 1
         return all_winning_line_ups
 
