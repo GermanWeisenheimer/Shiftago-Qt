@@ -23,7 +23,6 @@ class WinningLine:
                 slot = Slot(slot.hor_pos + 1, slot.ver_pos + 1)
             slots.append(slot)
         self._slots = tuple(slots)
-        print(self)
 
     def __eq__(self, other) -> bool:
         if isinstance(other, WinningLine):
