@@ -110,7 +110,7 @@ class Slot(namedtuple('Slot', 'hor_pos ver_pos')):
             return True
         return self.ver_pos == other.ver_pos and self.hor_pos < other.hor_pos
 
-    def neighbour(self, direction: Side):
+    def neighbour(self, direction: Side) -> 'Slot':
         if direction.is_vertical:
             return Slot(self.hor_pos - direction.shift_direction, self.ver_pos)
         return Slot(self.hor_pos, self.ver_pos - direction.shift_direction)
@@ -128,7 +128,8 @@ Slot.initialize()
 class LineOrientation(Enum):
     HORIZONTAL = 0
     VERTICAL = 1
-    DIAGONAL = 2
+    ASCENDING = 2
+    DESCENDING = 3
 
 
 class Move(namedtuple('Move', 'side position')):
