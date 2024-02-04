@@ -2,8 +2,22 @@
 import copy
 import unittest
 from shiftago.core import NUM_SLOTS_PER_SIDE, Colour, Slot, Move, Side
-from shiftago.core.express import ShiftagoExpress
+from shiftago.core.express import ShiftagoExpress, WinningLine, LineOrientation
 from tests import TestDataLoader
+
+
+class WinningLineTest(unittest.TestCase):
+
+    def test_get_all(self):
+        winning_lines = WinningLine.get_all(5)
+        self.assertEqual(len(list(filter(lambda wl: wl.orientation == LineOrientation.HORIZONTAL,
+                                         winning_lines))), 21)
+        self.assertEqual(len(list(filter(lambda wl: wl.orientation == LineOrientation.VERTICAL,
+                                         winning_lines))), 21)
+        self.assertEqual(len(list(filter(lambda wl: wl.orientation == LineOrientation.ASCENDING,
+                                         winning_lines))), 9)
+        self.assertEqual(len(list(filter(lambda wl: wl.orientation == LineOrientation.DESCENDING,
+                                         winning_lines))), 9)
 
 
 class ShiftagoExpressTest(unittest.TestCase):
