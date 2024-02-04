@@ -1,5 +1,5 @@
 # pylint: disable=consider-using-f-string
-from typing import List, Tuple, Dict, Set, Sequence, Optional, TextIO
+from typing import Tuple, Dict, Set, Sequence, Optional, TextIO
 from collections import defaultdict
 from shiftago.core import NUM_MARBLES_PER_COLOUR, NUM_SLOTS_PER_SIDE
 from shiftago.core import ShiftagoDeser, Slot, Colour, LineOrientation, Shiftago, Move, \
@@ -49,43 +49,43 @@ class WinningLine:
         return self._slots
 
     @staticmethod
-    def get_all(num_slots_in_line: int) -> List['WinningLine']:
-        all_winning_lines = []  # type: List[WinningLine]
+    def get_all(num_slots_in_line: int) -> Set['WinningLine']:
+        all_winning_lines = set()  # type: Set[WinningLine]
 
         for i in range(0, NUM_SLOTS_PER_SIDE):
             start_slot = Slot(0, i)
             for _ in range(0, NUM_SLOTS_PER_SIDE - num_slots_in_line + 1):
-                all_winning_lines.append(WinningLine(LineOrientation.HORIZONTAL, num_slots_in_line, start_slot))
+                all_winning_lines.add(WinningLine(LineOrientation.HORIZONTAL, num_slots_in_line, start_slot))
                 start_slot = WinningLine._to_neighbour(start_slot, LineOrientation.HORIZONTAL)
 
         for i in range(0, NUM_SLOTS_PER_SIDE):
             start_slot = Slot(i, 0)
             for _ in range(0, NUM_SLOTS_PER_SIDE - num_slots_in_line + 1):
-                all_winning_lines.append(WinningLine(LineOrientation.VERTICAL, num_slots_in_line, start_slot))
+                all_winning_lines.add(WinningLine(LineOrientation.VERTICAL, num_slots_in_line, start_slot))
                 start_slot = WinningLine._to_neighbour(start_slot, LineOrientation.VERTICAL)
 
         for i in range(0, NUM_SLOTS_PER_SIDE - num_slots_in_line + 1):
             start_slot = Slot(0, i)
             for _ in range(0, NUM_SLOTS_PER_SIDE - num_slots_in_line + 1 - i):
-                all_winning_lines.append(WinningLine(LineOrientation.DESCENDING, num_slots_in_line, start_slot))
+                all_winning_lines.add(WinningLine(LineOrientation.DESCENDING, num_slots_in_line, start_slot))
                 start_slot = WinningLine._to_neighbour(start_slot, LineOrientation.DESCENDING)
 
         for i in range(1, NUM_SLOTS_PER_SIDE - num_slots_in_line + 1):
             start_slot = Slot(i, 0)
             for _ in range(0, NUM_SLOTS_PER_SIDE - num_slots_in_line + 1 - i):
-                all_winning_lines.append(WinningLine(LineOrientation.DESCENDING, num_slots_in_line, start_slot))
+                all_winning_lines.add(WinningLine(LineOrientation.DESCENDING, num_slots_in_line, start_slot))
                 start_slot = WinningLine._to_neighbour(start_slot, LineOrientation.DESCENDING)
 
         for i in range(num_slots_in_line - 1, NUM_SLOTS_PER_SIDE):
             start_slot = Slot(0, i)
             for _ in range(0, i - num_slots_in_line + 2):
-                all_winning_lines.append(WinningLine(LineOrientation.ASCENDING, num_slots_in_line, start_slot))
+                all_winning_lines.add(WinningLine(LineOrientation.ASCENDING, num_slots_in_line, start_slot))
                 start_slot = WinningLine._to_neighbour(start_slot, LineOrientation.ASCENDING)
 
         for i in range(1, NUM_SLOTS_PER_SIDE - num_slots_in_line + 1):
             start_slot = Slot(i, NUM_SLOTS_PER_SIDE - 1)
             for _ in range(0, NUM_SLOTS_PER_SIDE - num_slots_in_line + 1 - i):
-                all_winning_lines.append(WinningLine(LineOrientation.ASCENDING, num_slots_in_line, start_slot))
+                all_winning_lines.add(WinningLine(LineOrientation.ASCENDING, num_slots_in_line, start_slot))
                 start_slot = WinningLine._to_neighbour(start_slot, LineOrientation.ASCENDING)
         return all_winning_lines
 

@@ -10,13 +10,13 @@ class WinningLineTest(unittest.TestCase):
 
     def test_get_all(self):
         winning_lines = WinningLine.get_all(5)
-        self.assertEqual(len(list(filter(lambda wl: wl.orientation == LineOrientation.HORIZONTAL,
+        self.assertEqual(len(set(filter(lambda wl: wl.orientation == LineOrientation.HORIZONTAL,
                                          winning_lines))), 21)
-        self.assertEqual(len(list(filter(lambda wl: wl.orientation == LineOrientation.VERTICAL,
+        self.assertEqual(len(set(filter(lambda wl: wl.orientation == LineOrientation.VERTICAL,
                                          winning_lines))), 21)
-        self.assertEqual(len(list(filter(lambda wl: wl.orientation == LineOrientation.ASCENDING,
+        self.assertEqual(len(set(filter(lambda wl: wl.orientation == LineOrientation.ASCENDING,
                                          winning_lines))), 9)
-        self.assertEqual(len(list(filter(lambda wl: wl.orientation == LineOrientation.DESCENDING,
+        self.assertEqual(len(set(filter(lambda wl: wl.orientation == LineOrientation.DESCENDING,
                                          winning_lines))), 9)
 
 
