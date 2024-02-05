@@ -50,23 +50,26 @@ class WinningLine:
     def get_all(num_slots_in_line: int) -> Set['WinningLine']:
         all_winning_lines = set()  # type: Set[WinningLine]
 
-        def add_all_sub_lines(start_slot: Slot, orientation: LineOrientation, offset: int):
-            for _ in range(0, NUM_SLOTS_PER_SIDE - num_slots_in_line + 1 - offset):
+        def add_all_sub_lines(start_slot: Slot, orientation: LineOrientation, board_line_length: int):
+            for _ in range(0, board_line_length - num_slots_in_line + 1):
                 all_winning_lines.add(WinningLine(orientation, num_slots_in_line, start_slot))
                 start_slot = WinningLine._to_neighbour(start_slot, orientation)
 
         for orientation in (LineOrientation.HORIZONTAL, LineOrientation.VERTICAL):
             for offset in range(0, NUM_SLOTS_PER_SIDE):
                 add_all_sub_lines(Slot(0, offset) if orientation == LineOrientation.HORIZONTAL else
-                                  Slot(offset, 0), orientation, 0)
+                                  Slot(offset, 0), orientation, NUM_SLOTS_PER_SIDE)
 
         for orientation in (LineOrientation.DESCENDING, LineOrientation.ASCENDING):
-            for offset in range(0, NUM_SLOTS_PER_SIDE - num_slots_in_line + 1):
+            max_offset = NUM_SLOTS_PER_SIDE - num_slots_in_line
+            for offset in range(0, max_offset + 1):
                 add_all_sub_lines(Slot(0, offset if orientation == LineOrientation.DESCENDING else
-                                        NUM_SLOTS_PER_SIDE - 1 - offset), orientation, offset)
-            for offset in range(1, NUM_SLOTS_PER_SIDE - num_slots_in_line + 1):
+                                        NUM_SLOTS_PER_SIDE - 1 - offset), orientation,
+                                        NUM_SLOTS_PER_SIDE - offset)
+            for offset in range(1, max_offset + 1):
                 add_all_sub_lines(Slot(offset, 0 if orientation == LineOrientation.DESCENDING else
-                                        NUM_SLOTS_PER_SIDE - 1), orientation, offset)
+                                        NUM_SLOTS_PER_SIDE - 1), orientation,
+                                        NUM_SLOTS_PER_SIDE - offset)
         return all_winning_lines
 
 
