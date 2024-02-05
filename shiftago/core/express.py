@@ -19,8 +19,6 @@ class WinningLine:
         return Slot(slot.hor_pos + 1, slot.ver_pos + 1)
 
     def __init__(self, orientation: LineOrientation, num_slots: int, start_slot: Slot) -> None:
-        if num_slots == 5:
-            print(f"start slot: {start_slot}")
         self._orientation = orientation
         slots = [start_slot]
         slot = start_slot
@@ -52,26 +50,15 @@ class WinningLine:
     def get_all(num_slots_in_line: int) -> Set['WinningLine']:
         all_winning_lines = set()  # type: Set[WinningLine]
 
-        for i in range(0, NUM_SLOTS_PER_SIDE):
-            start_slot = Slot(0, i)
-            for _ in range(0, NUM_SLOTS_PER_SIDE - num_slots_in_line + 1):
-                all_winning_lines.add(WinningLine(LineOrientation.HORIZONTAL, num_slots_in_line, start_slot))
-                start_slot = WinningLine._to_neighbour(start_slot, LineOrientation.HORIZONTAL)
-
-        for i in range(0, NUM_SLOTS_PER_SIDE):
-            start_slot = Slot(i, 0)
-            for _ in range(0, NUM_SLOTS_PER_SIDE - num_slots_in_line + 1):
-                all_winning_lines.add(WinningLine(LineOrientation.VERTICAL, num_slots_in_line, start_slot))
-                start_slot = WinningLine._to_neighbour(start_slot, LineOrientation.VERTICAL)
+        for orientation in (LineOrientation.HORIZONTAL, LineOrientation.VERTICAL):
+            for i in range(0, NUM_SLOTS_PER_SIDE):
+                start_slot = Slot(0, i) if orientation == LineOrientation.HORIZONTAL else Slot(i, 0)
+                for _ in range(0, NUM_SLOTS_PER_SIDE - num_slots_in_line + 1):
+                    all_winning_lines.add(WinningLine(orientation, num_slots_in_line, start_slot))
+                    start_slot = WinningLine._to_neighbour(start_slot, orientation)
 
         for i in range(0, NUM_SLOTS_PER_SIDE - num_slots_in_line + 1):
             start_slot = Slot(0, i)
-            for _ in range(0, NUM_SLOTS_PER_SIDE - num_slots_in_line + 1 - i):
-                all_winning_lines.add(WinningLine(LineOrientation.DESCENDING, num_slots_in_line, start_slot))
-                start_slot = WinningLine._to_neighbour(start_slot, LineOrientation.DESCENDING)
-
-        for i in range(1, NUM_SLOTS_PER_SIDE - num_slots_in_line + 1):
-            start_slot = Slot(i, 0)
             for _ in range(0, NUM_SLOTS_PER_SIDE - num_slots_in_line + 1 - i):
                 all_winning_lines.add(WinningLine(LineOrientation.DESCENDING, num_slots_in_line, start_slot))
                 start_slot = WinningLine._to_neighbour(start_slot, LineOrientation.DESCENDING)
@@ -82,11 +69,12 @@ class WinningLine:
                 all_winning_lines.add(WinningLine(LineOrientation.ASCENDING, num_slots_in_line, start_slot))
                 start_slot = WinningLine._to_neighbour(start_slot, LineOrientation.ASCENDING)
 
-        for i in range(1, NUM_SLOTS_PER_SIDE - num_slots_in_line + 1):
-            start_slot = Slot(i, NUM_SLOTS_PER_SIDE - 1)
-            for _ in range(0, NUM_SLOTS_PER_SIDE - num_slots_in_line + 1 - i):
-                all_winning_lines.add(WinningLine(LineOrientation.ASCENDING, num_slots_in_line, start_slot))
-                start_slot = WinningLine._to_neighbour(start_slot, LineOrientation.ASCENDING)
+        for orientation in (LineOrientation.DESCENDING, LineOrientation.ASCENDING):
+            for i in range(1, NUM_SLOTS_PER_SIDE - num_slots_in_line + 1):
+                start_slot = Slot(i, 0 if orientation == LineOrientation.DESCENDING else NUM_SLOTS_PER_SIDE - 1)
+                for _ in range(0, NUM_SLOTS_PER_SIDE - num_slots_in_line + 1 - i):
+                    all_winning_lines.add(WinningLine(orientation, num_slots_in_line, start_slot))
+                    start_slot = WinningLine._to_neighbour(start_slot, orientation)
         return all_winning_lines
 
 
