@@ -17,31 +17,18 @@ class _MainWindow(AppEventEmitter, QMainWindow):
 
     TITLE = 'Shiftago-Qt'
 
-    def __init__(self, config: ShiftagoConfig):
+    def __init__(self, model: ShiftagoExpressModel):
         super().__init__()
-        self._config = config
-        self._model = self._build_model()
+        self._model = model
         self.setWindowTitle(self.TITLE)
         self.setStyleSheet("background-color: lightGray;")
         self.setFixedSize(QSize(BOARD_VIEW_SIZE.width() + 20, BOARD_VIEW_SIZE.height() + 20))
-        self._board_view = BoardView(self._model, self.TITLE)
+        self._board_view = BoardView(model, self.TITLE)
         self.setCentralWidget(self._board_view)
         menu_bar = self.menuBar()
         file_menu = menu_bar.addMenu('File')
         file_menu.addAction('New match', lambda: self.emit(NewMatchRequestedEvent()))
         file_menu.addAction('Exit', lambda: self.emit(ExitRequestedEvent()))
-
-    def _build_model(self) -> ShiftagoExpressModel:
-        humans_colour = self._config.preferred_colour
-        computers_colour = Colour.ORANGE if humans_colour is Colour.BLUE else Colour.BLUE
-        return ShiftagoExpressModel((Player(humans_colour, PlayerNature.HUMAN),
-                                     Player(computers_colour, PlayerNature.ARTIFICIAL)),
-                                    self._config)
-
-    def reset_model(self) -> ShiftagoExpressModel:
-        self._model = self._build_model()
-        self._board_view.model = self._model
-        return self._model
 
     def closeEvent(self, event):  # pylint: disable=invalid-name
         event.ignore()
@@ -65,15 +52,29 @@ class _MainWindow(AppEventEmitter, QMainWindow):
     def model(self) -> ShiftagoExpressModel:
         return self._model
 
+    @model.setter
+    def model(self, new_model: ShiftagoExpressModel) -> None:
+        self._model = new_model
+        self._board_view.model = new_model
+
 
 class _MainWindowController(Controller):
 
-    def __init__(self, main_window: _MainWindow) -> None:
+    def __init__(self, config: ShiftagoConfig, main_window: _MainWindow) -> None:
         super().__init__(None, main_window)
+        self._config = config
+        self._model = main_window.model
         self._board_controller = BoardController(self, main_window.model, main_window.board_view)
         self._main_window = main_window
         self._main_window.show()
         self._board_controller.start_game()
+
+    @staticmethod
+    def build_model(config: ShiftagoConfig) -> ShiftagoExpressModel:
+        humans_colour = config.preferred_colour
+        computers_colour = Colour.ORANGE if humans_colour is Colour.BLUE else Colour.BLUE
+        return ShiftagoExpressModel((Player(humans_colour, PlayerNature.HUMAN),
+                                     Player(computers_colour, PlayerNature.ARTIFICIAL)), config)
 
     @property
     def model(self) -> ShiftagoExpressModel:
@@ -85,12 +86,14 @@ class _MainWindowController(Controller):
 
     @handle_event.register
     def _(self, _: NewMatchRequestedEvent) -> bool:  # pylint: disable=unused-argument
-        if self.model.count_occupied_slots() > 0 and self.model.game_over_condition is None:
+        if self._model.count_occupied_slots() > 0 and self._model.game_over_condition is None:
             if self._main_window.confirm_abort():
                 _logger.info("Current match aborted!")
             else:
                 return True
-        self._board_controller.model = self._main_window.reset_model()
+        self._model = self.build_model(self._config)
+        self._main_window.model = self._model
+        self._board_controller.model = self._model
         self._board_controller.start_game()
         return True
 
@@ -110,5 +113,5 @@ class ShiftagoQtExpress(QApplication):
 
     def __init__(self, config: ShiftagoConfig) -> None:
         super().__init__()
-        self._main_window = _MainWindow(config)
-        self._main_window_controller = _MainWindowController(self._main_window)
+        self._main_window = _MainWindow(_MainWindowController.build_model(config))
+        self._main_window_controller = _MainWindowController(config, self._main_window)
