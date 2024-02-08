@@ -20,12 +20,14 @@ class WinningLine:
 
     def __init__(self, orientation: LineOrientation, num_slots: int, start_slot: Slot) -> None:
         self._orientation = orientation
-        slots = [start_slot]
-        slot = start_slot
-        for _ in range(0, num_slots - 1):
-            slot = self._to_neighbour(slot, orientation)
-            slots.append(slot)
-        self._slots = tuple(slots)
+
+        def generate_line():
+            slot = start_slot
+            yield slot
+            for _ in range(0, num_slots - 1):
+                slot = self._to_neighbour(slot, orientation)
+                yield slot
+        self._slots = tuple(generate_line())
 
     def __eq__(self, other) -> bool:
         if isinstance(other, WinningLine):
@@ -64,12 +66,12 @@ class WinningLine:
             max_offset = NUM_SLOTS_PER_SIDE - num_slots_in_line
             for offset in range(0, max_offset + 1):
                 add_all_sub_lines(Slot(0, offset if orientation == LineOrientation.DESCENDING else
-                                        NUM_SLOTS_PER_SIDE - 1 - offset), orientation,
-                                        NUM_SLOTS_PER_SIDE - offset)
+                                       NUM_SLOTS_PER_SIDE - 1 - offset), orientation,
+                                  NUM_SLOTS_PER_SIDE - offset)
             for offset in range(1, max_offset + 1):
                 add_all_sub_lines(Slot(offset, 0 if orientation == LineOrientation.DESCENDING else
-                                        NUM_SLOTS_PER_SIDE - 1), orientation,
-                                        NUM_SLOTS_PER_SIDE - offset)
+                                       NUM_SLOTS_PER_SIDE - 1), orientation,
+                                  NUM_SLOTS_PER_SIDE - offset)
         return all_winning_lines
 
 
