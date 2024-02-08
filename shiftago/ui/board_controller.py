@@ -95,6 +95,13 @@ class BoardController(Controller):
     def model(self) -> ShiftagoExpressModel:
         return self._model
 
+    @model.setter
+    def model(self, new_model: ShiftagoExpressModel) -> None:
+        self._model = new_model
+        self.disconnect_from(self._state_machine)
+        self._state_machine = self._BoardStateMaschine(new_model, self._view)
+        self.connect_with(self._state_machine)
+
     @property
     def view(self) -> BoardView:
         return self._view
@@ -103,11 +110,11 @@ class BoardController(Controller):
         self._view.show_starting_player()
 
     @singledispatchmethod
-    def handle_event(self, event: AppEvent) -> bool:
+    def handle_event(self, _: AppEvent) -> bool:
         return False
 
     @handle_event.register
-    def _(self, event: ReadyForFirstMoveEvent) -> bool:  # pylint: disable=unused-argument
+    def _(self, _: ReadyForFirstMoveEvent) -> bool:  # pylint: disable=unused-argument
         current_player = self._model.current_player
         _logger.info("Starting player is %s (%s).", current_player.colour.name,
                      'human' if current_player.nature is PlayerNature.HUMAN else 'computer')
@@ -132,7 +139,7 @@ class BoardController(Controller):
         return True
 
     @handle_event.register
-    def _(self, event: AnimationFinishedEvent) -> bool:  # pylint: disable=unused-argument
+    def _(self, _: AnimationFinishedEvent) -> bool:  # pylint: disable=unused-argument
         assert self._state_machine.current_state == self._BoardStateMaschine.performing_animation_state
         _logger.debug("Animation finished.")
         if self._model.game_over_condition is None:

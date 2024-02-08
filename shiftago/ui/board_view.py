@@ -193,6 +193,12 @@ class BoardView(AppEventEmitter, QGraphicsView):
     def model(self) -> BoardViewModel:
         return self._model
 
+    @model.setter
+    def model(self, new_model: BoardViewModel) -> None:
+        self._model = new_model
+        self.setScene(self.BoardScene(self, new_model))
+        self.repaint()
+
     @property
     def move_selection_enabled(self) -> bool:
         return self._move_selection_enabled

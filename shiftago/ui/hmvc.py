@@ -25,6 +25,9 @@ class AppEventEmitter:
     def connect_with(self, handler: AppEventHandler):
         cast(SignalInstance, self._qobject.event_signal).connect(handler)
 
+    def disconnect_from(self, handler: AppEventHandler):
+        cast(SignalInstance, self._qobject.event_signal).disconnect(handler)
+
     def emit(self, event: AppEvent) -> None:
         cast(SignalInstance, self._qobject.event_signal).emit(event)
 
@@ -39,14 +42,17 @@ class Controller(ABC):
         self.connect_with(view)
 
     def connect_with(self, event_emitter: AppEventEmitter):
-        def handle_event(event: AppEvent) -> None:
-            if not self.handle_event(event):
-                if self._app_event_emitter is not None:
-                    self._app_event_emitter.emit(event) # delegate handling to parent
-                else:
-                    raise ValueError(f"Unexpected event: {event}")
+        event_emitter.connect_with(self._handle_event)
 
-        event_emitter.connect_with(handle_event)
+    def disconnect_from(self, event_emitter: AppEventEmitter):
+        event_emitter.disconnect_from(self._handle_event)
+
+    def _handle_event(self, event: AppEvent) -> None:
+        if not self.handle_event(event):
+            if self._app_event_emitter is not None:
+                self._app_event_emitter.emit(event)  # delegate handling to parent
+            else:
+                raise ValueError(f"Unexpected event: {event}")
 
     @abstractmethod
     def handle_event(self, event: AppEvent) -> bool:

@@ -20,6 +20,11 @@ class AnimationFinishedEvent(AppEvent):
 
 
 @dataclass(frozen=True)
+class NewMatchRequestedEvent(AppEvent):
+    """Emitted by view."""
+
+
+@dataclass(frozen=True)
 class ExitRequestedEvent(AppEvent):
     """Emitted by view."""
 
