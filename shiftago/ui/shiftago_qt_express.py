@@ -29,7 +29,7 @@ class _MainWindow(AppEventEmitter, QMainWindow):
         self._model = _build_model(config)
         self.setWindowTitle(self.TITLE)
         self.setStyleSheet("background-color: lightGray;")
-        self.setFixedSize(QSize(BOARD_VIEW_SIZE.width() + 20, BOARD_VIEW_SIZE.height() + 20))
+        self.setFixedSize(QSize(BOARD_VIEW_SIZE.width() + 28, BOARD_VIEW_SIZE.height() + 34))
         self._board_view = BoardView(self._model, self.TITLE)
         self.setCentralWidget(self._board_view)
         menu_bar = self.menuBar()
@@ -70,7 +70,6 @@ class _MainWindowController(Controller):
     def __init__(self, config: ShiftagoConfig, main_window: _MainWindow) -> None:
         super().__init__(None, main_window)
         self._config = config
-        self._model = main_window.model
         self._board_controller = BoardController(self, main_window.model, main_window.board_view)
         self._main_window = main_window
         self._main_window.show()
@@ -78,7 +77,7 @@ class _MainWindowController(Controller):
 
     @property
     def model(self) -> ShiftagoExpressModel:
-        return self._board_controller.model
+        return self._main_window.model
 
     @singledispatchmethod
     def handle_event(self, _: AppEvent) -> bool:
@@ -86,14 +85,14 @@ class _MainWindowController(Controller):
 
     @handle_event.register
     def _(self, _: NewMatchRequestedEvent) -> bool:  # pylint: disable=unused-argument
-        if self._model.count_occupied_slots() > 0 and self._model.game_over_condition is None:
+        if self.model.count_occupied_slots() > 0 and self.model.game_over_condition is None:
             if self._main_window.confirm_abort():
                 _logger.info("Current match aborted!")
             else:
                 return True
-        self._model = _build_model(self._config)
-        self._main_window.model = self._model
-        self._board_controller.model = self._model
+        model = _build_model(self._config)
+        self._main_window.model = model
+        self._board_controller.model = model
         _logger.info("Starting new match.")
         self._board_controller.start_match()
         return True
