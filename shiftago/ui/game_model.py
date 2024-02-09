@@ -6,7 +6,7 @@ from shiftago.app_config import ShiftagoConfig
 from shiftago.core import Colour, Slot, Side, Move, GameOverCondition, ShiftagoObserver
 from shiftago.core.express import ShiftagoExpress
 from shiftago.core.express_ai import SkillLevel, AlphaBetaPruning
-from .hmvc import AppEventEmitter
+from shiftago.ui import AppEventEmitter
 from .app_events import MarbleShiftedEvent, MarbleInsertedEvent
 
 

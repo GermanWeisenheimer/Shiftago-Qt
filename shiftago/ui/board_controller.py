@@ -3,7 +3,7 @@ import logging
 from functools import singledispatchmethod
 from PySide2.QtCore import QObject, QThread
 from statemachine import StateMachine, State
-from .hmvc import Controller, AppEvent, AppEventEmitter
+from shiftago.ui import Controller, AppEvent, AppEventEmitter
 from .board_view import BoardView
 from .game_model import ShiftagoExpressModel, PlayerNature
 from .app_events import ReadyForFirstMoveEvent, MoveSelectedEvent, AnimationFinishedEvent
@@ -98,7 +98,6 @@ class BoardController(Controller):
     @model.setter
     def model(self, new_model: ShiftagoExpressModel) -> None:
         self._model = new_model
-        self.disconnect_from(self._state_machine)
         self._state_machine = self._BoardStateMaschine(new_model, self._view)
         self.connect_with(self._state_machine)
 
@@ -106,7 +105,7 @@ class BoardController(Controller):
     def view(self) -> BoardView:
         return self._view
 
-    def start_game(self) -> None:
+    def start_match(self) -> None:
         self._view.show_starting_player()
 
     @singledispatchmethod

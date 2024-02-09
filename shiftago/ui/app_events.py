@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from shiftago.core import Side, Slot, Move
-from .hmvc import AppEvent
+from shiftago.ui import AppEvent
 
 
 @dataclass(frozen=True)

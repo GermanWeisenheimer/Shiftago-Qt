@@ -9,7 +9,7 @@ from PySide2.QtWidgets import QWidget, QMessageBox, QGraphicsView, QGraphicsScen
 from PySide2.QtGui import QPixmap, QPainter, QMouseEvent, QCursor
 from shiftago.core import Colour, Slot, Side, Move
 import shiftago.ui.images
-from .hmvc import AppEvent, AppEventEmitter
+from shiftago.ui import AppEvent, AppEventEmitter
 from .app_events import ReadyForFirstMoveEvent, AnimationFinishedEvent, MoveSelectedEvent, MarbleInsertedEvent, \
     MarbleShiftedEvent
 from .game_model import BoardViewModel, PlayerNature
