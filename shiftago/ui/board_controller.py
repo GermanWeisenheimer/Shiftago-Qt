@@ -88,13 +88,15 @@ class BoardController(Controller):
         super().__init__(parent, view)
         self._model = model
         self._view = view
-        self._state_machine = self._BoardStateMaschine(model, view)
+        self._init_state_machine()
+
+    def _init_state_machine(self) -> None:
+        self._state_machine = self._BoardStateMaschine(self._model, self._view)
         self.connect_with(self._state_machine)
 
     def reset(self) -> None:
         self._model.reset()
-        self._state_machine = self._BoardStateMaschine(self._model, self._view)
-        self.connect_with(self._state_machine)
+        self._init_state_machine()
 
     @property
     def model(self) -> ShiftagoExpressModel:
