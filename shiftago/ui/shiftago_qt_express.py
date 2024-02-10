@@ -59,11 +59,6 @@ class _MainWindow(AppEventEmitter, QMainWindow):
     def model(self) -> ShiftagoExpressModel:
         return self._model
 
-    @model.setter
-    def model(self, new_model: ShiftagoExpressModel) -> None:
-        self._model = new_model
-        self._board_view.model = new_model
-
 
 class _MainWindowController(Controller):
 
@@ -90,10 +85,8 @@ class _MainWindowController(Controller):
                 _logger.info("Current match aborted!")
             else:
                 return True
-        model = _build_model(self._config)
-        self._main_window.model = model
-        self._board_controller.model = model
         _logger.info("Starting new match.")
+        self._board_controller.reset()
         self._board_controller.start_match()
         return True
 

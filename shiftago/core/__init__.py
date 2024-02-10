@@ -230,6 +230,14 @@ class Shiftago(ABC):
 
     _DEFAULT_OBSERVER = ShiftagoObserver()
 
+    @staticmethod
+    def _validate_players(players: Sequence[Colour]) -> None:
+        num_players = len(set(players))
+        if num_players < len(players):
+            raise ValueError("Argument 'players' contains duplicates: {0}".format(players))
+        if not 2 <= num_players <= len(Colour):
+            raise ValueError("Illegal number of players!")
+
     def __init__(self, *, orig: Optional['Shiftago'] = None, players: Optional[Sequence[Colour]] = None,
                  board: Optional[Dict[Slot, Colour]] = None) -> None:
         if orig is not None:
@@ -242,13 +250,8 @@ class Shiftago(ABC):
         else:
             if players is None:
                 raise ValueError("Parameters 'players' is mandatory if 'orig' is None!")
-            num_players = len(set(players))
-            if num_players < len(players):
-                raise ValueError("Argument 'players' contains duplicates: {0}".format(players))
-            if 2 <= num_players <= len(Colour):
-                self._players = deque(players)
-            else:
-                raise ValueError("Illegal number of players!")
+            self._validate_players(players)
+            self._players = deque(players)
             if board is None:
                 self._board = {}  # type: Dict[Slot, Colour]
             else:
@@ -273,6 +276,15 @@ class Shiftago(ABC):
     @property
     def players(self) -> Sequence[Colour]:
         return self._players
+
+    @players.setter
+    def players(self, new_players: Sequence[Colour]):
+        self._set_players(new_players)
+
+    def _set_players(self, new_players: Sequence[Colour]) -> None:
+        self._validate_players(new_players)
+        self._players = deque(new_players)
+        self._board.clear()
 
     @property
     def current_player(self) -> Colour:

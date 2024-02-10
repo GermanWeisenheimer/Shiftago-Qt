@@ -11,7 +11,7 @@ from shiftago.core import Colour, Slot, Side, Move
 import shiftago.ui.images
 from shiftago.ui import AppEvent, AppEventEmitter
 from .app_events import ReadyForFirstMoveEvent, AnimationFinishedEvent, MoveSelectedEvent, MarbleInsertedEvent, \
-    MarbleShiftedEvent
+    MarbleShiftedEvent, BoardResetEvent
 from .game_model import BoardViewModel, PlayerNature
 
 BOARD_VIEW_SIZE = QSize(700, 700)
@@ -106,6 +106,12 @@ class BoardView(AppEventEmitter, QGraphicsView):
             animation.setDuration(500)
             self.run_animation(animation)
 
+        @update_from_model.register
+        def _(self, _: BoardResetEvent) -> None:
+            for m in self._marbles.values():
+                self.removeItem(m)
+            self._marbles.clear()
+
         def run_animation(self, animation: QPropertyAnimation) -> None:
             def finished() -> None:
                 if len(self._waiting_animations) > 0:
@@ -192,12 +198,6 @@ class BoardView(AppEventEmitter, QGraphicsView):
     @property
     def model(self) -> BoardViewModel:
         return self._model
-
-    @model.setter
-    def model(self, new_model: BoardViewModel) -> None:
-        self._model = new_model
-        self.setScene(self.BoardScene(self, new_model))
-        self.repaint()
 
     @property
     def move_selection_enabled(self) -> bool:

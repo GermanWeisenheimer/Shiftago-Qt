@@ -40,3 +40,8 @@ class MarbleShiftedEvent(AppEvent):
 class MarbleInsertedEvent(AppEvent):
     """Emitted by model."""
     slot: Slot
+
+
+@dataclass(frozen=True)
+class BoardResetEvent(AppEvent):
+    """Emitted by model."""

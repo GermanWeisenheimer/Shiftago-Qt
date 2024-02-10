@@ -116,6 +116,12 @@ class ShiftagoExpress(Shiftago):
     _WINNING_LINES_DETECTOR_4 = WinningLinesDetector(4)
     _WINNING_LINES_DETECTOR_5 = WinningLinesDetector(5)
 
+    @staticmethod
+    def _select_winning_lines_detector(players: Sequence[Colour]) -> WinningLinesDetector:
+        if 3 <= len(players) <= 4:
+            return ShiftagoExpress._WINNING_LINES_DETECTOR_4
+        return ShiftagoExpress._WINNING_LINES_DETECTOR_5
+
     def __init__(self, *, orig: Optional['ShiftagoExpress'] = None, players: Optional[Sequence[Colour]] = None,
                  board: Optional[Dict[Slot, Colour]] = None) -> None:
         super().__init__(orig=orig, players=players, board=board)
@@ -125,14 +131,14 @@ class ShiftagoExpress(Shiftago):
         else:
             if players is None:
                 raise ValueError("Parameters 'players' is mandatory if 'orig' is None!")
-            num_players = len(players)
-            if 3 <= num_players <= 4:
-                self._winning_lines_detector = self._WINNING_LINES_DETECTOR_4
-            elif num_players == 2:
-                self._winning_lines_detector = self._WINNING_LINES_DETECTOR_5
-            else:
-                raise ValueError("Illegal number of players: {0}".format(num_players))
+            self._winning_lines_detector = self._select_winning_lines_detector(players)
             self._game_over_condition = None
+
+    @Shiftago.players.setter
+    def players(self, new_players: Sequence[Colour]):
+        super()._set_players(new_players)
+        self._winning_lines_detector = self._select_winning_lines_detector(new_players)
+        self._game_over_condition = None
 
     @property
     def winning_line_length(self) -> int:

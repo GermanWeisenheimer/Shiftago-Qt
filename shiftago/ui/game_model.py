@@ -1,5 +1,5 @@
 import random
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Sequence
 from enum import Enum
 from abc import ABC, abstractmethod
 from shiftago.app_config import ShiftagoConfig
@@ -7,7 +7,7 @@ from shiftago.core import Colour, Slot, Side, Move, GameOverCondition, ShiftagoO
 from shiftago.core.express import ShiftagoExpress
 from shiftago.core.express_ai import SkillLevel, AlphaBetaPruning
 from shiftago.ui import AppEventEmitter
-from .app_events import MarbleShiftedEvent, MarbleInsertedEvent
+from .app_events import MarbleShiftedEvent, MarbleInsertedEvent, BoardResetEvent
 
 
 class PlayerNature(Enum):
@@ -36,18 +36,17 @@ class Player:
 
 class BoardViewModel(AppEventEmitter, ABC, ShiftagoObserver):
 
-    def __init__(self, players: Tuple[Player, Player]) -> None:
+    def __init__(self) -> None:
         super().__init__()
-        self._players = players
-
-    def player_of(self, colour: Colour) -> Player:
-        return next(filter(lambda p: p.colour is colour, self._players))
 
     def notify_marble_shifted(self, slot: Slot, direction: Side):
         self.emit(MarbleShiftedEvent(slot, direction))
 
     def notify_marble_inserted(self, slot: Slot):
         self.emit(MarbleInsertedEvent(slot))
+
+    def notify_board_reset(self):
+        self.emit(BoardResetEvent())
 
     @property
     @abstractmethod
@@ -75,13 +74,24 @@ class BoardViewModel(AppEventEmitter, ABC, ShiftagoObserver):
 class ShiftagoExpressModel(BoardViewModel):
 
     def __init__(self, players: Tuple[Player, Player], config: ShiftagoConfig) -> None:
-        super().__init__(players)
-        colours = [players[0].colour, players[1].colour]
-        random.shuffle(colours)  # draw starting player
-        core_model = ShiftagoExpress(players=colours)
+        super().__init__()
+        self._players = players
+        core_model = ShiftagoExpress(players=self._randomize_player_sequence())
         core_model.observer = self
         self._core_model = core_model
         self._ai_engine = AlphaBetaPruning(config.skill_level)
+
+    def _randomize_player_sequence(self) -> Sequence[Colour]:
+        colours = [self._players[0].colour, self._players[1].colour]
+        random.shuffle(colours)
+        return colours
+
+    def reset(self) -> None:
+        self._core_model.players = self._randomize_player_sequence()
+        self.notify_board_reset()
+
+    def player_of(self, colour: Colour) -> Player:
+        return next(filter(lambda p: p.colour is colour, self._players))
 
     @property
     def current_player(self) -> Player:
