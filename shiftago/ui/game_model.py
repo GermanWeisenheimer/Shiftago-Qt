@@ -39,14 +39,10 @@ class BoardViewModel(AppEventEmitter, ABC, ShiftagoObserver):
     def __init__(self) -> None:
         super().__init__()
 
-    def notify_marble_shifted(self, slot: Slot, direction: Side):
-        self.emit(MarbleShiftedEvent(slot, direction))
-
-    def notify_marble_inserted(self, slot: Slot):
-        self.emit(MarbleInsertedEvent(slot))
-
-    def notify_board_reset(self):
-        self.emit(BoardResetEvent())
+    @property
+    @abstractmethod
+    def players(self) -> Tuple[Player, ...]:
+        pass
 
     @property
     @abstractmethod
@@ -57,6 +53,18 @@ class BoardViewModel(AppEventEmitter, ABC, ShiftagoObserver):
     @abstractmethod
     def game_over_condition(self) -> Optional[GameOverCondition]:
         pass
+
+    def notify_marble_shifted(self, slot: Slot, direction: Side):
+        self.emit(MarbleShiftedEvent(slot, direction))
+
+    def notify_marble_inserted(self, slot: Slot):
+        self.emit(MarbleInsertedEvent(slot))
+
+    def notify_board_reset(self):
+        self.emit(BoardResetEvent())
+
+    def player_of(self, colour: Colour) -> Player:
+        return next(filter(lambda p: p.colour is colour, self.players))
 
     @abstractmethod
     def count_occupied_slots(self) -> int:
@@ -81,17 +89,9 @@ class ShiftagoExpressModel(BoardViewModel):
         self._core_model = core_model
         self._ai_engine = AlphaBetaPruning(config.skill_level)
 
-    def _randomize_player_sequence(self) -> Sequence[Colour]:
-        colours = [self._players[0].colour, self._players[1].colour]
-        random.shuffle(colours)
-        return colours
-
-    def reset(self) -> None:
-        self._core_model.players = self._randomize_player_sequence()
-        self.notify_board_reset()
-
-    def player_of(self, colour: Colour) -> Player:
-        return next(filter(lambda p: p.colour is colour, self._players))
+    @property
+    def players(self) -> Tuple[Player, Player]:
+        return self._players
 
     @property
     def current_player(self) -> Player:
@@ -104,6 +104,15 @@ class ShiftagoExpressModel(BoardViewModel):
     @property
     def game_over_condition(self) -> Optional[GameOverCondition]:
         return self._core_model.game_over_condition
+
+    def _randomize_player_sequence(self) -> Sequence[Colour]:
+        colours = [self._players[0].colour, self._players[1].colour]
+        random.shuffle(colours)
+        return colours
+
+    def reset(self) -> None:
+        self._core_model.players = self._randomize_player_sequence()
+        self.notify_board_reset()
 
     def count_occupied_slots(self) -> int:
         return self._core_model.count_occupied_slots()
