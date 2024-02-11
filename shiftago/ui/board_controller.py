@@ -115,7 +115,7 @@ class BoardController(Controller):
 
     @handle_event.register
     def _(self, _: ReadyForFirstMoveEvent) -> bool:  # pylint: disable=unused-argument
-        current_player = self._model.current_player
+        current_player = self._model.whose_turn_it_is
         _logger.info("Starting player is %s (%s).", current_player.colour.name,
                      'human' if current_player.nature is PlayerNature.HUMAN else 'computer')
         _logger.info("Skill level: %s", self._model.skill_level.name)
@@ -129,7 +129,7 @@ class BoardController(Controller):
     def _(self, event: MoveSelectedEvent) -> bool:
         assert self._state_machine.current_state in (self._BoardStateMaschine.computer_thinking_state,
                                                      self._BoardStateMaschine.human_thinking_state)
-        current_player = self._model.current_player
+        current_player = self._model.whose_turn_it_is
         if current_player.nature is PlayerNature.HUMAN:
             _logger.info("Human is making move: %s", event.move)
         else:
@@ -143,7 +143,7 @@ class BoardController(Controller):
         assert self._state_machine.current_state == self._BoardStateMaschine.performing_animation_state
         _logger.debug("Animation finished.")
         if self._model.game_over_condition is None:
-            if self._model.current_player.nature is PlayerNature.HUMAN:
+            if self._model.whose_turn_it_is.nature is PlayerNature.HUMAN:
                 self._state_machine.to_human_player()
             else:
                 self._state_machine.to_artifial_player()

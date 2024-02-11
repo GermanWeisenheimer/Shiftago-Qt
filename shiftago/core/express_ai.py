@@ -160,7 +160,7 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
         self._max_depth = 2 + skill_level.value
 
     def select_move(self, game_state: ShiftagoExpress) -> Move:
-        assert len(game_state.players) == 2
+        assert len(game_state.colours) == 2
         if game_state.count_occupied_slots() > 1:
             move, rating = self._apply(game_state, 1, (-math.inf, math.inf))
             _logger.debug("Selected move: %s (%s)", move, rating)

@@ -170,13 +170,13 @@ class GameOverException(Exception):
 
 class JSONEncoder(json.JSONEncoder):
 
-    KEY_PLAYERS = 'players'
+    KEY_COLOURS = 'colours'
     KEY_BOARD = "board"
 
     def default(self, o):
         if isinstance(o, Colour):
             return str(o)
-        return {JSONEncoder.KEY_PLAYERS: o.players,
+        return {JSONEncoder.KEY_COLOURS: o.colours,
                 JSONEncoder.KEY_BOARD: [[o.colour_at(Slot(hor_pos, ver_pos)) for hor_pos in range(NUM_SLOTS_PER_SIDE)]
                                         for ver_pos in range(NUM_SLOTS_PER_SIDE)]}
 
@@ -208,8 +208,8 @@ class ShiftagoDeser(Generic[_S]):
     def type(self) -> Type[_S]:
         return self._type
 
-    def _deserialize_players(self, json_dict: dict) -> Sequence[Colour]:
-        return [Colour(p) for p in json_dict[JSONEncoder.KEY_PLAYERS]]
+    def _deserialize_colours(self, json_dict: dict) -> Sequence[Colour]:
+        return [Colour(p) for p in json_dict[JSONEncoder.KEY_COLOURS]]
 
     def _deserialize_board(self, json_dict: Dict) -> Dict[Slot, Colour]:
         board = {}  # type: Dict[Slot, Colour]
@@ -221,7 +221,7 @@ class ShiftagoDeser(Generic[_S]):
 
     def deserialize(self, input_stream: TextIO) -> _S:
         def object_hook(json_dict: Dict) -> 'Shiftago':
-            return self._type(players=self._deserialize_players(json_dict),
+            return self._type(colours=self._deserialize_colours(json_dict),
                               board=self._deserialize_board(json_dict))
         return json.load(input_stream, object_hook=object_hook)
 
@@ -231,27 +231,27 @@ class Shiftago(ABC):
     _DEFAULT_OBSERVER = ShiftagoObserver()
 
     @staticmethod
-    def _validate_players(players: Sequence[Colour]) -> None:
-        num_players = len(set(players))
-        if num_players < len(players):
-            raise ValueError("Argument 'players' contains duplicates: {0}".format(players))
-        if not 2 <= num_players <= len(Colour):
-            raise ValueError("Illegal number of players!")
+    def _validate_colours(colours: Sequence[Colour]) -> None:
+        num_colours = len(set(colours))
+        if num_colours < len(colours):
+            raise ValueError("Argument 'colours' contains duplicates: {0}".format(colours))
+        if not 2 <= num_colours <= len(Colour):
+            raise ValueError("Illegal number of colours!")
 
-    def __init__(self, *, orig: Optional['Shiftago'] = None, players: Optional[Sequence[Colour]] = None,
+    def __init__(self, *, orig: Optional['Shiftago'] = None, colours: Optional[Sequence[Colour]] = None,
                  board: Optional[Dict[Slot, Colour]] = None) -> None:
         if orig is not None:
-            self._players = orig._players.copy()
+            self._colours = orig._colours.copy()
             self._board = orig._board.copy()
-            if players is not None:
-                raise ValueError("Parameters 'orig' and 'players' exclude each other!")
+            if colours is not None:
+                raise ValueError("Parameters 'orig' and 'colours' exclude each other!")
             if board is not None:
                 raise ValueError("Parameters 'orig' and 'board' exclude each other!")
         else:
-            if players is None:
-                raise ValueError("Parameters 'players' is mandatory if 'orig' is None!")
-            self._validate_players(players)
-            self._players = deque(players)
+            if colours is None:
+                raise ValueError("Parameters 'colours' is mandatory if 'orig' is None!")
+            self._validate_colours(colours)
+            self._colours = deque(colours)
             if board is None:
                 self._board = {}  # type: Dict[Slot, Colour]
             else:
@@ -274,23 +274,23 @@ class Shiftago(ABC):
         json.dump(self, output_stream, indent=4, cls=JSONEncoder)
 
     @property
-    def players(self) -> Sequence[Colour]:
-        return self._players
+    def colours(self) -> Sequence[Colour]:
+        return self._colours
 
-    @players.setter
-    def players(self, new_players: Sequence[Colour]):
-        self._set_players(new_players)
+    @colours.setter
+    def colours(self, new_colours: Sequence[Colour]):
+        self._set_colours(new_colours)
 
-    def _set_players(self, new_players: Sequence[Colour]) -> None:
-        self._validate_players(new_players)
-        self._players = deque(new_players)
+    def _set_colours(self, colours: Sequence[Colour]) -> None:
+        self._validate_colours(colours)
+        self._colours = deque(colours)
         self._board.clear()
 
     @property
-    def current_player(self) -> Colour:
+    def colour_to_move(self) -> Colour:
         if self.game_over_condition is not None:
             raise GameOverException(self.game_over_condition)
-        return self._players[0]
+        return self._colours[0]
 
     @property
     @abstractmethod
@@ -308,7 +308,7 @@ class Shiftago(ABC):
 
     def __eq__(self, other) -> bool:
         if isinstance(other, Shiftago):
-            return (self._players == other._players and self._board == other._board)
+            return (self._colours == other._colours and self._board == other._board)
         return False
 
     @abstractmethod
@@ -330,7 +330,7 @@ class Shiftago(ABC):
                 self._board[Slot(position, ver_pos)] = self.colour_of_occupied_slot(occupied)
                 self.observer.notify_marble_shifted(occupied, side.opposite)
             insert_slot = Slot(position, side.position)
-        self._board[insert_slot] = self._players[0]
+        self._board[insert_slot] = self._colours[0]
         self.observer.notify_marble_inserted(insert_slot)
 
     def find_first_empty_slot(self, side: Side, insert_pos: int) -> Optional[Slot]:

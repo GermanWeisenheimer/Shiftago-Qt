@@ -212,11 +212,11 @@ class BoardView(AppEventEmitter, QGraphicsView):
 
     def mouseMoveEvent(self, ev: QMouseEvent) -> None:  # pylint: disable=invalid-name
         if self._move_selection_enabled:
-            assert self._model.current_player is not None, "current_player not set!"
+            assert self._model.whose_turn_it_is is not None, "current_player not set!"
             side, insert_pos = self._determine_move_args(ev.pos())
             new_cursor = self._neutral_cursor
             if side is not None:
-                cursor_pair = self._insert_cursors[self._model.current_player.colour][side]
+                cursor_pair = self._insert_cursors[self._model.whose_turn_it_is.colour][side]
                 new_cursor = cursor_pair.get(insert_pos is not None)
             self.setCursor(new_cursor)
 
@@ -255,7 +255,7 @@ class BoardView(AppEventEmitter, QGraphicsView):
         msg_box = QMessageBox(self)
         msg_box.setWindowTitle(self._main_window_title)
         msg_box.setIcon(QMessageBox.Information)
-        current_player = self._model.current_player
+        current_player = self._model.whose_turn_it_is
         assert self._model.count_occupied_slots() == 0
         msg_box.setText(f"Starting player: {current_player.colour.name}")
         if current_player.nature is PlayerNature.HUMAN:

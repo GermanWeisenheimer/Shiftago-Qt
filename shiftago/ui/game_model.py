@@ -46,7 +46,7 @@ class BoardViewModel(AppEventEmitter, ABC, ShiftagoObserver):
 
     @property
     @abstractmethod
-    def current_player(self) -> Player:
+    def whose_turn_it_is(self) -> Player:
         pass
 
     @property
@@ -84,7 +84,7 @@ class ShiftagoExpressModel(BoardViewModel):
     def __init__(self, players: Tuple[Player, Player], config: ShiftagoConfig) -> None:
         super().__init__()
         self._players = players
-        core_model = ShiftagoExpress(players=self._randomize_player_sequence())
+        core_model = ShiftagoExpress(colours=self._randomize_player_sequence())
         core_model.observer = self
         self._core_model = core_model
         self._ai_engine = AlphaBetaPruning(config.skill_level)
@@ -94,8 +94,8 @@ class ShiftagoExpressModel(BoardViewModel):
         return self._players
 
     @property
-    def current_player(self) -> Player:
-        return self.player_of(self._core_model.current_player)
+    def whose_turn_it_is(self) -> Player:
+        return self.player_of(self._core_model.colour_to_move)
 
     @property
     def skill_level(self) -> SkillLevel:
@@ -111,7 +111,7 @@ class ShiftagoExpressModel(BoardViewModel):
         return colours
 
     def reset(self) -> None:
-        self._core_model.players = self._randomize_player_sequence()
+        self._core_model.colours = self._randomize_player_sequence()
         self.notify_board_reset()
 
     def count_occupied_slots(self) -> int:

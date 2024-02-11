@@ -37,7 +37,7 @@ class AlphaBetaPruningTest(unittest.TestCase):
             self.assertEqual(0, of_orange[1])
 
     def test_alpha_beta_pruning_empty_board(self):
-        express_game = ShiftagoExpress(players=(Colour.BLUE, Colour.ORANGE))
+        express_game = ShiftagoExpress(colours=(Colour.BLUE, Colour.ORANGE))
         move = AlphaBetaPruning().select_move(express_game)
         express_game.apply_move(move)
         print(express_game)

@@ -97,18 +97,18 @@ class WinningLinesDetector:
             -> Sequence[Dict[WinningLine, int]]:
         if min_match_count is None:
             min_match_count = self._winning_line_length
-        player_indexes = {player: index for index, player in enumerate(shiftago.players)}
-        wl_matches_per_player = [defaultdict(lambda: 0) for _ in shiftago.players]
+        colour_indexes = {colour: index for index, colour in enumerate(shiftago.colours)}
+        wl_matches_per_colour = [defaultdict(lambda: 0) for _ in shiftago.colours]
         for ver_pos in range(NUM_SLOTS_PER_SIDE):
             for hor_pos in range(NUM_SLOTS_PER_SIDE):
                 slot = Slot(hor_pos, ver_pos)
                 c = shiftago.colour_at(slot)
                 if c is not None:
-                    wl_match_dict = wl_matches_per_player[player_indexes[c]]
+                    wl_match_dict = wl_matches_per_colour[colour_indexes[c]]
                     for wl in self._slot_to_lines[slot]:
                         wl_match_dict[wl] += 1
         return tuple({wl: match_count for wl, match_count in wl_match_dict.items()
-                      if match_count >= min_match_count} for wl_match_dict in wl_matches_per_player)
+                      if match_count >= min_match_count} for wl_match_dict in wl_matches_per_colour)
 
 
 class ShiftagoExpress(Shiftago):
@@ -117,27 +117,27 @@ class ShiftagoExpress(Shiftago):
     _WINNING_LINES_DETECTOR_5 = WinningLinesDetector(5)
 
     @staticmethod
-    def _select_winning_lines_detector(players: Sequence[Colour]) -> WinningLinesDetector:
-        if 3 <= len(players) <= 4:
+    def _select_winning_lines_detector(colours: Sequence[Colour]) -> WinningLinesDetector:
+        if 3 <= len(colours) <= 4:
             return ShiftagoExpress._WINNING_LINES_DETECTOR_4
         return ShiftagoExpress._WINNING_LINES_DETECTOR_5
 
-    def __init__(self, *, orig: Optional['ShiftagoExpress'] = None, players: Optional[Sequence[Colour]] = None,
+    def __init__(self, *, orig: Optional['ShiftagoExpress'] = None, colours: Optional[Sequence[Colour]] = None,
                  board: Optional[Dict[Slot, Colour]] = None) -> None:
-        super().__init__(orig=orig, players=players, board=board)
+        super().__init__(orig=orig, colours=colours, board=board)
         if orig is not None:
             self._game_over_condition = orig._game_over_condition
             self._winning_lines_detector = orig._winning_lines_detector
         else:
-            if players is None:
-                raise ValueError("Parameters 'players' is mandatory if 'orig' is None!")
-            self._winning_lines_detector = self._select_winning_lines_detector(players)
+            if colours is None:
+                raise ValueError("Parameters 'colours' is mandatory if 'orig' is None!")
+            self._winning_lines_detector = self._select_winning_lines_detector(colours)
             self._game_over_condition = None
 
-    @Shiftago.players.setter
-    def players(self, new_players: Sequence[Colour]):
-        super()._set_players(new_players)
-        self._winning_lines_detector = self._select_winning_lines_detector(new_players)
+    @Shiftago.colours.setter
+    def colours(self, new_colours: Sequence[Colour]):
+        super()._set_colours(new_colours)
+        self._winning_lines_detector = self._select_winning_lines_detector(new_colours)
         self._game_over_condition = None
 
     @property
@@ -157,15 +157,16 @@ class ShiftagoExpress(Shiftago):
 
         self._insert_marble(move.side, move.position)
 
-        if self._has_current_player_won():
-            self._game_over_condition = GameOverCondition(self._players[0])
+        # check if the colour of the move has won the match
+        if len(self._winning_lines_detector.detect_winning_lines(self)[0]) > 0:
+            self._game_over_condition = GameOverCondition(self._colours[0])
         else:
             num_slots_per_colour = self.count_slots_per_colour()
             # check if there is a free slot left
             if sum(num_slots_per_colour.values()) < NUM_SLOTS_PER_SIDE * NUM_SLOTS_PER_SIDE:
-                next_player = self._select_next_player()
-                # check if selected player has one available marble at least
-                if num_slots_per_colour[next_player] == NUM_MARBLES_PER_COLOUR:
+                next_colour_to_move = self._select_colour_to_move()
+                # check if selected colour has one available marble at least
+                if num_slots_per_colour[next_colour_to_move] == NUM_MARBLES_PER_COLOUR:
                     self._game_over_condition = GameOverCondition()
             else:
                 # all slots are occupied
@@ -174,15 +175,12 @@ class ShiftagoExpress(Shiftago):
             self.observer.notify_game_over()
         return self._game_over_condition
 
-    def _has_current_player_won(self) -> bool:
-        return len(self._winning_lines_detector.detect_winning_lines(self)[0]) > 0
-
     def detect_winning_lines(self, min_match_count: Optional[int] = None) -> Sequence[Dict[WinningLine, int]]:
         return self._winning_lines_detector.detect_winning_lines(self, min_match_count)
 
-    def _select_next_player(self) -> Colour:
-        self._players.rotate(-1)
-        return self._players[0]
+    def _select_colour_to_move(self) -> Colour:
+        self._colours.rotate(-1)
+        return self._colours[0]
 
     @classmethod
     def deserialize(cls, input_stream: TextIO) -> 'ShiftagoExpress':

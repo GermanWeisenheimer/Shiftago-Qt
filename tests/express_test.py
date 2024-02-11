@@ -26,8 +26,8 @@ class ShiftagoExpressTest(unittest.TestCase):
         with TestDataLoader(ShiftagoExpress, 'board1.json') as express_game:
             express_game2 = copy.copy(express_game)
             self.assertTrue(express_game2 is not express_game)
-            self.assertEqual(express_game2.players, express_game.players)
-            self.assertEqual(express_game2.current_player, express_game.current_player)
+            self.assertEqual(express_game2.colours, express_game.colours)
+            self.assertEqual(express_game2.colour_to_move, express_game.colour_to_move)
             for ver_pos in range(NUM_SLOTS_PER_SIDE):
                 for hor_pos in range(NUM_SLOTS_PER_SIDE):
                     slot_pos = Slot(hor_pos, ver_pos)
