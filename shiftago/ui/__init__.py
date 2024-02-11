@@ -1,7 +1,15 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Optional, Callable, TypeAlias, cast
+from importlib.resources import path as resrc_path
 from PySide2.QtCore import QObject, Signal, SignalInstance
+from PySide2.QtGui import QPixmap
+import shiftago.ui.images
+
+
+def load_image(image_resource: str) -> QPixmap:
+    with resrc_path(shiftago.ui.images, image_resource) as path:
+        return QPixmap(str(path))
 
 
 @dataclass(frozen=True)

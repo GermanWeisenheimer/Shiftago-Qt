@@ -2,14 +2,12 @@ import logging
 from collections import defaultdict, deque
 from functools import singledispatchmethod
 from typing import Optional, NamedTuple
-from importlib.resources import path as resrc_path
 from PySide2.QtCore import Qt, QSize, QPoint, QRectF, QByteArray, QPropertyAnimation
 from PySide2.QtWidgets import QWidget, QMessageBox, QGraphicsView, QGraphicsScene, QGraphicsObject, \
     QStyleOptionGraphicsItem
 from PySide2.QtGui import QPixmap, QPainter, QMouseEvent, QCursor
 from shiftago.core import Colour, Slot, Side, Move
-import shiftago.ui.images
-from shiftago.ui import AppEvent, AppEventEmitter
+from shiftago.ui import load_image, AppEvent, AppEventEmitter
 from .app_events import ReadyForFirstMoveEvent, AnimationFinishedEvent, MoveSelectedEvent, MarbleInsertedEvent, \
     MarbleShiftedEvent, BoardResetEvent
 from .game_model import BoardViewModel, PlayerNature
@@ -18,11 +16,6 @@ BOARD_VIEW_SIZE = QSize(700, 700)
 
 
 _logger = logging.getLogger(__name__)
-
-
-def _load_image(image_resource: str) -> QPixmap:
-    with resrc_path(shiftago.ui.images, image_resource) as path:
-        return QPixmap(str(path))
 
 
 class BoardView(AppEventEmitter, QGraphicsView):
@@ -60,13 +53,13 @@ class BoardView(AppEventEmitter, QGraphicsView):
 
         def __init__(self, app_event_emitter: AppEventEmitter, model: BoardViewModel) -> None:
             super().__init__()
-            board_pixmap = _load_image('shiftago_board.jpg').scaled(self.IMAGE_SIZE)
+            board_pixmap = load_image('shiftago_board.jpg').scaled(self.IMAGE_SIZE)
             model.connect_with(self.update_from_model)
             self._app_event_emitter = app_event_emitter
             self._model = model
             self._marble_pixmaps: dict[Colour, QPixmap] = {
-                Colour.BLUE: _load_image('blue_marble.png').scaled(self.Marble.SIZE),
-                Colour.ORANGE: _load_image('orange_marble.png').scaled(self.Marble.SIZE)
+                Colour.BLUE: load_image('blue_marble.png').scaled(self.Marble.SIZE),
+                Colour.ORANGE: load_image('orange_marble.png').scaled(self.Marble.SIZE)
             }
             self.setSceneRect(0, 0, BOARD_VIEW_SIZE.width(), BOARD_VIEW_SIZE.height())
             self.addPixmap(board_pixmap).setPos(QPoint(self.IMAGE_OFFSET_X, self.IMAGE_OFFSET_Y))
@@ -192,8 +185,8 @@ class BoardView(AppEventEmitter, QGraphicsView):
                 sn = side.name.lower()
                 csize = cursor_hor_size if side.is_horizontal else cursor_ver_size
                 self._insert_cursors[colour][side] = self.CursorPair(
-                    QCursor(_load_image(f'insert_{cn}_{sn}_enabled.png').scaled(csize), -1, -1),
-                    QCursor(_load_image(f'insert_{cn}_{sn}_disabled.png').scaled(csize), -1, -1))
+                    QCursor(load_image(f'insert_{cn}_{sn}_enabled.png').scaled(csize), -1, -1),
+                    QCursor(load_image(f'insert_{cn}_{sn}_disabled.png').scaled(csize), -1, -1))
 
     @property
     def model(self) -> BoardViewModel:

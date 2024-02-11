@@ -1,10 +1,11 @@
 import logging
 from functools import singledispatchmethod
 from PySide2.QtCore import QSize
-from PySide2.QtWidgets import QApplication, QMainWindow, QMessageBox
+from PySide2.QtWidgets import QApplication, QMainWindow, QMessageBox, QAction
+from PySide2.QtGui import QIcon
 from shiftago.app_config import ShiftagoConfig
 from shiftago.core import Colour
-from shiftago.ui import Controller, AppEvent, AppEventEmitter
+from shiftago.ui import load_image, Controller, AppEvent, AppEventEmitter
 from .board_view import BoardView, BOARD_VIEW_SIZE
 from .app_events import NewMatchRequestedEvent, ExitRequestedEvent
 from .game_model import ShiftagoExpressModel, PlayerNature, Player
@@ -35,7 +36,9 @@ class _MainWindow(AppEventEmitter, QMainWindow):
         menu_bar = self.menuBar()
         file_menu = menu_bar.addMenu('File')
         file_menu.addAction('New match', lambda: self.emit(NewMatchRequestedEvent()))
-        file_menu.addAction('Exit', lambda: self.emit(ExitRequestedEvent()))
+        exit_action = QAction(QIcon(load_image('exit-icon.png')), '&Exit', self)
+        exit_action.triggered.connect(lambda: self.emit(ExitRequestedEvent()))
+        file_menu.addAction(exit_action)
 
     def closeEvent(self, event):  # pylint: disable=invalid-name
         event.ignore()
