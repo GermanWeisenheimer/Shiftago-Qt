@@ -80,6 +80,8 @@ class BoardController(Controller):
             assert game_over_condition is not None
             if game_over_condition.winner:
                 _logger.info("Game over: %s has won!", game_over_condition.winner.name)
+                for wl in self._model.winning_lines_of_winner():
+                    _logger.info("Winning line: %s", wl)
             else:
                 _logger.info("Game over: it has ended in a draw!")
             self._view.show_game_over()

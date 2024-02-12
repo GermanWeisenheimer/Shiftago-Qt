@@ -108,6 +108,17 @@ class WinningLinesDetector:
                       if match_count >= min_match_count} for wl_match_dict in wl_matches_per_colour)
 
     def has_winning_line(self, shiftago: Shiftago, colour: Colour) -> bool:
+        for match_count in self._build_match_dict(shiftago, colour).values():
+            if match_count == self._winning_line_length:
+                return True
+        return False
+
+    def winning_lines_of(self, shiftago: Shiftago, colour: Colour) -> Set[WinningLine]:
+        wl_match_dict = self._build_match_dict(shiftago, colour)
+        return set(filter(lambda wl: wl_match_dict[wl] == self._winning_line_length,
+                          wl_match_dict.keys()))
+
+    def _build_match_dict(self, shiftago: Shiftago, colour: Colour) -> Dict[WinningLine, int]:
         wl_match_dict = defaultdict(lambda: 0)  # type: Dict[WinningLine, int]
         for ver_pos in range(NUM_SLOTS_PER_SIDE):
             for hor_pos in range(NUM_SLOTS_PER_SIDE):
@@ -115,10 +126,7 @@ class WinningLinesDetector:
                 if shiftago.colour_at(slot) == colour:
                     for wl in self._slot_to_lines[slot]:
                         wl_match_dict[wl] += 1
-        for match_count in wl_match_dict.values():
-            if match_count == self._winning_line_length:
-                return True
-        return False
+        return wl_match_dict
 
 
 class ShiftagoExpress(Shiftago):
@@ -188,6 +196,10 @@ class ShiftagoExpress(Shiftago):
 
     def detect_winning_lines(self, min_match_count: Optional[int] = None) -> Sequence[Dict[WinningLine, int]]:
         return self._winning_lines_detector.detect_winning_lines(self, min_match_count)
+
+    def winning_lines_of_winner(self) -> Set[WinningLine]:
+        assert self._game_over_condition is not None and self._game_over_condition.winner is not None
+        return self._winning_lines_detector.winning_lines_of(self, self._game_over_condition.winner)
 
     def _select_colour_to_move(self) -> Colour:
         self._colours.rotate(-1)
