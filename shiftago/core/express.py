@@ -81,7 +81,7 @@ class WinningLinesDetector:
         if not 4 <= winning_line_length <= 5:
             raise ValueError("Illegal winning line length: {0}".format(winning_line_length))
         self._winning_line_length = winning_line_length
-        self._slot_to_lines = defaultdict(set)
+        self._slot_to_lines = defaultdict(set)  # type: Dict[Slot, Set[WinningLine]]
         for wl in WinningLine.get_all(winning_line_length):
             for slot in wl.slots:
                 self._slot_to_lines[slot].add(wl)
@@ -89,9 +89,6 @@ class WinningLinesDetector:
     @property
     def winning_line_length(self) -> int:
         return self._winning_line_length
-
-    def winning_lines_at(self, slot: Slot) -> Set[WinningLine]:
-        return self._slot_to_lines[slot]
 
     def detect_winning_lines(self, shiftago: Shiftago, min_match_count: Optional[int] = None) \
             -> Sequence[Dict[WinningLine, int]]:
@@ -109,6 +106,19 @@ class WinningLinesDetector:
                         wl_match_dict[wl] += 1
         return tuple({wl: match_count for wl, match_count in wl_match_dict.items()
                       if match_count >= min_match_count} for wl_match_dict in wl_matches_per_colour)
+
+    def has_winning_line(self, shiftago: Shiftago, colour: Colour) -> bool:
+        wl_match_dict = defaultdict(lambda: 0)  # type: Dict[WinningLine, int]
+        for ver_pos in range(NUM_SLOTS_PER_SIDE):
+            for hor_pos in range(NUM_SLOTS_PER_SIDE):
+                slot = Slot(hor_pos, ver_pos)
+                if shiftago.colour_at(slot) == colour:
+                    for wl in self._slot_to_lines[slot]:
+                        wl_match_dict[wl] += 1
+        for match_count in wl_match_dict.values():
+            if match_count == self._winning_line_length:
+                return True
+        return False
 
 
 class ShiftagoExpress(Shiftago):
@@ -155,11 +165,12 @@ class ShiftagoExpress(Shiftago):
         if self._game_over_condition is not None:
             raise GameOverException(self._game_over_condition)
 
+        colour_to_move = self.colour_to_move
         self._insert_marble(move.side, move.position)
 
-        # check if the colour of the move has won the match
-        if len(self._winning_lines_detector.detect_winning_lines(self)[0]) > 0:
-            self._game_over_condition = GameOverCondition(self._colours[0])
+        # check if the match has been won by the move
+        if self._winning_lines_detector.has_winning_line(self, colour_to_move):
+            self._game_over_condition = GameOverCondition(colour_to_move)
         else:
             num_slots_per_colour = self.count_slots_per_colour()
             # check if there is a free slot left
