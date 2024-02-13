@@ -4,7 +4,7 @@ from enum import Enum
 from abc import ABC, abstractmethod
 from shiftago.app_config import ShiftagoConfig
 from shiftago.core import Colour, Slot, Side, Move, GameOverCondition, ShiftagoObserver
-from shiftago.core.express import ShiftagoExpress, WinningLine
+from shiftago.core.express import ShiftagoExpress, SlotsInLine
 from shiftago.core.express_ai import SkillLevel, AlphaBetaPruning
 from shiftago.ui import AppEventEmitter
 from .app_events import MarbleShiftedEvent, MarbleInsertedEvent, BoardResetEvent
@@ -105,7 +105,7 @@ class ShiftagoExpressModel(BoardViewModel):
     def game_over_condition(self) -> Optional[GameOverCondition]:
         return self._core_model.game_over_condition
 
-    def winning_lines_of_winner(self) -> Set[WinningLine]:
+    def winning_lines_of_winner(self) -> Set[SlotsInLine]:
         return self._core_model.winning_lines_of_winner()
 
     def _randomize_player_sequence(self) -> Sequence[Colour]:

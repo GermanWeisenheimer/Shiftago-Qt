@@ -1,23 +1,23 @@
 # pylint: disable=consider-using-f-string
 import copy
 import unittest
-from shiftago.core import NUM_SLOTS_PER_SIDE, Colour, Slot, Move, Side
-from shiftago.core.express import ShiftagoExpress, WinningLine, LineOrientation
+from shiftago.core import NUM_SLOTS_PER_SIDE, Colour, Slot, Move, Side, LineOrientation, SlotsInLine
+from shiftago.core.express import ShiftagoExpress
 from tests import TestDataLoader
 
 
-class WinningLineTest(unittest.TestCase):
+class SlotsInLineTest(unittest.TestCase):
 
     def test_get_all(self):
-        winning_lines = WinningLine.get_all(5)
-        self.assertEqual(len(set(filter(lambda wl: wl.orientation == LineOrientation.HORIZONTAL,
-                                         winning_lines))), 21)
-        self.assertEqual(len(set(filter(lambda wl: wl.orientation == LineOrientation.VERTICAL,
-                                         winning_lines))), 21)
-        self.assertEqual(len(set(filter(lambda wl: wl.orientation == LineOrientation.ASCENDING,
-                                         winning_lines))), 9)
-        self.assertEqual(len(set(filter(lambda wl: wl.orientation == LineOrientation.DESCENDING,
-                                         winning_lines))), 9)
+        lines = SlotsInLine.get_all(5)
+        self.assertEqual(len(set(filter(lambda line: line.orientation == LineOrientation.HORIZONTAL,
+                                         lines))), 21)
+        self.assertEqual(len(set(filter(lambda line: line.orientation == LineOrientation.VERTICAL,
+                                         lines))), 21)
+        self.assertEqual(len(set(filter(lambda line: line.orientation == LineOrientation.ASCENDING,
+                                         lines))), 9)
+        self.assertEqual(len(set(filter(lambda line: line.orientation == LineOrientation.DESCENDING,
+                                         lines))), 9)
 
 
 class ShiftagoExpressTest(unittest.TestCase):

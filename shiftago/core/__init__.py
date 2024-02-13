@@ -1,5 +1,5 @@
 # pylint: disable=consider-using-f-string
-from typing import List, Dict,  Sequence, Optional, TextIO,  Type, TypeVar, Generic
+from typing import List, Dict, Sequence, Set, Optional, TextIO, Tuple, Type, TypeVar, Generic
 from abc import ABC, abstractmethod
 from enum import Enum
 from collections import namedtuple, defaultdict, deque
@@ -130,6 +130,75 @@ class LineOrientation(Enum):
     VERTICAL = 1
     ASCENDING = 2
     DESCENDING = 3
+
+
+class SlotsInLine:
+
+    @staticmethod
+    def _to_neighbour(slot: Slot, orientation: LineOrientation) -> Slot:
+        if orientation == LineOrientation.HORIZONTAL:
+            return Slot(slot.hor_pos + 1, slot.ver_pos)
+        if orientation == LineOrientation.VERTICAL:
+            return Slot(slot.hor_pos, slot.ver_pos + 1)
+        if orientation == LineOrientation.ASCENDING:
+            return Slot(slot.hor_pos + 1, slot.ver_pos - 1)
+        return Slot(slot.hor_pos + 1, slot.ver_pos + 1)
+
+    def __init__(self, orientation: LineOrientation, num_slots: int, start_slot: Slot) -> None:
+        self._orientation = orientation
+
+        def generate_line():
+            slot = start_slot
+            yield slot
+            for _ in range(0, num_slots - 1):
+                slot = self._to_neighbour(slot, orientation)
+                yield slot
+        self._slots = tuple(generate_line())
+
+    def __eq__(self, other) -> bool:
+        if isinstance(other, SlotsInLine):
+            return self._slots == other._slots
+        return False
+
+    def __hash__(self) -> int:
+        return hash(self._slots)
+
+    def __str__(self) -> str:
+        return ",".join(str(sp) for sp in self._slots)
+
+    @property
+    def orientation(self) -> LineOrientation:
+        return self._orientation
+
+    @property
+    def slots(self) -> Tuple[Slot, ...]:
+        return self._slots
+
+    @staticmethod
+    def get_all(line_length: int) -> Set['SlotsInLine']:
+        all_lines = set()  # type: Set[SlotsInLine]
+
+        def add_all_sub_lines(start_slot: Slot, orientation: LineOrientation, board_line_length: int):
+            for _ in range(0, board_line_length - line_length + 1):
+                all_lines.add(SlotsInLine(orientation, line_length, start_slot))
+                start_slot = SlotsInLine._to_neighbour(start_slot, orientation)
+
+        for orientation in (LineOrientation.HORIZONTAL, LineOrientation.VERTICAL):
+            for offset in range(0, NUM_SLOTS_PER_SIDE):
+                add_all_sub_lines(Slot(0, offset) if orientation == LineOrientation.HORIZONTAL else
+                                  Slot(offset, 0), orientation, NUM_SLOTS_PER_SIDE)
+
+        for orientation in (LineOrientation.DESCENDING, LineOrientation.ASCENDING):
+            max_offset = NUM_SLOTS_PER_SIDE - line_length
+            for offset in range(0, max_offset + 1):
+                add_all_sub_lines(Slot(0, offset if orientation == LineOrientation.DESCENDING else
+                                       NUM_SLOTS_PER_SIDE - 1 - offset), orientation,
+                                  NUM_SLOTS_PER_SIDE - offset)
+            for offset in range(1, max_offset + 1):
+                add_all_sub_lines(Slot(offset, 0 if orientation == LineOrientation.DESCENDING else
+                                       NUM_SLOTS_PER_SIDE - 1), orientation,
+                                  NUM_SLOTS_PER_SIDE - offset)
+        return all_lines
 
 
 class Move(namedtuple('Move', 'side position')):

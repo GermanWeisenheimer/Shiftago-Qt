@@ -1,132 +1,63 @@
 # pylint: disable=consider-using-f-string
-from typing import Tuple, Dict, Set, Sequence, Optional, TextIO
+from typing import Dict, Set, Sequence, Optional, TextIO
 from collections import defaultdict
 from shiftago.core import NUM_MARBLES_PER_COLOUR, NUM_SLOTS_PER_SIDE
-from shiftago.core import ShiftagoDeser, Slot, Colour, LineOrientation, Shiftago, Move, \
+from shiftago.core import ShiftagoDeser, Slot, Colour, SlotsInLine, Shiftago, Move, \
     GameOverCondition, GameOverException
-
-
-class WinningLine:
-
-    @staticmethod
-    def _to_neighbour(slot: Slot, orientation: LineOrientation) -> Slot:
-        if orientation == LineOrientation.HORIZONTAL:
-            return Slot(slot.hor_pos + 1, slot.ver_pos)
-        if orientation == LineOrientation.VERTICAL:
-            return Slot(slot.hor_pos, slot.ver_pos + 1)
-        if orientation == LineOrientation.ASCENDING:
-            return Slot(slot.hor_pos + 1, slot.ver_pos - 1)
-        return Slot(slot.hor_pos + 1, slot.ver_pos + 1)
-
-    def __init__(self, orientation: LineOrientation, num_slots: int, start_slot: Slot) -> None:
-        self._orientation = orientation
-
-        def generate_line():
-            slot = start_slot
-            yield slot
-            for _ in range(0, num_slots - 1):
-                slot = self._to_neighbour(slot, orientation)
-                yield slot
-        self._slots = tuple(generate_line())
-
-    def __eq__(self, other) -> bool:
-        if isinstance(other, WinningLine):
-            return self._slots == other._slots
-        return False
-
-    def __hash__(self) -> int:
-        return hash(self._slots)
-
-    def __str__(self) -> str:
-        return ",".join(str(sp) for sp in self._slots)
-
-    @property
-    def orientation(self) -> LineOrientation:
-        return self._orientation
-
-    @property
-    def slots(self) -> Tuple[Slot, ...]:
-        return self._slots
-
-    @staticmethod
-    def get_all(num_slots_in_line: int) -> Set['WinningLine']:
-        all_winning_lines = set()  # type: Set[WinningLine]
-
-        def add_all_sub_lines(start_slot: Slot, orientation: LineOrientation, board_line_length: int):
-            for _ in range(0, board_line_length - num_slots_in_line + 1):
-                all_winning_lines.add(WinningLine(orientation, num_slots_in_line, start_slot))
-                start_slot = WinningLine._to_neighbour(start_slot, orientation)
-
-        for orientation in (LineOrientation.HORIZONTAL, LineOrientation.VERTICAL):
-            for offset in range(0, NUM_SLOTS_PER_SIDE):
-                add_all_sub_lines(Slot(0, offset) if orientation == LineOrientation.HORIZONTAL else
-                                  Slot(offset, 0), orientation, NUM_SLOTS_PER_SIDE)
-
-        for orientation in (LineOrientation.DESCENDING, LineOrientation.ASCENDING):
-            max_offset = NUM_SLOTS_PER_SIDE - num_slots_in_line
-            for offset in range(0, max_offset + 1):
-                add_all_sub_lines(Slot(0, offset if orientation == LineOrientation.DESCENDING else
-                                       NUM_SLOTS_PER_SIDE - 1 - offset), orientation,
-                                  NUM_SLOTS_PER_SIDE - offset)
-            for offset in range(1, max_offset + 1):
-                add_all_sub_lines(Slot(offset, 0 if orientation == LineOrientation.DESCENDING else
-                                       NUM_SLOTS_PER_SIDE - 1), orientation,
-                                  NUM_SLOTS_PER_SIDE - offset)
-        return all_winning_lines
 
 
 class WinningLinesDetector:
 
-    def __init__(self, winning_line_length: int) -> None:
-        if not 4 <= winning_line_length <= 5:
-            raise ValueError("Illegal winning line length: {0}".format(winning_line_length))
-        self._winning_line_length = winning_line_length
-        self._slot_to_lines = defaultdict(set)  # type: Dict[Slot, Set[WinningLine]]
-        for wl in WinningLine.get_all(winning_line_length):
-            for slot in wl.slots:
-                self._slot_to_lines[slot].add(wl)
+    def __init__(self, winning_match_degree: int) -> None:
+        if not 4 <= winning_match_degree <= 5:
+            raise ValueError("Illegal winning line length: {0}".format(winning_match_degree))
+        self._winning_match_degree = winning_match_degree
+        self._slot_to_lines = defaultdict(set)  # type: Dict[Slot, Set[SlotsInLine]]
+        for line in SlotsInLine.get_all(winning_match_degree):
+            for slot in line.slots:
+                self._slot_to_lines[slot].add(line)
 
     @property
-    def winning_line_length(self) -> int:
-        return self._winning_line_length
+    def winning_match_degree(self) -> int:
+        return self._winning_match_degree
 
-    def detect_winning_lines(self, shiftago: Shiftago, min_match_count: Optional[int] = None) \
-            -> Sequence[Dict[WinningLine, int]]:
-        if min_match_count is None:
-            min_match_count = self._winning_line_length
-        colour_indexes = {colour: index for index, colour in enumerate(shiftago.colours)}
-        wl_matches_per_colour = [defaultdict(lambda: 0) for _ in shiftago.colours]
+    def determine_match_degrees(self, shiftago: Shiftago, min_match_degree: Optional[int] = None) \
+            -> Sequence[Dict[SlotsInLine, int]]:
+        if min_match_degree is None:
+            min_match_degree = self._winning_match_degree
+        match_degrees_per_colour = {colour: defaultdict(lambda: 0) for colour in \
+                                    shiftago.colours}  # type: Dict[Colour, Dict[SlotsInLine, int]]
         for ver_pos in range(NUM_SLOTS_PER_SIDE):
             for hor_pos in range(NUM_SLOTS_PER_SIDE):
                 slot = Slot(hor_pos, ver_pos)
                 c = shiftago.colour_at(slot)
                 if c is not None:
-                    wl_match_dict = wl_matches_per_colour[colour_indexes[c]]
-                    for wl in self._slot_to_lines[slot]:
-                        wl_match_dict[wl] += 1
-        return tuple({wl: match_count for wl, match_count in wl_match_dict.items()
-                      if match_count >= min_match_count} for wl_match_dict in wl_matches_per_colour)
+                    match_degrees = match_degrees_per_colour[c]
+                    for line in self._slot_to_lines[slot]:
+                        match_degrees[line] += 1
+        return tuple({line: match_degree for line, match_degree in match_degrees_per_colour[colour].items()
+                      if match_degree >= min_match_degree} for colour in shiftago.colours)
 
     def has_winning_line(self, shiftago: Shiftago, colour: Colour) -> bool:
-        for match_count in self._build_match_dict(shiftago, colour).values():
-            if match_count == self._winning_line_length:
+        for match_degree in self._build_match_degrees(shiftago, colour).values():
+            if match_degree == self._winning_match_degree:
                 return True
         return False
 
-    def winning_lines_of(self, shiftago: Shiftago, colour: Colour) -> Set[WinningLine]:
-        wl_match_dict = self._build_match_dict(shiftago, colour)
-        return set(filter(lambda wl: wl_match_dict[wl] == self._winning_line_length,
-                          wl_match_dict.keys()))
+    def winning_lines_of(self, shiftago: Shiftago, colour: Colour) -> Set[SlotsInLine]:
+        match_degrees = self._build_match_degrees(shiftago, colour)
+        return set(filter(lambda line: match_degrees[line] == self._winning_match_degree,
+                          match_degrees.keys()))
 
-    def _build_match_dict(self, shiftago: Shiftago, colour: Colour) -> Dict[WinningLine, int]:
-        wl_match_dict = defaultdict(lambda: 0)  # type: Dict[WinningLine, int]
+    def _build_match_degrees(self, shiftago: Shiftago, colour: Colour) -> Dict[SlotsInLine, int]:
+        match_degrees = defaultdict(lambda: 0)  # type: Dict[SlotsInLine, int]
         for ver_pos in range(NUM_SLOTS_PER_SIDE):
             for hor_pos in range(NUM_SLOTS_PER_SIDE):
                 slot = Slot(hor_pos, ver_pos)
                 if shiftago.colour_at(slot) == colour:
-                    for wl in self._slot_to_lines[slot]:
-                        wl_match_dict[wl] += 1
-        return wl_match_dict
+                    for line in self._slot_to_lines[slot]:
+                        match_degrees[line] += 1
+        return match_degrees
 
 
 class ShiftagoExpress(Shiftago):
@@ -160,7 +91,7 @@ class ShiftagoExpress(Shiftago):
 
     @property
     def winning_line_length(self) -> int:
-        return self._winning_lines_detector.winning_line_length
+        return self._winning_lines_detector.winning_match_degree
 
     @property
     def game_over_condition(self) -> Optional[GameOverCondition]:
@@ -194,10 +125,10 @@ class ShiftagoExpress(Shiftago):
             self.observer.notify_game_over()
         return self._game_over_condition
 
-    def detect_winning_lines(self, min_match_count: Optional[int] = None) -> Sequence[Dict[WinningLine, int]]:
-        return self._winning_lines_detector.detect_winning_lines(self, min_match_count)
+    def detect_winning_lines(self, min_match_count: Optional[int] = None) -> Sequence[Dict[SlotsInLine, int]]:
+        return self._winning_lines_detector.determine_match_degrees(self, min_match_count)
 
-    def winning_lines_of_winner(self) -> Set[WinningLine]:
+    def winning_lines_of_winner(self) -> Set[SlotsInLine]:
         assert self._game_over_condition is not None and self._game_over_condition.winner is not None
         return self._winning_lines_detector.winning_lines_of(self, self._game_over_condition.winner)
 
