@@ -66,13 +66,13 @@ class Side(Enum):
 
     @property
     def opposite(self) -> 'Side':
-        if self == Side.LEFT:
-            return Side.RIGHT
-        if self == Side.RIGHT:
-            return Side.LEFT
-        if self == Side.TOP:
-            return Side.BOTTOM
-        return Side.TOP
+        if self == self.LEFT:
+            return self.RIGHT
+        if self == self.RIGHT:
+            return self.LEFT
+        if self == self.TOP:
+            return self.BOTTOM
+        return self.TOP
 
 
 @total_ordering
@@ -126,23 +126,23 @@ Slot.initialize()
 
 
 class LineOrientation(Enum):
+
     HORIZONTAL = 0
     VERTICAL = 1
     ASCENDING = 2
     DESCENDING = 3
 
-
-class SlotsInLine:
-
-    @staticmethod
-    def _to_neighbour(slot: Slot, orientation: LineOrientation) -> Slot:
-        if orientation == LineOrientation.HORIZONTAL:
+    def to_neighbour(self, slot: Slot) -> Slot:
+        if self == self.HORIZONTAL:
             return Slot(slot.hor_pos + 1, slot.ver_pos)
-        if orientation == LineOrientation.VERTICAL:
+        if self == self.VERTICAL:
             return Slot(slot.hor_pos, slot.ver_pos + 1)
-        if orientation == LineOrientation.ASCENDING:
+        if self == self.ASCENDING:
             return Slot(slot.hor_pos + 1, slot.ver_pos - 1)
         return Slot(slot.hor_pos + 1, slot.ver_pos + 1)
+
+
+class SlotsInLine:
 
     def __init__(self, orientation: LineOrientation, num_slots: int, start_slot: Slot) -> None:
         self._orientation = orientation
@@ -151,7 +151,7 @@ class SlotsInLine:
             slot = start_slot
             yield slot
             for _ in range(0, num_slots - 1):
-                slot = self._to_neighbour(slot, orientation)
+                slot = orientation.to_neighbour(slot)
                 yield slot
         self._slots = tuple(generate_line())
 
@@ -181,7 +181,7 @@ class SlotsInLine:
         def add_all_sub_lines(start_slot: Slot, orientation: LineOrientation, board_line_length: int):
             for _ in range(0, board_line_length - line_length + 1):
                 all_lines.add(SlotsInLine(orientation, line_length, start_slot))
-                start_slot = SlotsInLine._to_neighbour(start_slot, orientation)
+                start_slot = orientation.to_neighbour(start_slot)
 
         for orientation in (LineOrientation.HORIZONTAL, LineOrientation.VERTICAL):
             for offset in range(0, NUM_SLOTS_PER_SIDE):
