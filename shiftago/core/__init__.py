@@ -201,6 +201,18 @@ class Move(namedtuple('Move', 'side position')):
         return "Move(side = {0}, position = {1})".format(self.side, self.position)
 
 
+class MoveObserver:
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)  # forwards all unused arguments
+
+    def notify_marble_shifted(self, slot: Slot, direction: Side):
+        pass
+
+    def notify_marble_inserted(self, slot: Slot):
+        pass
+
+
 class GameOverCondition:
 
     def __init__(self, winner: Optional[Colour] = None) -> None:
@@ -239,21 +251,6 @@ class JSONEncoder(json.JSONEncoder):
                                         for ver_pos in range(NUM_SLOTS_PER_SIDE)]}
 
 
-class ShiftagoObserver:
-
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)  # forwards all unused arguments
-
-    def notify_marble_shifted(self, slot: Slot, direction: Side):
-        pass
-
-    def notify_marble_inserted(self, slot: Slot):
-        pass
-
-    def notify_game_over(self):
-        pass
-
-
 _S = TypeVar("_S", bound='Shiftago')
 
 
@@ -286,8 +283,6 @@ class ShiftagoDeser(Generic[_S]):
 
 class Shiftago(ABC):
 
-    _DEFAULT_OBSERVER = ShiftagoObserver()
-
     @staticmethod
     def _validate_colours(colours: Sequence[Colour]) -> None:
         num_colours = len(set(colours))
@@ -314,7 +309,6 @@ class Shiftago(ABC):
                 self._board = {}  # type: Dict[Slot, Colour]
             else:
                 self._board = board
-        self.observer = self._DEFAULT_OBSERVER
 
     def __str__(self) -> str:
         string_io = StringIO()
@@ -376,26 +370,29 @@ class Shiftago(ABC):
         return False
 
     @abstractmethod
-    def apply_move(self, move: Move) -> Optional[GameOverCondition]:
+    def apply_move(self, move: Move, observer: Optional[MoveObserver] = None) -> Optional[GameOverCondition]:
         raise NotImplementedError
 
-    def _insert_marble(self, side: Side, position: int) -> None:
+    def _insert_marble(self, side: Side, position: int, observer: Optional[MoveObserver]) -> None:
         first_empty_slot = self.find_first_empty_slot(side, position)  # type: Optional[Slot]
         assert first_empty_slot is not None, "No empty slot!"
         if side.is_vertical:
             for hor_pos in range(first_empty_slot.hor_pos, side.position, -side.shift_direction):
                 occupied = Slot(hor_pos - side.shift_direction, position)
                 self._board[Slot(hor_pos, position)] = self.colour_of_occupied_slot(occupied)
-                self.observer.notify_marble_shifted(occupied, side.opposite)
+                if observer is not None:
+                    observer.notify_marble_shifted(occupied, side.opposite)
             insert_slot = Slot(side.position, position)
         else:
             for ver_pos in range(first_empty_slot.ver_pos, side.position, -side.shift_direction):
                 occupied = Slot(position, ver_pos - side.shift_direction)
                 self._board[Slot(position, ver_pos)] = self.colour_of_occupied_slot(occupied)
-                self.observer.notify_marble_shifted(occupied, side.opposite)
+                if observer is not None:
+                    observer.notify_marble_shifted(occupied, side.opposite)
             insert_slot = Slot(position, side.position)
         self._board[insert_slot] = self._colours[0]
-        self.observer.notify_marble_inserted(insert_slot)
+        if observer is not None:
+            observer.notify_marble_inserted(insert_slot)
 
     def find_first_empty_slot(self, side: Side, insert_pos: int) -> Optional[Slot]:
         if side.is_vertical:

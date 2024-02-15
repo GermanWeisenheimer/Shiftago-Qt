@@ -3,7 +3,7 @@ from typing import Dict, Set, Sequence, Optional, TextIO
 from collections import defaultdict
 from shiftago.core import NUM_MARBLES_PER_COLOUR, NUM_SLOTS_PER_SIDE
 from shiftago.core import ShiftagoDeser, Slot, Colour, SlotsInLine, Shiftago, Move, \
-    GameOverCondition, GameOverException
+    MoveObserver, GameOverCondition, GameOverException
 
 
 class WinningLinesDetector:
@@ -95,12 +95,12 @@ class ShiftagoExpress(Shiftago):
     def __copy__(self) -> 'ShiftagoExpress':
         return ShiftagoExpress(orig=self)
 
-    def apply_move(self, move: Move) -> Optional[GameOverCondition]:
+    def apply_move(self, move: Move, observer: Optional[MoveObserver] = None) -> Optional[GameOverCondition]:
         if self._game_over_condition is not None:
             raise GameOverException(self._game_over_condition)
 
         colour_to_move = self.colour_to_move
-        self._insert_marble(move.side, move.position)
+        self._insert_marble(move.side, move.position, observer)
 
         # check if the match has been won by the move
         if self._winning_lines_detector.has_winning_line(self, colour_to_move):
@@ -116,8 +116,6 @@ class ShiftagoExpress(Shiftago):
             else:
                 # all slots are occupied
                 self._game_over_condition = GameOverCondition()
-        if self._game_over_condition is not None:
-            self.observer.notify_game_over()
         return self._game_over_condition
 
     def detect_winning_lines(self, min_match_count: Optional[int] = None) -> Sequence[Dict[SlotsInLine, int]]:

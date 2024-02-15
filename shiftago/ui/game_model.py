@@ -3,7 +3,7 @@ from typing import Optional, Tuple, Sequence, Set
 from enum import Enum
 from abc import ABC, abstractmethod
 from shiftago.app_config import ShiftagoConfig
-from shiftago.core import Colour, Slot, Side, Move, GameOverCondition, ShiftagoObserver
+from shiftago.core import Colour, Slot, Side, Move, GameOverCondition, MoveObserver
 from shiftago.core.express import ShiftagoExpress, SlotsInLine
 from shiftago.core.express_ai import SkillLevel, AlphaBetaPruning
 from shiftago.ui import AppEventEmitter
@@ -34,7 +34,7 @@ class Player:
         return self._nature
 
 
-class BoardViewModel(AppEventEmitter, ABC, ShiftagoObserver):
+class BoardViewModel(AppEventEmitter, ABC, MoveObserver):
 
     def __init__(self) -> None:
         super().__init__()
@@ -85,7 +85,6 @@ class ShiftagoExpressModel(BoardViewModel):
         super().__init__()
         self._players = players
         core_model = ShiftagoExpress(colours=self._randomize_player_sequence())
-        core_model.observer = self
         self._core_model = core_model
         self._ai_engine = AlphaBetaPruning(config.skill_level)
 
@@ -127,7 +126,7 @@ class ShiftagoExpressModel(BoardViewModel):
         return self._core_model.find_first_empty_slot(side, insert_pos) is not None
 
     def apply_move(self, move: Move) -> Optional[GameOverCondition]:
-        self._core_model.apply_move(move)
+        self._core_model.apply_move(move, self)
 
     def ai_select_move(self) -> Move:
         return self._ai_engine.select_move(self._core_model)
