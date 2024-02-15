@@ -27,14 +27,11 @@ class WinningLinesDetector:
             min_match_degree = self._winning_match_degree
         match_degrees_per_colour = {colour: defaultdict(lambda: 0) for colour in \
                                     shiftago.colours}  # type: Dict[Colour, Dict[SlotsInLine, int]]
-        for ver_pos in range(NUM_SLOTS_PER_SIDE):
-            for hor_pos in range(NUM_SLOTS_PER_SIDE):
-                slot = Slot(hor_pos, ver_pos)
-                c = shiftago.colour_at(slot)
-                if c is not None:
-                    match_degrees = match_degrees_per_colour[c]
-                    for line in self._slot_to_lines[slot]:
-                        match_degrees[line] += 1
+        for slot, colour in shiftago.slots():
+            if colour is not None:
+                match_degrees = match_degrees_per_colour[colour]
+                for line in self._slot_to_lines[slot]:
+                    match_degrees[line] += 1
         return tuple({line: match_degree for line, match_degree in match_degrees_per_colour[colour].items()
                       if match_degree >= min_match_degree} for colour in shiftago.colours)
 
@@ -51,12 +48,10 @@ class WinningLinesDetector:
 
     def _build_match_degrees(self, shiftago: Shiftago, colour: Colour) -> Dict[SlotsInLine, int]:
         match_degrees = defaultdict(lambda: 0)  # type: Dict[SlotsInLine, int]
-        for ver_pos in range(NUM_SLOTS_PER_SIDE):
-            for hor_pos in range(NUM_SLOTS_PER_SIDE):
-                slot = Slot(hor_pos, ver_pos)
-                if shiftago.colour_at(slot) == colour:
-                    for line in self._slot_to_lines[slot]:
-                        match_degrees[line] += 1
+        for slot, slot_col in shiftago.slots():
+            if slot_col == colour:
+                for line in self._slot_to_lines[slot]:
+                    match_degrees[line] += 1
         return match_degrees
 
 

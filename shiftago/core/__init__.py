@@ -1,5 +1,5 @@
 # pylint: disable=consider-using-f-string
-from typing import List, Dict, Sequence, Set, Optional, TextIO, Tuple, Type, TypeVar, Generic
+from typing import List, Dict, Sequence, Set, Optional, TextIO, Tuple, Type, TypeVar, Generic, Iterator
 from abc import ABC, abstractmethod
 from enum import Enum
 from collections import namedtuple, defaultdict, deque
@@ -365,6 +365,12 @@ class Shiftago(ABC):
     @abstractmethod
     def game_over_condition(self) -> Optional[GameOverCondition]:
         pass
+
+    def slots(self) -> Iterator[Tuple[Slot, Optional[Colour]]]:
+        for ver_pos in range(NUM_SLOTS_PER_SIDE):
+            for hor_pos in range(NUM_SLOTS_PER_SIDE):
+                slot = Slot(hor_pos, ver_pos)
+                yield slot, self._board.get(slot)
 
     def colour_at(self, position: Slot) -> Optional[Colour]:
         return self._board.get(position)
