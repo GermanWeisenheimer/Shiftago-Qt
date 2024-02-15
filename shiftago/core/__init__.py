@@ -193,8 +193,8 @@ class SlotsInLine:
 class Move(namedtuple('Move', 'side position')):
 
     def __new__(cls, side: Side, position: int):
-        if position < 0 or position >= NUM_SLOTS_PER_SIDE:
-            raise ValueError("Parameter position has illegal value: {0}".format(position))
+        assert 0 <= position < NUM_SLOTS_PER_SIDE, \
+            "Parameter position has illegal value: {0}".format(position)
         return super().__new__(cls, side, position)
 
     def __str__(self) -> str:
@@ -264,7 +264,7 @@ class ShiftagoDeser(Generic[_S]):
         return self._type
 
     def _deserialize_colours(self, json_dict: dict) -> Sequence[Colour]:
-        return [Colour(p) for p in json_dict[JSONEncoder.KEY_COLOURS]]
+        return [Colour(c) for c in json_dict[JSONEncoder.KEY_COLOURS]]
 
     def _deserialize_board(self, json_dict: Dict) -> Dict[Slot, Colour]:
         board = {}  # type: Dict[Slot, Colour]
