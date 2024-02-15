@@ -1,5 +1,5 @@
 # pylint: disable=consider-using-f-string
-from typing import List, Dict, Sequence, Set, Optional, TextIO, Tuple, Type, TypeVar, Generic, Iterator
+from typing import List, Dict, Set, Sequence, Optional, TextIO, Tuple, Type, TypeVar, Generic, Iterator
 from abc import ABC, abstractmethod
 from enum import Enum
 from collections import namedtuple, defaultdict, deque
@@ -78,29 +78,21 @@ class Side(Enum):
 @total_ordering
 class Slot(namedtuple('Slot', 'hor_pos ver_pos')):
 
-    _instances = []  # type: List[List[Slot]]
+    _instances = [[None for _ in range(NUM_SLOTS_PER_SIDE)]
+                  for _ in range(NUM_SLOTS_PER_SIDE)]  # type: List[List[Optional[Slot]]]
 
-    @classmethod
-    def initialize(cls):
-        if cls.is_initialized():
-            raise RuntimeError("Class Slot has already been initialized!")
-        cls._instances = [[Slot(hor_pos, ver_pos) for hor_pos in range(NUM_SLOTS_PER_SIDE)]
-                          for ver_pos in range(NUM_SLOTS_PER_SIDE)]
+    def __new__(cls, hor_pos: int, ver_pos: int) -> 'Slot':
+        assert 0 <= ver_pos <= NUM_SLOTS_PER_SIDE, \
+            "Parameter ver_pos has illegal value: {0}".format(ver_pos)
+        assert 0 <= hor_pos <= NUM_SLOTS_PER_SIDE, \
+            "Parameter hor_pos has illegal value: {0}".format(hor_pos)
 
-    @classmethod
-    def is_initialized(cls) -> bool:
-        return bool(cls._instances)
+        slot = cls._instances[ver_pos][hor_pos]
 
-    def __new__(cls, hor_pos: int, ver_pos: int):
-        if ver_pos < 0 or ver_pos >= NUM_SLOTS_PER_SIDE:
-            raise ValueError(
-                "Parameter ver_pos has illegal value: {0}".format(ver_pos))
-        if hor_pos < 0 or hor_pos >= NUM_SLOTS_PER_SIDE:
-            raise ValueError(
-                "Parameter hor_pos has illegal value: {0}".format(hor_pos))
-        if cls.is_initialized():
-            return cls._instances[ver_pos][hor_pos]
-        return super().__new__(cls, hor_pos, ver_pos)
+        if slot is None:
+            slot = super().__new__(cls, hor_pos, ver_pos)
+            cls._instances[ver_pos][hor_pos] = slot
+        return slot
 
     def __str__(self) -> str:
         return "[{0},{1}]".format(self.hor_pos, self.ver_pos)
@@ -120,9 +112,6 @@ class Slot(namedtuple('Slot', 'hor_pos ver_pos')):
         if side.is_vertical:
             return Slot(side.position, position)
         return Slot(position, side.position)
-
-
-Slot.initialize()
 
 
 class LineOrientation(Enum):
