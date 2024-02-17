@@ -2,7 +2,7 @@
 from typing import List, Dict, Set, Sequence, Optional, TextIO, Tuple, Type, TypeVar, Generic, Iterator
 from abc import ABC, abstractmethod
 from enum import Enum
-from collections import namedtuple, defaultdict, deque
+from collections import namedtuple, deque
 from functools import total_ordering
 import json
 from io import StringIO
@@ -283,6 +283,8 @@ class ShiftagoDeser(Generic[_S]):
 
 class Shiftago(ABC):
 
+    _DEFAULT_MOVE_OBSERVER = MoveObserver()
+
     @staticmethod
     def _validate_colours(colours: Sequence[Colour]) -> None:
         num_colours = len(set(colours))
@@ -370,45 +372,45 @@ class Shiftago(ABC):
         return False
 
     @abstractmethod
-    def apply_move(self, move: Move, observer: Optional[MoveObserver] = None) -> Optional[GameOverCondition]:
+    def apply_move(self, move: Move, observer: MoveObserver = _DEFAULT_MOVE_OBSERVER) \
+        -> Optional[GameOverCondition]:
         raise NotImplementedError
 
-    def _insert_marble(self, side: Side, position: int, observer: Optional[MoveObserver]) -> None:
+    def _insert_marble(self, side: Side, position: int, observer: MoveObserver) -> None:
         first_empty_slot = self.find_first_empty_slot(side, position)  # type: Optional[Slot]
         assert first_empty_slot is not None, "No empty slot!"
         if side.is_vertical:
             for hor_pos in range(first_empty_slot.hor_pos, side.position, -side.shift_direction):
                 occupied = Slot(hor_pos - side.shift_direction, position)
                 self._board[Slot(hor_pos, position)] = self.colour_of_occupied_slot(occupied)
-                if observer is not None:
-                    observer.notify_marble_shifted(occupied, side.opposite)
+                observer.notify_marble_shifted(occupied, side.opposite)
             insert_slot = Slot(side.position, position)
         else:
             for ver_pos in range(first_empty_slot.ver_pos, side.position, -side.shift_direction):
                 occupied = Slot(position, ver_pos - side.shift_direction)
                 self._board[Slot(position, ver_pos)] = self.colour_of_occupied_slot(occupied)
-                if observer is not None:
-                    observer.notify_marble_shifted(occupied, side.opposite)
+                observer.notify_marble_shifted(occupied, side.opposite)
             insert_slot = Slot(position, side.position)
         self._board[insert_slot] = self._colours[0]
-        if observer is not None:
-            observer.notify_marble_inserted(insert_slot)
+        observer.notify_marble_inserted(insert_slot)
 
     def find_first_empty_slot(self, side: Side, insert_pos: int) -> Optional[Slot]:
         if side.is_vertical:
-            for hor_pos in (range(NUM_SLOTS_PER_SIDE) if side == Side.LEFT else range(NUM_SLOTS_PER_SIDE - 1, -1, -1)):
+            for hor_pos in (range(NUM_SLOTS_PER_SIDE) if side == Side.LEFT else
+                            range(NUM_SLOTS_PER_SIDE - 1, -1, -1)):
                 position = Slot(hor_pos, insert_pos)
                 if self.colour_at(position) is None:
                     return position
         else:
-            for ver_pos in (range(NUM_SLOTS_PER_SIDE) if side == Side.TOP else range(NUM_SLOTS_PER_SIDE - 1, -1, -1)):
+            for ver_pos in (range(NUM_SLOTS_PER_SIDE) if side == Side.TOP else
+                            range(NUM_SLOTS_PER_SIDE - 1, -1, -1)):
                 position = Slot(insert_pos, ver_pos)
                 if self.colour_at(position) is None:
                     return position
         return None
 
     def count_slots_per_colour(self) -> Dict[Colour, int]:
-        slots_per_colour = defaultdict(lambda: 0)
+        slots_per_colour = {c: 0 for c in self._colours}
         for c in self._board.values():
             slots_per_colour[c] += 1
         return slots_per_colour
@@ -435,6 +437,7 @@ class Shiftago(ABC):
 
 
 class SkillLevel(Enum):
+
     ROOKIE = 0
     ADVANCED = 1
     EXPERT = 2

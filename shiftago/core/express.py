@@ -95,7 +95,8 @@ class ShiftagoExpress(Shiftago):
     def __copy__(self) -> 'ShiftagoExpress':
         return ShiftagoExpress(orig=self)
 
-    def apply_move(self, move: Move, observer: Optional[MoveObserver] = None) -> Optional[GameOverCondition]:
+    def apply_move(self, move: Move, observer: MoveObserver = Shiftago._DEFAULT_MOVE_OBSERVER) \
+        -> Optional[GameOverCondition]:
         if self._game_over_condition is not None:
             raise GameOverException(self._game_over_condition)
 
