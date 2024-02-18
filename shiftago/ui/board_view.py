@@ -1,12 +1,12 @@
 import logging
 from collections import defaultdict, deque
 from functools import singledispatchmethod
-from typing import Optional, NamedTuple
+from typing import Optional, NamedTuple, Set
 from PySide2.QtCore import Qt, QSize, QPoint, QRectF, QByteArray, QPropertyAnimation
 from PySide2.QtWidgets import QWidget, QMessageBox, QGraphicsView, QGraphicsScene, QGraphicsObject, \
-    QStyleOptionGraphicsItem
-from PySide2.QtGui import QPixmap, QPainter, QMouseEvent, QCursor
-from shiftago.core import Colour, Slot, Side, Move
+    QStyleOptionGraphicsItem, QGraphicsEllipseItem
+from PySide2.QtGui import QPixmap, QPainter, QMouseEvent, QCursor, QPen
+from shiftago.core import Colour, Slot, Side, Move, SlotsInLine
 from shiftago.ui import load_image, AppEvent, AppEventEmitter
 from .app_events import ReadyForFirstMoveEvent, AnimationFinishedEvent, MoveSelectedEvent, MarbleInsertedEvent, \
     MarbleShiftedEvent, BoardResetEvent
@@ -64,6 +64,7 @@ class BoardView(AppEventEmitter, QGraphicsView):
             self.setSceneRect(0, 0, BOARD_VIEW_SIZE.width(), BOARD_VIEW_SIZE.height())
             self.addPixmap(board_pixmap).setPos(QPoint(self.IMAGE_OFFSET_X, self.IMAGE_OFFSET_Y))
             self._marbles: dict[Slot, BoardView.BoardScene.Marble] = {}
+            self._winning_line_markers: dict[Slot, QGraphicsEllipseItem] = {}
             self._running_animation: Optional[QPropertyAnimation] = None
             self._waiting_animations: deque[QPropertyAnimation] = deque()
             self._move_selection_enabled: bool = False
@@ -101,9 +102,12 @@ class BoardView(AppEventEmitter, QGraphicsView):
 
         @update_from_model.register
         def _(self, _: BoardResetEvent) -> None:
-            for m in self._marbles.values():
-                self.removeItem(m)
+            for item in self._marbles.values():
+                self.removeItem(item)
             self._marbles.clear()
+            for item in self._winning_line_markers.values():
+                self.removeItem(item)
+            self._winning_line_markers.clear()
 
         def run_animation(self, animation: QPropertyAnimation) -> None:
             def finished() -> None:
@@ -119,6 +123,17 @@ class BoardView(AppEventEmitter, QGraphicsView):
             else:
                 self._running_animation = animation
                 self._running_animation.start()
+
+        def mark_lines(self, lines: Set[SlotsInLine]) -> None:
+            pen = QPen(Qt.darkGreen, 8)
+            for line in lines:
+                for slot in line.slots:
+                    slot_pos = self.position_of(slot)
+                    marker = QGraphicsEllipseItem(slot_pos.x() - 2, slot_pos.y() - 2,
+                                                  self.Marble.SIZE.width() + 2, self.Marble.SIZE.height() + 4)
+                    marker.setPen(pen)
+                    self._winning_line_markers[slot] = marker
+                    self.addItem(marker)
 
         @classmethod
         def position_of(cls, slot: Slot) -> QPoint:
@@ -168,7 +183,8 @@ class BoardView(AppEventEmitter, QGraphicsView):
     def __init__(self, model: BoardViewModel, main_window_title: str) -> None:
         super().__init__()
 
-        self.setScene(self.BoardScene(self, model))
+        self._board_scene = self.BoardScene(self, model)
+        self.setScene(self._board_scene)
 
         self._model = model
         self._main_window_title = main_window_title
@@ -237,12 +253,15 @@ class BoardView(AppEventEmitter, QGraphicsView):
         msg_box.setText("Game over!")
         game_over_condition = self._model.game_over_condition
         assert game_over_condition is not None, "Game not yet over!"
-        if game_over_condition.winner:
+        if game_over_condition.winner is not None:
             msg_box.setInformativeText(f"{game_over_condition.winner.name} has won.")
         else:
             msg_box.setInformativeText("It has ended in a draw.")
         msg_box.setStandardButtons(QMessageBox.Ok)
         msg_box.exec_()
+
+    def mark_lines(self, lines: Set[SlotsInLine]) -> None:
+        self._board_scene.mark_lines(lines)
 
     def show_starting_player(self):
         msg_box = QMessageBox(self)
