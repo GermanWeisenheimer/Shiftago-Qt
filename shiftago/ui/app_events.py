@@ -20,7 +20,7 @@ class AnimationFinishedEvent(AppEvent):
 
 
 @dataclass(frozen=True)
-class NewMatchRequestedEvent(AppEvent):
+class NewGameRequestedEvent(AppEvent):
     """Emitted by view."""
 
 

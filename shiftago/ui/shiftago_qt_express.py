@@ -7,7 +7,7 @@ from shiftago.app_config import ShiftagoConfig
 from shiftago.core import Colour
 from shiftago.ui import load_image, Controller, AppEvent, AppEventEmitter
 from .board_view import BoardView, BOARD_VIEW_SIZE
-from .app_events import NewMatchRequestedEvent, ExitRequestedEvent
+from .app_events import NewGameRequestedEvent, ExitRequestedEvent
 from .game_model import ShiftagoExpressModel, PlayerNature, Player
 from .board_controller import BoardController
 
@@ -35,7 +35,7 @@ class _MainWindow(AppEventEmitter, QMainWindow):
         self.setCentralWidget(self._board_view)
         menu_bar = self.menuBar()
         file_menu = menu_bar.addMenu('File')
-        file_menu.addAction('New match', lambda: self.emit(NewMatchRequestedEvent()))
+        file_menu.addAction('New game', lambda: self.emit(NewGameRequestedEvent()))
         exit_action = QAction(QIcon(load_image('exit-icon.png')), '&Exit', self)
         exit_action.triggered.connect(lambda: self.emit(ExitRequestedEvent()))
         file_menu.addAction(exit_action)
@@ -45,7 +45,7 @@ class _MainWindow(AppEventEmitter, QMainWindow):
         self.emit(ExitRequestedEvent())
 
     def confirm_abort(self) -> bool:
-        reply = QMessageBox.question(self, self.TITLE, 'Are you sure you want to abort the current match?',
+        reply = QMessageBox.question(self, self.TITLE, 'Are you sure you want to abort the current game?',
                                      QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         return reply == QMessageBox.Yes
 
@@ -82,7 +82,7 @@ class _MainWindowController(Controller):
         return False
 
     @handle_event.register
-    def _(self, _: NewMatchRequestedEvent) -> bool:  # pylint: disable=unused-argument
+    def _(self, _: NewGameRequestedEvent) -> bool:  # pylint: disable=unused-argument
         if self.model.count_occupied_slots() > 0 and self.model.game_over_condition is None:
             if self._main_window.confirm_abort():
                 _logger.info("Current match aborted!")

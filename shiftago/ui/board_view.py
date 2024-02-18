@@ -128,17 +128,18 @@ class BoardView(AppEventEmitter, QGraphicsView):
             pen = QPen(Qt.darkGreen, 8)
             for line in lines:
                 for slot in line.slots:
-                    slot_pos = self.position_of(slot)
-                    marker = QGraphicsEllipseItem(slot_pos.x() - 2, slot_pos.y() - 2,
-                                                  self.Marble.SIZE.width() + 2, self.Marble.SIZE.height() + 4)
-                    marker.setPen(pen)
-                    self._winning_line_markers[slot] = marker
-                    self.addItem(marker)
+                    if self._winning_line_markers.get(slot) is None:
+                        pos = self.position_of(slot)
+                        marker = QGraphicsEllipseItem(pos.x() - 2, pos.y() - 2,
+                                                      self.Marble.SIZE.width() + 2, self.Marble.SIZE.height() + 4)
+                        marker.setPen(pen)
+                        self._winning_line_markers[slot] = marker
+                        self.addItem(marker)
 
         @classmethod
         def position_of(cls, slot: Slot) -> QPoint:
             return QPoint(cls.IMAGE_OFFSET_X + 36 + slot.hor_pos * (cls.Marble.SIZE.width() + 6),
-                          cls.IMAGE_OFFSET_Y + 36 + slot.ver_pos * (cls.Marble.SIZE.height() + 6))
+                          cls.IMAGE_OFFSET_Y + 38 + slot.ver_pos * (cls.Marble.SIZE.height() + 6))
 
         @classmethod
         def determine_side(cls, cursor_pos: QPoint) -> Optional[Side]:
