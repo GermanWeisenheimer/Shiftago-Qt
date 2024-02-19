@@ -228,16 +228,6 @@ class GameOverCondition:
         return self._winner
 
 
-class GameOverException(Exception):
-
-    def __init__(self, game_over_condition: GameOverCondition) -> None:
-        self._game_over_condition = game_over_condition
-
-    @property
-    def game_over_condition(self) -> GameOverCondition:
-        return self._game_over_condition
-
-
 class JSONEncoder(json.JSONEncoder):
 
     KEY_COLOURS = 'colours'
@@ -342,8 +332,7 @@ class Shiftago(ABC):
 
     @property
     def colour_to_move(self) -> Colour:
-        if self.game_over_condition is not None:
-            raise GameOverException(self.game_over_condition)
+        assert self.game_over_condition is None, "Game is already over!"
         return self._colours[0]
 
     @property
@@ -373,7 +362,7 @@ class Shiftago(ABC):
 
     @abstractmethod
     def apply_move(self, move: Move, observer: MoveObserver = _DEFAULT_MOVE_OBSERVER) \
-        -> Optional[GameOverCondition]:
+            -> Optional[GameOverCondition]:
         raise NotImplementedError
 
     def _insert_marble(self, side: Side, position: int, observer: MoveObserver) -> None:

@@ -3,7 +3,7 @@ from typing import Dict, Set, Sequence, Optional, TextIO
 from collections import defaultdict
 from shiftago.core import NUM_MARBLES_PER_COLOUR, NUM_SLOTS_PER_SIDE
 from shiftago.core import ShiftagoDeser, Slot, Colour, SlotsInLine, Shiftago, Move, \
-    MoveObserver, GameOverCondition, GameOverException
+    MoveObserver, GameOverCondition
 
 
 class WinningLinesDetector:
@@ -25,7 +25,7 @@ class WinningLinesDetector:
             -> Sequence[Dict[SlotsInLine, int]]:
         if min_match_degree is None:
             min_match_degree = self._winning_match_degree
-        match_degrees_per_colour = {colour: defaultdict(lambda: 0) for colour in \
+        match_degrees_per_colour = {colour: defaultdict(lambda: 0) for colour in
                                     shiftago.colours}  # type: Dict[Colour, Dict[SlotsInLine, int]]
         for slot, colour in shiftago.slots():
             if colour is not None:
@@ -96,9 +96,8 @@ class ShiftagoExpress(Shiftago):
         return ShiftagoExpress(orig=self)
 
     def apply_move(self, move: Move, observer: MoveObserver = Shiftago._DEFAULT_MOVE_OBSERVER) \
-        -> Optional[GameOverCondition]:
-        if self._game_over_condition is not None:
-            raise GameOverException(self._game_over_condition)
+            -> Optional[GameOverCondition]:
+        assert self._game_over_condition is None, "Game is already over!"
 
         colour_to_move = self.colour_to_move
         self._insert_marble(move.side, move.position, observer)
@@ -110,10 +109,11 @@ class ShiftagoExpress(Shiftago):
             num_slots_per_colour = self.count_slots_per_colour()
             # check if there is a free slot left
             if sum(num_slots_per_colour.values()) < NUM_SLOTS_PER_SIDE * NUM_SLOTS_PER_SIDE:
-                next_colour_to_move = self._select_colour_to_move()
-                # check if selected colour has one available marble at least
-                if num_slots_per_colour[next_colour_to_move] == NUM_MARBLES_PER_COLOUR:
+                # check if the colour to move next has one available marble at least
+                if num_slots_per_colour[self._colours[1]] == NUM_MARBLES_PER_COLOUR:
                     self._game_over_condition = GameOverCondition()
+                else:
+                    self._colours.rotate(-1)  # switch colour to move
             else:
                 # all slots are occupied
                 self._game_over_condition = GameOverCondition()
@@ -125,10 +125,6 @@ class ShiftagoExpress(Shiftago):
     def winning_lines_of_winner(self) -> Set[SlotsInLine]:
         assert self._game_over_condition is not None and self._game_over_condition.winner is not None
         return self._winning_lines_detector.winning_lines_of(self, self._game_over_condition.winner)
-
-    def _select_colour_to_move(self) -> Colour:
-        self._colours.rotate(-1)
-        return self._colours[0]
 
     @classmethod
     def deserialize(cls, input_stream: TextIO) -> 'ShiftagoExpress':
