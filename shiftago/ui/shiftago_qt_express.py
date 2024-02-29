@@ -1,13 +1,14 @@
 import logging
+from datetime import datetime
 from functools import singledispatchmethod
-from PySide2.QtCore import QSize
-from PySide2.QtWidgets import QApplication, QMainWindow, QMessageBox, QAction
-from PySide2.QtGui import QIcon
+from PySide6.QtCore import QSize
+from PySide6.QtWidgets import QApplication, QMainWindow, QMessageBox
+from PySide6.QtGui import  QIcon, QAction
 from shiftago.app_config import ShiftagoConfig
 from shiftago.core import Colour
 from shiftago.ui import load_image, Controller, AppEvent, AppEventEmitter
 from .board_view import BoardView, BOARD_VIEW_SIZE
-from .app_events import NewGameRequestedEvent, ExitRequestedEvent
+from .app_events import NewGameRequestedEvent, ScreenshotRequestedEvent, ExitRequestedEvent
 from .game_model import ShiftagoExpressModel, PlayerNature, Player
 from .board_controller import BoardController
 
@@ -36,23 +37,30 @@ class _MainWindow(AppEventEmitter, QMainWindow):
         menu_bar = self.menuBar()
         file_menu = menu_bar.addMenu('File')
         file_menu.addAction('New game', lambda: self.emit(NewGameRequestedEvent()))
+        file_menu.addAction('Screenshot', lambda: self.emit(ScreenshotRequestedEvent()))
         exit_action = QAction(QIcon(load_image('exit-icon.png')), '&Exit', self)
         exit_action.triggered.connect(lambda: self.emit(ExitRequestedEvent()))
         file_menu.addAction(exit_action)
+        self._exit_confirmed = False
 
     def closeEvent(self, event):  # pylint: disable=invalid-name
-        event.ignore()
-        self.emit(ExitRequestedEvent())
+        if not self._exit_confirmed:
+            event.ignore()
+            self.emit(ExitRequestedEvent())
 
     def confirm_abort(self) -> bool:
         reply = QMessageBox.question(self, self.TITLE, 'Are you sure you want to abort the current game?',
-                                     QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-        return reply == QMessageBox.Yes
+                                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                                     QMessageBox.StandardButton.No)
+        return reply == QMessageBox.StandardButton.Yes
 
     def confirm_exit(self) -> bool:
         reply = QMessageBox.question(self, self.TITLE, 'Are you sure you want to quit?',
-                                     QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-        return reply == QMessageBox.Yes
+                                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                                     QMessageBox.StandardButton.No)
+        if reply == QMessageBox.StandardButton.Yes:
+            self._exit_confirmed = True
+        return self._exit_confirmed
 
     @property
     def board_view(self) -> BoardView:
@@ -82,7 +90,7 @@ class _MainWindowController(Controller):
         return False
 
     @handle_event.register
-    def _(self, _: NewGameRequestedEvent) -> bool:  # pylint: disable=unused-argument
+    def _(self, _: NewGameRequestedEvent) -> bool:
         if self.model.count_occupied_slots() > 0 and self.model.game_over_condition is None:
             if self._main_window.confirm_abort():
                 _logger.info("Current match aborted!")
@@ -94,7 +102,13 @@ class _MainWindowController(Controller):
         return True
 
     @handle_event.register
-    def _(self, _: ExitRequestedEvent) -> bool:  # pylint: disable=unused-argument
+    def _(self, _: ScreenshotRequestedEvent) -> bool:
+        pixmap = QApplication.primaryScreen().grabWindow(self._main_window.board_view.winId())
+        pixmap.save(f"shiftago_qt_screenshot_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.jpg", "JPG", 90)
+        return True
+
+    @handle_event.register
+    def _(self, _: ExitRequestedEvent) -> bool:
         if self.model.count_occupied_slots() > 0:
             if self._main_window.confirm_exit():
                 if self.model.game_over_condition is None:

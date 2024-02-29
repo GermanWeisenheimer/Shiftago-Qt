@@ -2,10 +2,10 @@ import logging
 from collections import defaultdict, deque
 from functools import singledispatchmethod
 from typing import Optional, NamedTuple, Set
-from PySide2.QtCore import Qt, QSize, QPoint, QRectF, QByteArray, QPropertyAnimation
-from PySide2.QtWidgets import QWidget, QMessageBox, QGraphicsView, QGraphicsScene, QGraphicsObject, \
+from PySide6.QtCore import Qt, QSize, QPoint, QRectF, QByteArray, QPropertyAnimation
+from PySide6.QtWidgets import QWidget, QMessageBox, QGraphicsView, QGraphicsScene, QGraphicsObject, \
     QStyleOptionGraphicsItem, QGraphicsEllipseItem
-from PySide2.QtGui import QPixmap, QPainter, QMouseEvent, QCursor, QPen
+from PySide6.QtGui import QPixmap, QPainter, QMouseEvent, QCursor, QPen
 from shiftago.core import Colour, Slot, Side, Move, SlotsInLine
 from shiftago.ui import load_image, AppEvent, AppEventEmitter
 from .app_events import ReadyForFirstMoveEvent, AnimationFinishedEvent, MoveSelectedEvent, MarbleInsertedEvent, \
@@ -125,7 +125,7 @@ class BoardView(AppEventEmitter, QGraphicsView):
                 self._running_animation.start()
 
         def mark_lines(self, lines: Set[SlotsInLine]) -> None:
-            pen = QPen(Qt.darkGreen, 8)
+            pen = QPen(Qt.GlobalColor.darkGreen, 8)
             for line in lines:
                 for slot in line.slots:
                     if self._winning_line_markers.get(slot) is None:
@@ -250,7 +250,7 @@ class BoardView(AppEventEmitter, QGraphicsView):
     def show_game_over(self):
         msg_box = QMessageBox(self)
         msg_box.setWindowTitle(self._main_window_title)
-        msg_box.setIcon(QMessageBox.Information)
+        msg_box.setIcon(QMessageBox.Icon.Information)
         msg_box.setText("Game over!")
         game_over_condition = self._model.game_over_condition
         assert game_over_condition is not None, "Game not yet over!"
@@ -258,7 +258,7 @@ class BoardView(AppEventEmitter, QGraphicsView):
             msg_box.setInformativeText(f"{game_over_condition.winner.name} has won.")
         else:
             msg_box.setInformativeText("It has ended in a draw.")
-        msg_box.setStandardButtons(QMessageBox.Ok)
+        msg_box.setStandardButtons(QMessageBox.StandardButton.Ok)
         msg_box.exec_()
 
     def mark_lines(self, lines: Set[SlotsInLine]) -> None:
@@ -267,7 +267,7 @@ class BoardView(AppEventEmitter, QGraphicsView):
     def show_starting_player(self):
         msg_box = QMessageBox(self)
         msg_box.setWindowTitle(self._main_window_title)
-        msg_box.setIcon(QMessageBox.Information)
+        msg_box.setIcon(QMessageBox.Icon.Information)
         current_player = self._model.whose_turn_it_is
         assert self._model.count_occupied_slots() == 0
         msg_box.setText(f"Starting player: {current_player.colour.name}")
@@ -275,6 +275,6 @@ class BoardView(AppEventEmitter, QGraphicsView):
             msg_box.setInformativeText("That's you.")
         else:
             msg_box.setInformativeText("That's the computer.")
-        msg_box.setStandardButtons(QMessageBox.Ok)
+        msg_box.setStandardButtons(QMessageBox.StandardButton.Ok)
         msg_box.exec_()
         self.emit(ReadyForFirstMoveEvent())

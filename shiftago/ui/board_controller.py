@@ -1,7 +1,7 @@
 import time
 import logging
 from functools import singledispatchmethod
-from PySide2.QtCore import QObject, QThread
+from PySide6.QtCore import QObject, QThread
 from statemachine import StateMachine, State
 from shiftago.ui import Controller, AppEvent, AppEventEmitter
 from .board_view import BoardView
@@ -115,7 +115,7 @@ class BoardController(Controller):
         return False
 
     @handle_event.register
-    def _(self, _: ReadyForFirstMoveEvent) -> bool:  # pylint: disable=unused-argument
+    def _(self, _: ReadyForFirstMoveEvent) -> bool:
         current_player = self._model.whose_turn_it_is
         _logger.info("Starting player is %s (%s).", current_player.colour.name,
                      'human' if current_player.nature is PlayerNature.HUMAN else 'computer')
@@ -140,7 +140,7 @@ class BoardController(Controller):
         return True
 
     @handle_event.register
-    def _(self, _: AnimationFinishedEvent) -> bool:  # pylint: disable=unused-argument
+    def _(self, _: AnimationFinishedEvent) -> bool:
         assert self._state_machine.current_state == self._BoardStateMaschine.performing_animation_state
         _logger.debug("Animation finished.")
         if self._model.game_over_condition is None:

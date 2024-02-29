@@ -2,7 +2,7 @@ import sys
 import logging
 from datetime import datetime
 from types import TracebackType
-from PySide2.QtCore import QThread
+from PySide6.QtCore import QThread
 from .app_config import read_config, LoggingConfig
 from .ui.shiftago_qt_express import ShiftagoQtExpress
 

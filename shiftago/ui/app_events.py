@@ -23,6 +23,9 @@ class AnimationFinishedEvent(AppEvent):
 class NewGameRequestedEvent(AppEvent):
     """Emitted by view."""
 
+@dataclass(frozen=True)
+class ScreenshotRequestedEvent(AppEvent):
+    """Emitted by view."""
 
 @dataclass(frozen=True)
 class ExitRequestedEvent(AppEvent):

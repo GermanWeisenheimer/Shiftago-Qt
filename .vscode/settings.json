@@ -1,7 +1,7 @@
 {
 	"files.eol": "\n",
     "autopep8.args": ["--max-line-length=120"],
-    "pylint.args": ["--extension-pkg-whitelist=PySide2", "--disable=C0114,C0115,C0116", "--max-line-length=120"],
+    "pylint.args": ["--extension-pkg-whitelist=PySide6", "--disable=C0114,C0115,C0116", "--max-line-length=120"],
     "[python]": {
         "editor.defaultFormatter": "ms-python.autopep8",
     },
