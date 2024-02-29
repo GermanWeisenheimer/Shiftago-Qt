@@ -42,7 +42,7 @@ def main() -> None:
     sys.excepthook = handle_uncaught_exception
     app_config = read_config()
     _configure_logging(config=app_config.logging)
-    sys.exit(ShiftagoQtExpress(app_config.shiftago).exec_())
+    sys.exit(ShiftagoQtExpress(app_config.shiftago).exec())
 
 
 if __name__ == '__main__':

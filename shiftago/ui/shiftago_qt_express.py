@@ -1,9 +1,10 @@
 import logging
+import os
 from datetime import datetime
 from functools import singledispatchmethod
 from PySide6.QtCore import QSize
-from PySide6.QtWidgets import QApplication, QMainWindow, QMessageBox
-from PySide6.QtGui import  QIcon, QAction
+from PySide6.QtWidgets import QApplication, QMainWindow, QMessageBox, QFileDialog
+from PySide6.QtGui import QIcon, QAction
 from shiftago.app_config import ShiftagoConfig
 from shiftago.core import Colour
 from shiftago.ui import load_image, Controller, AppEvent, AppEventEmitter
@@ -103,8 +104,12 @@ class _MainWindowController(Controller):
 
     @handle_event.register
     def _(self, _: ScreenshotRequestedEvent) -> bool:
-        pixmap = QApplication.primaryScreen().grabWindow(self._main_window.board_view.winId())
-        pixmap.save(f"shiftago_qt_screenshot_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.jpg", "JPG", 90)
+        suggested_path = f"{os.getcwd()}/shiftago_qt_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.jpg"
+        file_name = QFileDialog.getSaveFileName(self._main_window, "Save screenshot",
+                                                suggested_path, "Images (*.png *.jpg)")[0]
+        if file_name:
+            pixmap = QApplication.primaryScreen().grabWindow(self._main_window.board_view.winId())
+            pixmap.save(file_name, "PNG" if file_name.lower().endswith(".png") else "JPG", 90)
         return True
 
     @handle_event.register
