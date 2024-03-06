@@ -18,6 +18,32 @@ BOARD_VIEW_SIZE = QSize(700, 700)
 _logger = logging.getLogger(__name__)
 
 
+class _AnimationManager:
+
+    def __init__(self, app_event_emitter: AppEventEmitter) -> None:
+        self._app_event_emitter = app_event_emitter
+        self._running_animation: Optional[QPropertyAnimation] = None
+        self._waiting_animations: deque[QPropertyAnimation] = deque()
+
+    def perform(self, animation: QPropertyAnimation) -> None:
+        def finished() -> None:
+            if len(self._waiting_animations) > 0:
+                self._running_animation = self._waiting_animations.popleft()
+                self._running_animation.start()
+            else:
+                self._running_animation = None
+                self._app_event_emitter.emit(AnimationFinishedEvent())
+        animation.finished.connect(finished)
+        if self._running_animation is not None:
+            self._waiting_animations.append(animation)
+        else:
+            self._running_animation = animation
+            self._running_animation.start()
+
+    def is_animation_in_progress(self) -> bool:
+        return self._running_animation is not None
+
+
 class BoardView(AppEventEmitter, QGraphicsView):
 
     class CursorPair(NamedTuple):
@@ -51,11 +77,10 @@ class BoardView(AppEventEmitter, QGraphicsView):
                       widget: Optional[QWidget]) -> None:  # pylint: disable=unused-argument
                 painter.drawPixmap(0, 0, self._pixmap)
 
-        def __init__(self, app_event_emitter: AppEventEmitter, model: BoardViewModel) -> None:
+        def __init__(self, model: BoardViewModel, animation_manager: _AnimationManager) -> None:
             super().__init__()
             board_pixmap = load_image('shiftago_board.jpg').scaled(self.IMAGE_SIZE)
             model.connect_with(self.update_from_model)
-            self._app_event_emitter = app_event_emitter
             self._model = model
             self._marble_pixmaps: dict[Colour, QPixmap] = {
                 Colour.BLUE: load_image('blue_marble.png').scaled(self.Marble.SIZE),
@@ -65,8 +90,7 @@ class BoardView(AppEventEmitter, QGraphicsView):
             self.addPixmap(board_pixmap).setPos(QPoint(self.IMAGE_OFFSET_X, self.IMAGE_OFFSET_Y))
             self._marbles: dict[Slot, BoardView.BoardScene.Marble] = {}
             self._winning_line_markers: dict[Slot, QGraphicsEllipseItem] = {}
-            self._running_animation: Optional[QPropertyAnimation] = None
-            self._waiting_animations: deque[QPropertyAnimation] = deque()
+            self._animation_manager = animation_manager
             self._move_selection_enabled: bool = False
 
         @singledispatchmethod
@@ -86,7 +110,7 @@ class BoardView(AppEventEmitter, QGraphicsView):
             animation = QPropertyAnimation(marble, QByteArray(b'opacity'))
             animation.setEndValue(1.0)
             animation.setDuration(500)
-            self.run_animation(animation)
+            self._animation_manager.perform(animation)
 
         @update_from_model.register
         def _(self, event: MarbleShiftedEvent) -> None:
@@ -98,7 +122,7 @@ class BoardView(AppEventEmitter, QGraphicsView):
             animation = QPropertyAnimation(marble, QByteArray(b'pos'))
             animation.setEndValue(self.position_of(to_slot))
             animation.setDuration(500)
-            self.run_animation(animation)
+            self._animation_manager.perform(animation)
 
         @update_from_model.register
         def _(self, _: BoardResetEvent) -> None:
@@ -108,21 +132,6 @@ class BoardView(AppEventEmitter, QGraphicsView):
             for item in self._winning_line_markers.values():
                 self.removeItem(item)
             self._winning_line_markers.clear()
-
-        def run_animation(self, animation: QPropertyAnimation) -> None:
-            def finished() -> None:
-                if len(self._waiting_animations) > 0:
-                    self._running_animation = self._waiting_animations.popleft()
-                    self._running_animation.start()
-                else:
-                    self._running_animation = None
-                    self._app_event_emitter.emit(AnimationFinishedEvent())
-            animation.finished.connect(finished)
-            if self._running_animation:
-                self._waiting_animations.append(animation)
-            else:
-                self._running_animation = animation
-                self._running_animation.start()
 
         def mark_lines(self, lines: Set[SlotsInLine]) -> None:
             pen = QPen(Qt.GlobalColor.darkGreen, 8)
@@ -184,7 +193,7 @@ class BoardView(AppEventEmitter, QGraphicsView):
     def __init__(self, model: BoardViewModel, main_window_title: str) -> None:
         super().__init__()
 
-        self._board_scene = self.BoardScene(self, model)
+        self._board_scene = self.BoardScene(model, _AnimationManager(self))
         self.setScene(self._board_scene)
 
         self._model = model
