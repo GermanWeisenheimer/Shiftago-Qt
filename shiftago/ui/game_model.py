@@ -58,7 +58,9 @@ class BoardViewModel(AppEventEmitter, ABC, MoveObserver):
         self.emit(MarbleShiftedEvent(slot, direction))
 
     def notify_marble_inserted(self, slot: Slot):
-        self.emit(MarbleInsertedEvent(slot))
+        colour = self.colour_at(slot)
+        assert colour is not None, f"{slot} is not occupied!"
+        self.emit(MarbleInsertedEvent(slot, colour))
 
     def notify_board_reset(self):
         self.emit(BoardResetEvent())

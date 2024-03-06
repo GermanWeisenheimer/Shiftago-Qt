@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from shiftago.core import Side, Slot, Move
+from shiftago.core import Side, Slot, Colour, Move
 from shiftago.ui import AppEvent
 
 
@@ -23,9 +23,11 @@ class AnimationFinishedEvent(AppEvent):
 class NewGameRequestedEvent(AppEvent):
     """Emitted by view."""
 
+
 @dataclass(frozen=True)
 class ScreenshotRequestedEvent(AppEvent):
     """Emitted by view."""
+
 
 @dataclass(frozen=True)
 class ExitRequestedEvent(AppEvent):
@@ -43,6 +45,7 @@ class MarbleShiftedEvent(AppEvent):
 class MarbleInsertedEvent(AppEvent):
     """Emitted by model."""
     slot: Slot
+    colour: Colour
 
 
 @dataclass(frozen=True)

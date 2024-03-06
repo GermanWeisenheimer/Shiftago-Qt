@@ -80,11 +80,9 @@ class BoardView(AppEventEmitter, QGraphicsView):
                       widget: Optional[QWidget]) -> None:  # pylint: disable=unused-argument
                 painter.drawPixmap(0, 0, self._pixmap)
 
-        def __init__(self, model: BoardViewModel, animation_manager: _AnimationManager) -> None:
+        def __init__(self, animation_manager: _AnimationManager) -> None:
             super().__init__()
             board_pixmap = load_image('shiftago_board.jpg').scaled(self.IMAGE_SIZE)
-            model.connect_with(self.update_from_model)
-            self._model = model
             self._marble_pixmaps: dict[Colour, QPixmap] = {
                 Colour.BLUE: load_image('blue_marble.png').scaled(self.Marble.SIZE),
                 Colour.ORANGE: load_image('orange_marble.png').scaled(self.Marble.SIZE)
@@ -96,16 +94,7 @@ class BoardView(AppEventEmitter, QGraphicsView):
             self._animation_manager = animation_manager
             self._move_selection_enabled: bool = False
 
-        @singledispatchmethod
-        def update_from_model(self, event: AppEvent) -> None:
-            raise ValueError(f"Unsupported event type: {event.__class__}")
-
-        @update_from_model.register
-        def _(self, event: MarbleInsertedEvent) -> None:
-            _logger.debug("Model event occurred: %s", event)
-            slot: Slot = event.slot
-            colour = self._model.colour_at(slot)
-            assert colour is not None, f"{slot} is not occupied!"
+        def insert_marble(self, slot: Slot, colour: Colour) -> None:
             marble = self.Marble(self._marble_pixmaps[colour], self.position_of(slot))
             self._marbles[slot] = marble
             marble.setOpacity(0.0)
@@ -113,18 +102,14 @@ class BoardView(AppEventEmitter, QGraphicsView):
             self._animation_manager.perform(QPropertyAnimation(marble, QByteArray(b'opacity')),
                                             1.0, 500)
 
-        @update_from_model.register
-        def _(self, event: MarbleShiftedEvent) -> None:
-            _logger.debug("Model event occurred: %s", event)
-            from_slot: Slot = event.slot
-            to_slot = from_slot.neighbour(event.direction)
-            marble = self._marbles.pop(from_slot)
-            self._marbles[to_slot] = marble
+        def shift_marble(self, slot: Slot, direction: Side) -> None:
+            target_slot = slot.neighbour(direction)
+            marble = self._marbles.pop(slot)
+            self._marbles[target_slot] = marble
             self._animation_manager.perform(QPropertyAnimation(marble, QByteArray(b'pos')),
-                                            self.position_of(to_slot), 500)
+                                            self.position_of(target_slot), 500)
 
-        @update_from_model.register
-        def _(self, _: BoardResetEvent) -> None:
+        def reset(self) -> None:
             for item in self._marbles.values():
                 self.removeItem(item)
             self._marbles.clear()
@@ -192,9 +177,10 @@ class BoardView(AppEventEmitter, QGraphicsView):
     def __init__(self, model: BoardViewModel, main_window_title: str) -> None:
         super().__init__()
 
-        self._board_scene = self.BoardScene(model, _AnimationManager(self))
+        self._board_scene = self.BoardScene(_AnimationManager(self))
         self.setScene(self._board_scene)
 
+        model.connect_with(self._update_from_model)
         self._model = model
         self._main_window_title = main_window_title
 
@@ -227,6 +213,25 @@ class BoardView(AppEventEmitter, QGraphicsView):
         self.setMouseTracking(new_val)
         if not new_val:
             self.setCursor(self._neutral_cursor)
+
+    @singledispatchmethod
+    def _update_from_model(self, event: AppEvent) -> None:
+        raise ValueError(f"Unsupported event type: {event.__class__}")
+
+    @_update_from_model.register
+    def _(self, event: MarbleInsertedEvent) -> None:
+        _logger.debug("Model event occurred: %s", event)
+        self._board_scene.insert_marble(event.slot, event.colour)
+
+    @_update_from_model.register
+    def _(self, event: MarbleShiftedEvent) -> None:
+        _logger.debug("Model event occurred: %s", event)
+        self._board_scene.shift_marble(event.slot, event.direction)
+
+    @_update_from_model.register
+    def _(self, event: BoardResetEvent) -> None:
+        _logger.debug("Model event occurred: %s", event)
+        self._board_scene.reset()
 
     def mouseMoveEvent(self, ev: QMouseEvent) -> None:  # pylint: disable=invalid-name
         if self._move_selection_enabled:
