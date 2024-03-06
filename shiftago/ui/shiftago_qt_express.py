@@ -38,10 +38,15 @@ class _MainWindow(AppEventEmitter, QMainWindow):
         menu_bar = self.menuBar()
         file_menu = menu_bar.addMenu('File')
         file_menu.addAction('New game', lambda: self.emit(NewGameRequestedEvent()))
-        file_menu.addAction('Screenshot', lambda: self.emit(ScreenshotRequestedEvent()))
+
+        screenshot_action = QAction(QIcon(load_image('screenshot-icon.png')), '&Screenshot', self)
+        screenshot_action.triggered.connect(lambda: self.emit(ScreenshotRequestedEvent()))
+        file_menu.addAction(screenshot_action)
+
         exit_action = QAction(QIcon(load_image('exit-icon.png')), '&Exit', self)
         exit_action.triggered.connect(lambda: self.emit(ExitRequestedEvent()))
         file_menu.addAction(exit_action)
+
         self._exit_confirmed = False
 
     def closeEvent(self, event):  # pylint: disable=invalid-name
@@ -105,7 +110,7 @@ class _MainWindowController(Controller):
     @handle_event.register
     def _(self, _: ScreenshotRequestedEvent) -> bool:
         suggested_path = f"{os.getcwd()}/shiftago_qt_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.jpg"
-        file_name = QFileDialog.getSaveFileName(self._main_window, "Save screenshot",
+        file_name = QFileDialog.getSaveFileName(self._main_window, f"{_MainWindow.TITLE} Screenshot",
                                                 suggested_path, "Images (*.png *.jpg)")[0]
         if file_name:
             pixmap = QApplication.primaryScreen().grabWindow(self._main_window.board_view.winId())
