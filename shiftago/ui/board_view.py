@@ -1,7 +1,7 @@
 import logging
 from collections import defaultdict, deque
 from functools import singledispatchmethod
-from typing import Optional, NamedTuple, Set
+from typing import Any, Optional, NamedTuple, Set
 from PySide6.QtCore import Qt, QSize, QPoint, QRectF, QByteArray, QPropertyAnimation
 from PySide6.QtWidgets import QWidget, QMessageBox, QGraphicsView, QGraphicsScene, QGraphicsObject, \
     QStyleOptionGraphicsItem, QGraphicsEllipseItem
@@ -25,15 +25,10 @@ class _AnimationManager:
         self._running_animation: Optional[QPropertyAnimation] = None
         self._waiting_animations: deque[QPropertyAnimation] = deque()
 
-    def perform(self, animation: QPropertyAnimation) -> None:
-        def finished() -> None:
-            if len(self._waiting_animations) > 0:
-                self._running_animation = self._waiting_animations.popleft()
-                self._running_animation.start()
-            else:
-                self._running_animation = None
-                self._app_event_emitter.emit(AnimationFinishedEvent())
-        animation.finished.connect(finished)
+    def perform(self, animation: QPropertyAnimation, end_value: Any, duration: int) -> None:
+        animation.setEndValue(end_value)
+        animation.setDuration(duration)
+        animation.finished.connect(self._finished)
         if self._running_animation is not None:
             self._waiting_animations.append(animation)
         else:
@@ -42,6 +37,14 @@ class _AnimationManager:
 
     def is_animation_in_progress(self) -> bool:
         return self._running_animation is not None
+
+    def _finished(self) -> None:
+        if len(self._waiting_animations) > 0:
+            self._running_animation = self._waiting_animations.popleft()
+            self._running_animation.start()
+        else:
+            self._running_animation = None
+            self._app_event_emitter.emit(AnimationFinishedEvent())
 
 
 class BoardView(AppEventEmitter, QGraphicsView):
@@ -107,10 +110,8 @@ class BoardView(AppEventEmitter, QGraphicsView):
             self._marbles[slot] = marble
             marble.setOpacity(0.0)
             self.addItem(marble)
-            animation = QPropertyAnimation(marble, QByteArray(b'opacity'))
-            animation.setEndValue(1.0)
-            animation.setDuration(500)
-            self._animation_manager.perform(animation)
+            self._animation_manager.perform(QPropertyAnimation(marble, QByteArray(b'opacity')),
+                                            1.0, 500)
 
         @update_from_model.register
         def _(self, event: MarbleShiftedEvent) -> None:
@@ -119,10 +120,8 @@ class BoardView(AppEventEmitter, QGraphicsView):
             to_slot = from_slot.neighbour(event.direction)
             marble = self._marbles.pop(from_slot)
             self._marbles[to_slot] = marble
-            animation = QPropertyAnimation(marble, QByteArray(b'pos'))
-            animation.setEndValue(self.position_of(to_slot))
-            animation.setDuration(500)
-            self._animation_manager.perform(animation)
+            self._animation_manager.perform(QPropertyAnimation(marble, QByteArray(b'pos')),
+                                            self.position_of(to_slot), 500)
 
         @update_from_model.register
         def _(self, _: BoardResetEvent) -> None:
