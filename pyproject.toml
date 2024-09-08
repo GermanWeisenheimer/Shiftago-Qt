@@ -2,7 +2,7 @@
 name = "shiftago-qt"
 version = "0.1.0"
 description = ""
-authors = ["Thomas Schaper <tschaper69@gmail.com>"]
+authors = ["Thomas Schaper <genius.magnus@tuta.com>"]
 readme = "README.md"
 packages = [{include = "shiftago_qt"}]
 
