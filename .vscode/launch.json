@@ -7,7 +7,7 @@
         
         {
             "name": "Shiftago_Qt",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "module": "shiftago",
             "console": "integratedTerminal",
