@@ -1,4 +1,5 @@
 import sys
+import platform
 import logging
 from datetime import datetime
 from types import TracebackType
@@ -42,6 +43,7 @@ def main() -> None:
     sys.excepthook = handle_uncaught_exception
     app_config = read_config()
     _configure_logging(config=app_config.logging)
+    _logger.debug("Python version: %s", platform.python_version())
     sys.exit(ShiftagoQtExpress(app_config.shiftago).exec())
 
 
