@@ -12,6 +12,14 @@ NUM_MARBLES_PER_COLOUR = 22
 
 
 class Colour(Enum):
+    """
+    Colour is an enumeration representing the different colours of marbles used in the game.
+    
+    Attributes:
+    BLUE (str): Represents the blue colour marble.
+    GREEN (str): Represents the green colour marble.
+    ORANGE (str): Represents the orange colour marble.
+    """
 
     BLUE = 'B'
     GREEN = 'G'
@@ -22,6 +30,16 @@ class Colour(Enum):
 
 
 class Side(Enum):
+    """
+    Side is an enumeration representing the four sides of the game board. Each side has 
+    specific attributes that define its position and behavior in the game.
+
+    Attributes:
+    LEFT (tuple): Represents the left side of the board with its specific attributes.
+    RIGHT (tuple): Represents the right side of the board with its specific attributes.
+    TOP (tuple): Represents the top side of the board with its specific attributes.
+    BOTTOM (tuple): Represents the bottom side of the board with its specific attributes.
+    """
 
     LEFT = 0, 0, False, 1
     RIGHT = 1, NUM_SLOTS_PER_SIDE - 1, False, -1
@@ -66,6 +84,12 @@ class Side(Enum):
 
     @property
     def opposite(self) -> 'Side':
+        """
+        Returns the opposite side of the current side of the game board.
+
+        Returns:
+        Side: The opposite side of the current side (LEFT <-> RIGHT, TOP <-> BOTTOM).
+        """
         if self == self.LEFT:
             return self.RIGHT
         if self == self.RIGHT:
@@ -77,6 +101,19 @@ class Side(Enum):
 
 @total_ordering
 class Slot(namedtuple('Slot', 'hor_pos ver_pos')):
+    """
+    Slot represents a position on the game board with horizontal and vertical coordinates.
+    It uses the total_ordering decorator to provide comparison methods based on the 
+    coordinates, allowing slots to be compared and sorted.
+
+    Attributes:
+    hor_pos (int): The horizontal position of the slot.
+    ver_pos (int): The vertical position of the slot.
+    
+    Class Attributes:
+    _instances (List[List[Optional[Slot]]]): A 2D list to store instances of Slot objects 
+                                             for each position on the game board.
+    """
 
     _instances = [[None for _ in range(NUM_SLOTS_PER_SIDE)]
                   for _ in range(NUM_SLOTS_PER_SIDE)]  # type: List[List[Optional[Slot]]]
@@ -103,18 +140,47 @@ class Slot(namedtuple('Slot', 'hor_pos ver_pos')):
         return self.ver_pos == other.ver_pos and self.hor_pos < other.hor_pos
 
     def neighbour(self, direction: Side) -> 'Slot':
+        """
+        Returns the neighbouring Slot object in the specified direction.
+
+        Parameters:
+        direction (Side): The direction (LEFT, RIGHT, TOP, BOTTOM) to find the neighbouring slot.
+
+        Returns:
+        Slot: The neighbouring Slot object in the specified direction.
+        """
         if direction.is_vertical:
             return Slot(self.hor_pos - direction.shift_direction, self.ver_pos)
         return Slot(self.hor_pos, self.ver_pos - direction.shift_direction)
 
     @staticmethod
     def on_edge(side: Side, position: int) -> 'Slot':
+        """
+        Returns a Slot object representing a position on the edge of the game board.
+
+        Parameters:
+        side (Side): The side of the game board (LEFT, RIGHT, TOP, BOTTOM) where the slot is located.
+        position (int): The position along the specified side.
+
+        Returns:
+        Slot: A Slot object representing the position on the edge of the game board.
+        """
         if side.is_vertical:
             return Slot(side.position, position)
         return Slot(position, side.position)
 
 
 class LineOrientation(Enum):
+    """
+    LineOrientation is an enumeration representing the possible orientations of lines on the game board.
+    It defines four orientations: HORIZONTAL, VERTICAL, ASCENDING, and DESCENDING.
+
+    Attributes:
+    HORIZONTAL (int): Represents a horizontal line orientation.
+    VERTICAL (int): Represents a vertical line orientation.
+    ASCENDING (int): Represents an ascending diagonal line orientation.
+    DESCENDING (int): Represents a descending diagonal line orientation.
+    """
 
     HORIZONTAL = 0
     VERTICAL = 1
@@ -122,6 +188,15 @@ class LineOrientation(Enum):
     DESCENDING = 3
 
     def to_neighbour(self, slot: Slot) -> Slot:
+        """
+        Returns the neighbouring Slot object in the direction of the line orientation.
+
+        Parameters:
+        slot (Slot): The current slot.
+
+        Returns:
+        Slot: The neighbouring Slot object in the direction of the line orientation.
+        """
         if self == self.HORIZONTAL:
             return Slot(slot.hor_pos + 1, slot.ver_pos)
         if self == self.VERTICAL:
@@ -132,6 +207,14 @@ class LineOrientation(Enum):
 
 
 class SlotsInLine:
+    """
+    SlotsInLine represents a sequence of slots on the game board that form a line with a specific orientation.
+    It is used to identify and work with potential winning lines in the game.
+
+    Attributes:
+    _orientation (LineOrientation): The orientation of the line (HORIZONTAL, VERTICAL, ASCENDING, DESCENDING).
+    _slots (Tuple[Slot, ...]): A tuple of Slot objects that form the line.
+    """
 
     def __init__(self, orientation: LineOrientation, num_slots: int, start_slot: Slot) -> None:
         self._orientation = orientation
@@ -165,6 +248,17 @@ class SlotsInLine:
 
     @staticmethod
     def get_all(line_length: int) -> Set['SlotsInLine']:
+        """
+        Generates all possible lines of a given length (winning match degree) on the game board.
+        This method creates lines in all orientations (HORIZONTAL, VERTICAL, ASCENDING, DESCENDING)
+        starting from every possible slot on the board.
+
+        Parameters:
+        line_length (int): The length of the lines to be generated.
+
+        Returns:
+        Set[SlotsInLine]: A set of all possible lines of the specified length on the game board.
+        """
         all_lines = set()  # type: Set[SlotsInLine]
 
         def add_all_sub_lines(start_slot: Slot, orientation: LineOrientation, board_line_length: int):
@@ -191,6 +285,14 @@ class SlotsInLine:
 
 
 class Move(namedtuple('Move', 'side position')):
+    """
+    Move represents a move in the game, defined by the side of the board from which the move is made 
+    and the position along that side. It is used to encapsulate the details of a move.
+
+    Attributes:
+    side (Side): The side of the board from which the move is made (LEFT, RIGHT, TOP, BOTTOM).
+    position (int): The position along the specified side where the move is made.
+    """
 
     def __new__(cls, side: Side, position: int):
         assert 0 <= position < NUM_SLOTS_PER_SIDE, \
@@ -202,18 +304,37 @@ class Move(namedtuple('Move', 'side position')):
 
 
 class MoveObserver:
+    """
+    MoveObserver is an observer class that provides methods to be notified of changes in the game state.
+    It is used to observe and react to specific events such as marble shifts and insertions.
+    """
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)  # forwards all unused arguments
 
     def notify_marble_shifted(self, slot: Slot, direction: Side):
-        pass
+        """
+        Notifies that a marble has been shifted in the specified direction.
+
+        Parameters:
+        slot (Slot): The slot from which the marble was shifted.
+        direction (Side): The direction in which the marble was shifted.
+        """
 
     def notify_marble_inserted(self, slot: Slot):
-        pass
+        """
+        Notifies that a marble has been inserted into the specified slot.
+
+        Parameters:
+        slot (Slot): The slot into which the marble was inserted.
+        """
 
 
 class GameOverCondition:
+    """
+    GameOverCondition represents the condition of the game when it is over. It indicates whether 
+    there is a winner or if the game ended in a draw.
+    """
 
     def __init__(self, winner: Optional[Colour] = None) -> None:
         self._winner = winner
@@ -225,10 +346,24 @@ class GameOverCondition:
 
     @property
     def winner(self) -> Optional[Colour]:
+        """
+        Returns the colour of the winning player, or None if the game ended in a draw.
+
+        Returns:
+        Optional[Colour]: The colour of the winning player, or None if the game ended in a draw.
+        """
         return self._winner
 
 
 class JSONEncoder(json.JSONEncoder):
+    """
+    JSONEncoder is a custom JSON encoder for serializing the game state of a Shiftago game.
+    It provides methods to convert Colour objects and the game board state into a JSON-compatible format.
+
+    Attributes:
+    KEY_COLOURS (str): The key used to store the colours in the JSON representation.
+    KEY_BOARD (str): The key used to store the board state in the JSON representation.
+    """
 
     KEY_COLOURS = 'colours'
     KEY_BOARD = "board"
@@ -245,18 +380,46 @@ _S = TypeVar("_S", bound='Shiftago')
 
 
 class ShiftagoDeser(Generic[_S]):
+    """
+    ShiftagoDeser is a generic class responsible for deserializing the game state of a Shiftago game 
+    from a JSON representation. It provides methods to deserialize the colours and the board state.
+    """
 
     def __init__(self, stype: Type[_S]) -> None:
         self._type = stype
 
     @property
     def type(self) -> Type[_S]:
+        """
+        Returns the type of the Shiftago game to be deserialized.
+
+        Returns:
+        Type[_S]: The type of the Shiftago game.
+        """
         return self._type
 
     def _deserialize_colours(self, json_dict: dict) -> Sequence[Colour]:
+        """
+        Deserializes the colours from the JSON dictionary.
+
+        Parameters:
+        json_dict (dict): The JSON dictionary containing the game state.
+
+        Returns:
+        Sequence[Colour]: A sequence of Colour objects deserialized from the JSON dictionary.
+        """
         return [Colour(c) for c in json_dict[JSONEncoder.KEY_COLOURS]]
 
     def _deserialize_board(self, json_dict: Dict) -> Dict[Slot, Colour]:
+        """
+        Deserializes the board state from the JSON dictionary.
+
+        Parameters:
+        json_dict (Dict): The JSON dictionary containing the game state.
+
+        Returns:
+        Dict[Slot, Colour]: A dictionary mapping Slot objects to their corresponding Colour objects.
+        """
         board = {}  # type: Dict[Slot, Colour]
         for ver_pos, row in enumerate(json_dict[JSONEncoder.KEY_BOARD]):
             for hor_pos, colour_symbol in enumerate(row):
@@ -265,6 +428,15 @@ class ShiftagoDeser(Generic[_S]):
         return board
 
     def deserialize(self, input_stream: TextIO) -> _S:
+        """
+        Deserializes the Shiftago game state from an input stream.
+
+        Parameters:
+        input_stream (TextIO): The input stream containing the JSON representation of the game state.
+
+        Returns:
+        _S: An instance of the Shiftago game deserialized from the input stream.
+        """
         def object_hook(json_dict: Dict) -> 'Shiftago':
             return self._type(colours=self._deserialize_colours(json_dict),
                               board=self._deserialize_board(json_dict))
@@ -272,11 +444,26 @@ class ShiftagoDeser(Generic[_S]):
 
 
 class Shiftago(ABC):
+    """
+    Shiftago is an abstract base class representing the core game logic for the Shiftago game.
+    It provides methods and attributes to manage the game state, validate moves, and handle 
+    game-specific operations.
+    """
 
     _DEFAULT_MOVE_OBSERVER = MoveObserver()
 
     @staticmethod
     def _validate_colours(colours: Sequence[Colour]) -> None:
+        """
+        Validates the list of colours to ensure there are no duplicates and the number of colours 
+        is within the allowed range.
+
+        Parameters:
+        colours (Sequence[Colour]): The list of colours to be validated.
+
+        Raises:
+        ValueError: If the list contains duplicates or the number of colours is not within the allowed range.
+        """
         num_colours = len(set(colours))
         if num_colours < len(colours):
             raise ValueError("Argument 'colours' contains duplicates: {0}".format(colours))
@@ -285,6 +472,17 @@ class Shiftago(ABC):
 
     def __init__(self, *, orig: Optional['Shiftago'] = None, colours: Optional[Sequence[Colour]] = None,
                  board: Optional[Dict[Slot, Colour]] = None) -> None:
+        """
+        Initializes a new instance of the Shiftago class.
+
+        Parameters:
+        orig (Optional[Shiftago]): An optional original Shiftago instance to copy from.
+        colours (Optional[Sequence[Colour]]): An optional sequence of colours for the game.
+        board (Optional[Dict[Slot, Colour]]): An optional dictionary representing the game board state.
+
+        Raises:
+        ValueError: If 'colours' is not provided when 'orig' is None.
+        """
         if orig is not None:
             self._colours = orig._colours.copy()
             self._board = orig._board.copy()
@@ -319,10 +517,24 @@ class Shiftago(ABC):
 
     @property
     def colours(self) -> Sequence[Colour]:
+        """
+        Returns the sequence of colours used in the game.
+
+        The first element of the sequence identifies the current player.
+
+        Returns:
+        Sequence[Colour]: The sequence of colours used in the game.
+        """
         return self._colours
 
     @colours.setter
     def colours(self, new_colours: Sequence[Colour]):
+        """
+        Sets the colours for the game and updates the winning lines detector and game over condition.
+
+        Parameters:
+        new_colours (Sequence[Colour]): The new colours to be set.
+        """
         self._set_colours(new_colours)
 
     def _set_colours(self, colours: Sequence[Colour]) -> None:
@@ -332,24 +544,74 @@ class Shiftago(ABC):
 
     @property
     def colour_to_move(self) -> Colour:
+        """
+        Returns the colour of the player whose turn it is to move.
+
+        This property ensures that the game is not over before determining the current player.
+        
+        Returns:
+        Colour: The colour of the player who is to make the next move.
+
+        Raises:
+        AssertionError: If the game is already over.
+        """
         assert self.game_over_condition is None, "Game is already over!"
         return self._colours[0]
 
     @property
     @abstractmethod
     def game_over_condition(self) -> Optional[GameOverCondition]:
-        pass
+        """
+        Abstract property that returns the condition of the game when it is over.
+
+        This property should be implemented by subclasses to provide the specific game over condition.
+
+        Returns:
+        Optional[GameOverCondition]: The condition of the game when it is over, or None if the game is not over.
+        """
 
     def slots(self) -> Iterator[Tuple[Slot, Optional[Colour]]]:
+        """
+        Yields all slots on the game board along with their corresponding colours, if occupied.
+
+        This method iterates over all positions on the game board and yields a tuple containing 
+        the Slot object and the Colour object (or None if the slot is unoccupied).
+
+        Yields:
+        Iterator[Tuple[Slot, Optional[Colour]]]: An iterator of tuples where each tuple contains 
+                                                 a Slot object and an Optional[Colour] object.
+        """
         for ver_pos in range(NUM_SLOTS_PER_SIDE):
             for hor_pos in range(NUM_SLOTS_PER_SIDE):
                 slot = Slot(hor_pos, ver_pos)
                 yield slot, self._board.get(slot)
 
     def colour_at(self, position: Slot) -> Optional[Colour]:
+        """
+        Returns the colour of the marble at the specified slot position on the game board.
+
+        Parameters:
+        position (Slot): The slot position to check.
+
+        Returns:
+        Optional[Colour]: The colour of the marble at the specified slot, or None if the slot is unoccupied.
+        """
         return self._board.get(position)
 
     def colour_of_occupied_slot(self, position: Slot) -> Colour:
+        """
+        Returns the colour of the marble at the specified slot position on the game board.
+        Raises an error if the slot is not occupied.
+
+        Parameters:
+        position (Slot): The slot position to check.
+
+        Returns:
+        Colour: The colour of the marble at the specified slot.
+
+        Raises:
+        ValueError: If the slot is not occupied.
+        """
         c = self._board.get(position)
         if c is None:
             raise ValueError("Slot {0} is not occupied!".format(position))
@@ -366,6 +628,18 @@ class Shiftago(ABC):
         raise NotImplementedError
 
     def _insert_marble(self, side: Side, position: int, observer: MoveObserver) -> None:
+        """
+        Inserts a marble into the game board from the specified side and position, shifting other marbles as necessary.
+        Notifies the observer of marble shifts and insertions.
+
+        Parameters:
+        side (Side): The side of the board from which the marble is inserted (LEFT, RIGHT, TOP, BOTTOM).
+        position (int): The position along the specified side where the marble is inserted.
+        observer (MoveObserver): An observer to be notified of marble shift and insertion events.
+
+        Raises:
+        AssertionError: If there is no empty slot to insert the marble.
+        """
         first_empty_slot = self.find_first_empty_slot(side, position)  # type: Optional[Slot]
         assert first_empty_slot is not None, "No empty slot!"
         if side.is_vertical:
@@ -384,6 +658,16 @@ class Shiftago(ABC):
         observer.notify_marble_inserted(insert_slot)
 
     def find_first_empty_slot(self, side: Side, insert_pos: int) -> Optional[Slot]:
+        """
+        Finds the first empty slot in the specified column or row where a marble can be inserted.
+
+        Parameters:
+        side (Side): The side of the board from which the marble is to be inserted (LEFT, RIGHT, TOP, BOTTOM).
+        insert_pos (int): The position along the specified side to check for the first empty slot.
+
+        Returns:
+        Optional[Slot]: The first empty Slot object if found, or None if no empty slot is available.
+        """
         if side.is_vertical:
             for hor_pos in (range(NUM_SLOTS_PER_SIDE) if side == Side.LEFT else
                             range(NUM_SLOTS_PER_SIDE - 1, -1, -1)):
@@ -399,6 +683,12 @@ class Shiftago(ABC):
         return None
 
     def count_slots_per_colour(self) -> Dict[Colour, int]:
+        """
+        Counts the number of slots occupied by each colour on the game board.
+
+        Returns:
+        Dict[Colour, int]: A dictionary mapping each Colour to the number of slots it occupies.
+        """
         slots_per_colour = {c: 0 for c in self._colours}
         for c in self._board.values():
             slots_per_colour[c] += 1
@@ -408,6 +698,13 @@ class Shiftago(ABC):
         return len(self._board)
 
     def detect_all_possible_moves(self) -> List[Move]:
+        """
+        Detects all possible moves that can be made on the game board. A move is possible if there is at least 
+        one empty slot in the corresponding row or column.
+
+        Returns:
+        List[Move]: A list of all possible moves that can be made on the game board.
+        """
         results = []  # type: List[Move]
         for hor_pos in range(NUM_SLOTS_PER_SIDE):
             if self.find_first_empty_slot(Side.TOP, hor_pos) is not None:
@@ -426,6 +723,16 @@ class Shiftago(ABC):
 
 
 class SkillLevel(Enum):
+    """
+    SkillLevel is an enumeration representing the different skill levels for the AI in the game.
+    It defines four levels of difficulty: ROOKIE, ADVANCED, EXPERT, and GRANDMASTER.
+
+    Attributes:
+    ROOKIE (int): Represents the rookie skill level, suitable for beginners.
+    ADVANCED (int): Represents the advanced skill level, suitable for intermediate players.
+    EXPERT (int): Represents the expert skill level, suitable for experienced players.
+    GRANDMASTER (int): Represents the grandmaster skill level, suitable for highly skilled players.
+    """
 
     ROOKIE = 0
     ADVANCED = 1
@@ -434,6 +741,16 @@ class SkillLevel(Enum):
 
 
 class AIEngine(ABC, Generic[_S]):
+    """
+    AIEngine is an abstract base class representing the AI engine for the game. It defines the 
+    interface and common functionality for AI implementations at different skill levels.
+
+    Attributes:
+    _skill_level (SkillLevel): The skill level of the AI, determining its difficulty.
+
+    Methods:
+    select_move(game_state: _S) -> Move: Abstract method to select the best move based on the current game state.
+    """
 
     def __init__(self, skill_level: SkillLevel) -> None:
         self._skill_level = skill_level
@@ -444,4 +761,16 @@ class AIEngine(ABC, Generic[_S]):
 
     @abstractmethod
     def select_move(self, game_state: _S) -> Move:
+        """
+        Selects the best move for the AI based on the current game state.
+
+        Parameters:
+        game_state (_S): The current state of the game.
+
+        Returns:
+        Move: The selected move.
+
+        Raises:
+        NotImplementedError: If the method is not implemented by a subclass.
+        """
         raise NotImplementedError
