@@ -2,7 +2,7 @@
 
 Shiftago-Qt is a Qt-based implementation of the Shiftago board game. The game involves strategic placement and shifting of marbles to form winning lines.
 
-The board looks like this: [board_sample_image.jpg](board_sample_image.jpg)
+The board looks like this: ![board_sample_image.jpg](board_sample_image.jpg)
 
 ## Features
 
