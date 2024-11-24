@@ -32,7 +32,7 @@ class _MainWindow(AppEventEmitter, QMainWindow):
         self._model = _build_model(config)
         self.setWindowTitle(self.TITLE)
         self.setStyleSheet("background-color: lightGray;")
-        self.setFixedSize(QSize(BOARD_VIEW_SIZE.width() + 28, BOARD_VIEW_SIZE.height() + 34))
+        self.setFixedSize(QSize(BOARD_VIEW_SIZE.width() + 28, BOARD_VIEW_SIZE.height() + 35))
         self._board_view = BoardView(self._model, self.TITLE)
         self.setCentralWidget(self._board_view)
         menu_bar = self.menuBar()
