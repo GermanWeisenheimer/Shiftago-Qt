@@ -1,18 +1,26 @@
 [tool.poetry]
 name = "shiftago-qt"
 version = "0.1.0"
-description = ""
+description = "Shiftago-Qt is a Qt-based implementation of the Shiftago board game."
 authors = ["Thomas Schaper <genius.magnus@tuta.com>"]
 readme = "README.md"
-packages = [{include = "shiftago_qt"}]
+packages = [{include = "shiftago"}]
 
 [tool.poetry.dependencies]
 python = ">=3.10,<3.13"
 python-statemachine = "^2.1.2"
-pyinstaller = "^6.3.0"
 pyside6 = "^6.6.2"
-
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry-pyinstaller-plugin]
+version = "6.10.0"
+post-build = "pyinstaller_build_hooks:post_build"
+
+[tool.poetry-pyinstaller-plugin.scripts]
+shiftago_qt = { source = "entry_point.py", type = "onefile", windowed = "false", add_version = "true", bundle = "false" }
+
+[tool.poetry-pyinstaller-plugin.include]
+"shiftago/ui/images/*" = "shiftago/ui/images"
