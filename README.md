@@ -15,7 +15,7 @@ The board looks like this: ![board_sample_image.jpg](board_sample_image.jpg)
 ### Prerequisites
 
 - Python 3.9 or higher
-- Poetry
+- Poetry with PyInstaller plugin
 
 ### Installation
 
@@ -38,11 +38,9 @@ To start the game, run the following command:
     
 ### Building a Distribution
 
-On Windows it is possible to build a standalone distribution of the game using PyInstaller by running the following command:
+poetry build
 
-    make_dist.bat
-
-This will create a standalone executable in the `dist` directory.
+This will create a standalone executable in the `dist/pyinstaller/<arc>` directory.
 
 ## Usage
 
