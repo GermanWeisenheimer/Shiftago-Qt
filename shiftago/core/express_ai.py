@@ -51,11 +51,6 @@ class _Node:
     Each node corresponds to a game state resulting from a specific move. 
     It stores the move that led to this game state, the resulting game state, 
     and whether the game is over after this move.
-    
-    Attributes:
-    _move (Move): The move that led to this game state.
-    _target_game_state (ShiftagoExpress): The resulting game state after applying the move.
-    _game_over_condition (bool): Indicates whether the game is over after this move.
     """
 
     def __init__(self, from_game_state: ShiftagoExpress, move: Move) -> None:
@@ -69,25 +64,44 @@ class _Node:
     def __hash__(self) -> int:
         return hash(self._move)
 
-    def __eq__(self, other: object) -> bool:
-        if isinstance(other, _Node):
-            return self._move == other._move
-        return False
-
     @property
     def move(self) -> Move:
+        """
+        Returns the move that led to this game state.
+
+        Returns:
+        Move: The move that led to this game state.
+        """
         return self._move
 
     @property
     def target_game_state(self) -> ShiftagoExpress:
+        """
+        Returns the resulting game state after applying the move.
+
+        Returns:
+        ShiftagoExpress: The resulting game state after applying the move.
+        """
         return self._target_game_state
 
     @property
     def game_over_condition(self) -> Optional[GameOverCondition]:
+        """
+        Indicates whether the game is over after this move.
+
+        Returns:
+        Optional[GameOverCondition]: The game over condition after this move, or None if the game is not over.
+        """
         return self._game_over_condition
 
     @property
     def is_leaf(self) -> bool:
+        """
+        Indicates whether this node is a leaf node in the game tree.
+
+        Returns:
+        bool: True if the game is over after this move, False otherwise.
+        """
         return self._game_over_condition is not None
 
 
@@ -96,12 +110,6 @@ class _MiniMaxStrategy(ABC):
     _MiniMaxStrategy is an abstract base class for implementing the minimax strategy 
     with Alpha-Beta pruning. It defines common properties and methods used by both 
     maximizing and minimizing strategies in the game tree search.
-    
-    Attributes:
-    _alpha (float): The alpha value for pruning.
-    _beta (float): The beta value for pruning.
-    _win_rating_value (int): The rating value for a win (1 for maximizing, -1 for minimizing).
-    _optimal_rating (Optional[_Rating]): The optimal rating found during the search.
     """
 
     def __init__(self, alpha_beta: Tuple[float, float]) -> None:
@@ -114,12 +122,36 @@ class _MiniMaxStrategy(ABC):
 
     @property
     def alpha_beta(self) -> Tuple[float, float]:
+        """
+        Returns the current alpha and beta values for pruning.
+
+        Returns:
+        Tuple[float, float]: The current alpha and beta values.
+        """
         return self._alpha, self._beta
 
     @property
     def optimal_rating(self) -> _Rating:
+        """
+        Returns the optimal rating found during the search.
+
+        Returns:
+        _Rating: The optimal rating found during the search.
+        """
         assert self._optimal_rating is not None
         return self._optimal_rating
+
+    @property
+    @abstractmethod
+    def is_maximizing(self) -> bool:
+        """
+        Abstract property that indicates whether the current strategy is maximizing or minimizing.
+        This property should be implemented by subclasses to return True if the strategy is 
+        maximizing, and False if the strategy is minimizing.
+
+        Returns:
+        bool: True if the strategy is maximizing, False if it is minimizing.
+        """
 
     def sort_nodes(self, nodes: List) -> None:
         """
@@ -175,18 +207,6 @@ class _MiniMaxStrategy(ABC):
         bool: True if the branch can be pruned, False otherwise.
         """
         return self._alpha >= self._beta
-
-    @property
-    @abstractmethod
-    def is_maximizing(self) -> bool:
-        """
-        Abstract property that indicates whether the current strategy is maximizing or minimizing.
-        This property should be implemented by subclasses to return True if the strategy is 
-        maximizing, and False if the strategy is minimizing.
-        
-        Returns:
-        bool: True if the strategy is maximizing, False if it is minimizing.
-        """
 
     @abstractmethod
     def check_optimal(self, rating: _Rating) -> bool:

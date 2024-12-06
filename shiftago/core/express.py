@@ -12,11 +12,6 @@ class WinningLinesDetector:
     It initializes with a specified winning match degree, which determines the length of the 
     line required to win the game. The class provides methods to analyze the game board and 
     determine the match degrees for each line.
-
-    Attributes:
-    _winning_match_degree (int): The length of the line required to win the game.
-    _slot_to_lines (Dict[Slot, Set[SlotsInLine]]): A mapping from each slot to the set of 
-    potential winning lines that include that slot.
     """
 
     def __init__(self, winning_match_degree: int) -> None:
@@ -30,7 +25,23 @@ class WinningLinesDetector:
 
     @property
     def winning_match_degree(self) -> int:
+        """
+        Returns the length of the line required to win the game.
+
+        Returns:
+        int: The length of the line required to win the game.
+        """
         return self._winning_match_degree
+
+    @property
+    def slot_to_lines(self) -> Dict[Slot, Set[SlotsInLine]]:
+        """
+        Returns a mapping from each slot to the set of potential winning lines that include that slot.
+
+        Returns:
+        Dict[Slot, Set[SlotsInLine]]: A mapping from each slot to the set of potential winning lines.
+        """
+        return self._slot_to_lines
 
     def determine_match_degrees(self, shiftago: Shiftago, min_match_degree: Optional[int] = None) \
             -> Sequence[Dict[SlotsInLine, int]]:
