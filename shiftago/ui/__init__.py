@@ -33,7 +33,9 @@ class AppEventEmitter:
     """
 
     class _QObject(QObject):
-
+        """
+        _QObject is used internally as delegate to emit event signals.
+        """
         event_signal = Signal(AppEvent)
 
     def __init__(self, *args, **kwargs) -> None:
@@ -60,6 +62,9 @@ class Controller(ABC):
     """
 
     def __init__(self, parent: Optional['Controller'], view: AppEventEmitter) -> None:
+        """
+        Initializes the Controller with an optional parent controller and view.
+        """
         self._app_event_emitter: Optional[AppEventEmitter] = None
         if parent is not None:
             self._app_event_emitter = AppEventEmitter()
@@ -85,10 +90,7 @@ class Controller(ABC):
         """
         Abstract method to handle the given event. Subclasses must implement this method.
 
-        Parameters:
-        event (AppEvent): The event to be handled.
-
         Returns:
-        bool: True if the event was handled, False otherwise.
+        True if the event was handled, False otherwise.
         """
         raise NotImplementedError
