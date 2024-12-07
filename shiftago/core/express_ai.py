@@ -18,10 +18,10 @@ def analyze_colour_placements(game_state: ShiftagoExpress) -> Sequence[Dict[int,
     Analyzes the placement of colors on the game board and detects potential winning lines for each player.
     
     Parameters:
-    game_state (ShiftagoExpress): The current state of the game.
+    game_state: The current state of the game.
     
     Returns:
-    Sequence[Dict[int, int]]: A sequence of dictionaries where each dictionary corresponds to a player and maps 
+    A sequence of dictionaries where each dictionary corresponds to a player and maps 
     match group indices to the number of times they appear in potential winning lines.
     """
     # Detect winning lines for each player
@@ -68,9 +68,6 @@ class _Node:
     def move(self) -> Move:
         """
         Returns the move that led to this game state.
-
-        Returns:
-        Move: The move that led to this game state.
         """
         return self._move
 
@@ -78,19 +75,14 @@ class _Node:
     def target_game_state(self) -> ShiftagoExpress:
         """
         Returns the resulting game state after applying the move.
-
-        Returns:
-        ShiftagoExpress: The resulting game state after applying the move.
         """
         return self._target_game_state
 
     @property
     def game_over_condition(self) -> Optional[GameOverCondition]:
         """
-        Indicates whether the game is over after this move.
-
-        Returns:
-        Optional[GameOverCondition]: The game over condition after this move, or None if the game is not over.
+        Indicates whether the game is over after this move. If the game is not over,
+        this property will be None.
         """
         return self._game_over_condition
 
@@ -98,9 +90,6 @@ class _Node:
     def is_leaf(self) -> bool:
         """
         Indicates whether this node is a leaf node in the game tree.
-
-        Returns:
-        bool: True if the game is over after this move, False otherwise.
         """
         return self._game_over_condition is not None
 
@@ -124,9 +113,6 @@ class _MiniMaxStrategy(ABC):
     def alpha_beta(self) -> Tuple[float, float]:
         """
         Returns the current alpha and beta values for pruning.
-
-        Returns:
-        Tuple[float, float]: The current alpha and beta values.
         """
         return self._alpha, self._beta
 
@@ -134,9 +120,6 @@ class _MiniMaxStrategy(ABC):
     def optimal_rating(self) -> _Rating:
         """
         Returns the optimal rating found during the search.
-
-        Returns:
-        _Rating: The optimal rating found during the search.
         """
         assert self._optimal_rating is not None
         return self._optimal_rating
@@ -150,7 +133,7 @@ class _MiniMaxStrategy(ABC):
         maximizing, and False if the strategy is minimizing.
 
         Returns:
-        bool: True if the strategy is maximizing, False if it is minimizing.
+        True if the strategy is maximizing, False if it is minimizing.
         """
 
     def sort_nodes(self, nodes: List) -> None:
@@ -159,9 +142,6 @@ class _MiniMaxStrategy(ABC):
         in descending order if the current strategy is maximizing, and in ascending order if 
         the strategy is minimizing. This pre-sorting helps improve the efficiency of the 
         Alpha-Beta pruning algorithm by increasing the likelihood of pruning suboptimal branches early.
-        
-        Parameters:
-        nodes (List): The list of nodes to be sorted.
         """
         ratings = {node: self.evaluate(node) for node in nodes}
         nodes.sort(key=lambda n: ratings[n], reverse=self.is_maximizing)
@@ -169,12 +149,6 @@ class _MiniMaxStrategy(ABC):
     def evaluate(self, node: _Node) -> float:
         """
         Evaluates the given node in the game tree and returns a rating value based on the current game state.
-        
-        Parameters:
-        node (_Node): The node to be evaluated.
-        
-        Returns:
-        float: The evaluation score of the node.
         """
         if node.game_over_condition is not None:
             if node.game_over_condition.winner is not None:
@@ -204,7 +178,7 @@ class _MiniMaxStrategy(ABC):
         a better result.
         
         Returns:
-        bool: True if the branch can be pruned, False otherwise.
+        True if the branch can be pruned, False otherwise.
         """
         return self._alpha >= self._beta
 
@@ -217,10 +191,10 @@ class _MiniMaxStrategy(ABC):
         found optimal rating.
         
         Parameters:
-        rating (_Rating): The rating to be checked.
+        rating: The rating to be checked.
         
         Returns:
-        bool: True if the rating is optimal, False otherwise.
+        True if the rating is optimal, False otherwise.
         """
 
 class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
@@ -246,7 +220,7 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
             Indicates that this strategy is maximizing.
             
             Returns:
-            bool: True, as this strategy is maximizing.
+            True, as this strategy is maximizing.
             """
             return True
 
@@ -257,15 +231,14 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
             optimal rating.
             
             Parameters:
-            rating (_Rating): The rating to be checked.
+            rating: The rating to be checked.
             
             Returns:
-            bool: True if the rating is optimal, False otherwise.
+            True if the rating is optimal, False otherwise.
             """
             if self._optimal_rating is None or rating.value > self._optimal_rating.value:
                 self._optimal_rating = rating
-                if self._optimal_rating.value > self._alpha:
-                    self._alpha = self._optimal_rating.value
+                self._alpha = max(self._alpha, self._optimal_rating.value)
                 return True
             if rating.value == self._optimal_rating.value:
                 if rating.depth < self._optimal_rating.depth if rating.value > 0. else \
@@ -287,7 +260,7 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
             Indicates that this strategy is minimizing.
             
             Returns:
-            bool: False, as this strategy is minimizing.
+            False, as this strategy is minimizing.
             """
             return False
 
@@ -298,15 +271,14 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
             optimal rating.
             
             Parameters:
-            rating (_Rating): The rating to be checked.
+            rating: The rating to be checked.
             
             Returns:
-            bool: True if the rating is optimal, False otherwise.
+            True if the rating is optimal, False otherwise.
             """
             if self._optimal_rating is None or rating.value < self._optimal_rating.value:
                 self._optimal_rating = rating
-                if self._optimal_rating.value < self._beta:
-                    self._beta = self._optimal_rating.value
+                self._beta = min(self._beta, self._optimal_rating.value)
                 return True
             if rating.value == self._optimal_rating.value:
                 if rating.depth < self._optimal_rating.depth if rating.value < 0. else \
@@ -327,7 +299,7 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
         game_state (ShiftagoExpress): The current state of the game.
         
         Returns:
-        Move: The selected move.
+        The selected move.
         """
         # Ensure the game involves exactly two players
         assert len(game_state.colours) == 2
@@ -349,12 +321,12 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
         Recursively applies the Alpha-Beta pruning algorithm to evaluate and select the optimal move.
         
         Parameters:
-        game_state (ShiftagoExpress): The current state of the game.
-        depth (int): The current depth in the game tree.
-        alpha_beta (Tuple[float, float]): The current alpha and beta values for pruning.
+        game_state: The current state of the game.
+        depth: The current depth in the game tree.
+        alpha_beta: The current alpha and beta values for pruning.
         
         Returns:
-        Tuple[Move, _Rating]: The optimal move and its corresponding rating.
+        The optimal move and its corresponding rating.
         """
         strategy = self._Maximizer(alpha_beta) if depth % 2 == 1 else self._Minimizer(alpha_beta)
         nodes = [_Node(game_state, move) for move in game_state.detect_all_possible_moves()]

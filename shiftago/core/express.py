@@ -27,9 +27,6 @@ class WinningLinesDetector:
     def winning_match_degree(self) -> int:
         """
         Returns the length of the line required to win the game.
-
-        Returns:
-        int: The length of the line required to win the game.
         """
         return self._winning_match_degree
 
@@ -37,9 +34,6 @@ class WinningLinesDetector:
     def slot_to_lines(self) -> Dict[Slot, Set[SlotsInLine]]:
         """
         Returns a mapping from each slot to the set of potential winning lines that include that slot.
-
-        Returns:
-        Dict[Slot, Set[SlotsInLine]]: A mapping from each slot to the set of potential winning lines.
         """
         return self._slot_to_lines
 
@@ -50,13 +44,13 @@ class WinningLinesDetector:
         is the number of consecutive slots occupied by the same colour in a potential winning line.
 
         Parameters:
-        shiftago (Shiftago): The current state of the game.
-        min_match_degree (Optional[int]): The minimum match degree to consider. If not provided, 
-                                          it defaults to the winning match degree.
+        shiftago: The current state of the game.
+        min_match_degree: The minimum match degree to consider. If not provided,
+                          it defaults to the winning match degree.
 
         Returns:
-        Sequence[Dict[SlotsInLine, int]]: A sequence of dictionaries where each dictionary corresponds 
-                                          to a colour and maps each potential winning line to its match degree.
+        A sequence of dictionaries where each dictionary corresponds to a colour and maps each
+        potential winning line to its match degree.
         """
         if min_match_degree is None:
             min_match_degree = self._winning_match_degree
@@ -77,11 +71,11 @@ class WinningLinesDetector:
         winning match degree.
 
         Parameters:
-        shiftago (Shiftago): The current state of the game.
-        colour (Colour): The colour to check for a winning line.
+        shiftago: The current state of the game.
+        colour: The colour to check for a winning line.
 
         Returns:
-        bool: True if the specified colour has a winning line, False otherwise.
+        True if the specified colour has a winning line, False otherwise.
         """
         for match_degree in self._build_match_degrees(shiftago, colour).values():
             if match_degree == self._winning_match_degree:
@@ -95,11 +89,11 @@ class WinningLinesDetector:
         match degree.
 
         Parameters:
-        shiftago (Shiftago): The current state of the game.
-        colour (Colour): The colour to check for winning lines.
+        shiftago: The current state of the game.
+        colour: The colour to check for winning lines.
 
         Returns:
-        Set[SlotsInLine]: A set of winning lines for the specified colour.
+        A set of winning lines for the specified colour.
         """
         match_degrees = self._build_match_degrees(shiftago, colour)
         return set(filter(lambda line: match_degrees[line] == self._winning_match_degree,
@@ -135,9 +129,9 @@ class ShiftagoExpress(Shiftago):
         Initializes a new instance of the ShiftagoExpress class.
 
         Parameters:
-        orig (Optional[ShiftagoExpress]): An optional original ShiftagoExpress instance to copy from.
-        colours (Optional[Sequence[Colour]]): An optional sequence of colours for the game.
-        board (Optional[Dict[Slot, Colour]]): An optional dictionary representing the game board state.
+        orig: An optional original ShiftagoExpress instance to copy from.
+        colours: An optional sequence of colours for the game.
+        board: An optional dictionary representing the game board state.
 
         Raises:
         ValueError: If 'colours' is not provided when 'orig' is None.
@@ -156,9 +150,6 @@ class ShiftagoExpress(Shiftago):
     def colours(self, new_colours: Sequence[Colour]):
         """
         Sets the colours for the game and updates the winning lines detector and game over condition.
-
-        Parameters:
-        new_colours (Sequence[Colour]): The new colours to be set.
         """
         super()._set_colours(new_colours)
         self._winning_lines_detector = self._select_winning_lines_detector(new_colours)
@@ -168,9 +159,6 @@ class ShiftagoExpress(Shiftago):
     def winning_line_length(self) -> int:
         """
         Returns the length of the winning line required to win the game.
-
-        Returns:
-        int: The length of the winning line.
         """
         return self._winning_lines_detector.winning_match_degree
 
@@ -180,16 +168,13 @@ class ShiftagoExpress(Shiftago):
         Returns the condition of the game when it is over.
 
         Returns:
-        Optional[GameOverCondition]: The condition of the game when it is over, or None if the game is not over.
+        An 'game over' condition if the game is over, None otherwise.
         """
         return self._game_over_condition
 
     def __copy__(self) -> 'ShiftagoExpress':
         """
         Creates a copy of the current game state.
-
-        Returns:
-        ShiftagoExpress: A copy of the current game state.
         """
         return ShiftagoExpress(orig=self)
 
@@ -199,12 +184,12 @@ class ShiftagoExpress(Shiftago):
         Applies the given move to the game board and updates the game state accordingly.
 
         Parameters:
-        move (Move): The move to be applied.
-        observer (MoveObserver): An observer to be notified of move events (default is Shiftago._DEFAULT_MOVE_OBSERVER).
+        move: The move to be applied.
+        observer: An observer to be notified of shift and insert events.
 
         Returns:
-        Optional[GameOverCondition]: The condition of the game after the move is applied,
-        or None if the game is not over.
+        A 'game over' condition if the game is over after the move has been applied,
+        None otherwise.
 
         Raises:
         AssertionError: If the game is already over.
@@ -236,22 +221,18 @@ class ShiftagoExpress(Shiftago):
         Detects all potential winning lines on the game board and their match degrees for each colour.
 
         Parameters:
-        min_match_count (Optional[int]): The minimum match degree to consider. If not provided, 
-                                         it defaults to the winning match degree.
+        min_match_count: The minimum match degree to consider. If not provided,
+                         it defaults to the winning match degree.
 
         Returns:
-        Sequence[Dict[SlotsInLine, int]]: A sequence of dictionaries where each dictionary corresponds 
-                                          to a colour and maps each potential winning line to its match degree.
+        A sequence of dictionaries where each dictionary corresponds to a colour and maps each
+        potential winning line to its match degree.
         """
         return self._winning_lines_detector.determine_match_degrees(self, min_match_count)
 
     def winning_lines_of_winner(self) -> Set[SlotsInLine]:
         """
         Determines the set of winning lines for the winning colour on the game board.
-
-        Returns:
-        Set[SlotsInLine]: A set of winning lines for the winning colour.
-
         Raises:
         AssertionError: If the game is not over or there is no winner.
         """
@@ -262,11 +243,5 @@ class ShiftagoExpress(Shiftago):
     def deserialize(cls, input_stream: TextIO) -> 'ShiftagoExpress':
         """
         Deserializes a JSON input stream to a ShiftagoExpress instance.
-
-        Parameters:
-        input_stream (TextIO): The input stream containing the JSON representation of the game state.
-
-        Returns:
-        ShiftagoExpress: An instance of ShiftagoExpress deserialized from the input stream.
         """
         return ShiftagoDeser(cls).deserialize(input_stream)
