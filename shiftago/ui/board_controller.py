@@ -55,10 +55,6 @@ class BoardController(Controller):
                          app_event_emitter: AppEventEmitter) -> None:
                 """
                 Initializes the ComputerThinkingWorker with the given model and event emitter.
-
-                Parameters:
-                model (ShiftagoExpressModel): The game model.
-                app_event_emitter (AppEventEmitter): The event emitter to emit events.
                 """
                 super().__init__()
                 self._model = model
@@ -81,6 +77,9 @@ class BoardController(Controller):
                 self._app_event_emitter.emit(MoveSelectedEvent(move))
 
         def __init__(self, model: ShiftagoExpressModel, view: BoardView) -> None:
+            """
+            Initializes the _BoardStateMachine with the given model and view.
+            """
             super().__init__()
             self._model = model
             self._view = view
