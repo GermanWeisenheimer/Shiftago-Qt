@@ -14,7 +14,7 @@ The board looks like this: ![board_sample_image.jpg](board_sample_image.jpg)
 
 ### Prerequisites
 
-- Python 3.9 or higher
+- Python 3.12 or higher
 - Poetry with PyInstaller plugin
 
 ### Installation
