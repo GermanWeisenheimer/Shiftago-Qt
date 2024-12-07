@@ -34,11 +34,16 @@ The board looks like this: ![board_sample_image.jpg](board_sample_image.jpg)
 
 To start the game, run the following command:
     
-    poetry run python -m shiftago __main__.py
+  ```
+  poetry run python -m shiftago __main__.py
+  ```
     
 ### Building a Distribution
 
-poetry build
+To build a distribution, run the following command:
+  ```
+  poetry build
+  ```
 
 This will create a standalone executable in the `dist/pyinstaller/<arc>` directory.
 
