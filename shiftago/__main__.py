@@ -11,8 +11,14 @@ _logger = logging.getLogger(__name__)
 
 
 def _configure_logging(config: LoggingConfig, filename_prefix: str = 'shiftago_qt'):
-    '''Adds the name of the current QThread as field 'threadName'.'''
+    """
+    Configures the logging settings for the application.
+    """
+
     def thread_name_filter(record: logging.LogRecord):
+        """
+        Adds the name of the current QThread as field 'threadName'.'''
+        """
         qthread_name = QThread.currentThread().objectName()
         if qthread_name:
             record.threadName = qthread_name
@@ -32,8 +38,15 @@ def _configure_logging(config: LoggingConfig, filename_prefix: str = 'shiftago_q
 
 
 def main() -> None:
+    """
+    The main entry point for the Shiftago-Qt application.
+    It sets up the exception handler, reads the configuration, configures logging, and starts the application.
+    """
     def handle_uncaught_exception(exc_type: type[BaseException], exc_value: BaseException,
                                   exc_traceback: TracebackType | None):
+        """
+        Handles uncaught exceptions by logging them and exiting the application.
+        """
         if issubclass(exc_type, KeyboardInterrupt):
             sys.__excepthook__(exc_type, exc_value, exc_traceback)
             return

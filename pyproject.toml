@@ -7,7 +7,7 @@ readme = "README.md"
 packages = [{include = "shiftago"}]
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.14"
+python = ">=3.12,<3.14"
 python-statemachine = "^2.1.2"
 pyside6 = "^6.6.2"
 

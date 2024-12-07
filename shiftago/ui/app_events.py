@@ -21,33 +21,33 @@ class AnimationFinishedEvent(AppEvent):
 
 @dataclass(frozen=True)
 class NewGameRequestedEvent(AppEvent):
-    """Emitted by view."""
+    """Emitted by view when a new game is requested."""
 
 
 @dataclass(frozen=True)
 class ScreenshotRequestedEvent(AppEvent):
-    """Emitted by view."""
+    """Emitted by view when a screenshot is requested."""
 
 
 @dataclass(frozen=True)
 class ExitRequestedEvent(AppEvent):
-    """Emitted by view."""
+    """Emitted by view when exiting is requested."""
 
 
 @dataclass(frozen=True)
 class MarbleShiftedEvent(AppEvent):
-    """Emitted by model."""
+    """Emitted by model when a marble is shifted."""
     slot: Slot
     direction: Side
 
 
 @dataclass(frozen=True)
 class MarbleInsertedEvent(AppEvent):
-    """Emitted by model."""
+    """Emitted by model when a marble is inserted."""
     slot: Slot
     colour: Colour
 
 
 @dataclass(frozen=True)
 class BoardResetEvent(AppEvent):
-    """Emitted by model."""
+    """Emitted by model when the board is reset."""
