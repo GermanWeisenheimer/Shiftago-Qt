@@ -16,10 +16,10 @@ _logger = logging.getLogger(__name__)
 def analyze_colour_placements(game_state: ShiftagoExpress) -> Sequence[Dict[int, int]]:
     """
     Analyzes the placement of colors on the game board and detects potential winning lines for each player.
-    
+
     Parameters:
     game_state: The current state of the game.
-    
+
     Returns:
     A sequence of dictionaries where each dictionary corresponds to a player and maps 
     match group indices to the number of times they appear in potential winning lines.
@@ -38,7 +38,7 @@ class _Rating(namedtuple('Rating', 'value depth')):
     _Rating is a named tuple that represents the evaluation of a game state in the 
     Alpha-Beta pruning algorithm. It contains the rating value and the depth at which 
     the rating was determined.
-    
+
     Attributes:
     value (float): The evaluation score of the game state.
     depth (int): The depth in the game tree at which the rating was determined.
@@ -102,11 +102,11 @@ class _MiniMaxStrategy(ABC):
     """
 
     def __init__(self, alpha_beta: Tuple[float, float]) -> None:
+        """
+        Initializes the _MiniMaxStrategy with the given alpha and beta values.
+        """
         self._alpha, self._beta = alpha_beta
-        if self.is_maximizing:
-            self._win_rating_value = 1
-        else:
-            self._win_rating_value = -1
+        self._win_rating_value = 1 if self.is_maximizing else -1
         self._optimal_rating = None  # type: Optional[_Rating]
 
     @property
@@ -176,7 +176,7 @@ class _MiniMaxStrategy(ABC):
         alpha and beta values. Pruning occurs when the alpha value is greater than or equal 
         to the beta value, indicating that further exploration of this branch will not yield 
         a better result.
-        
+
         Returns:
         True if the branch can be pruned, False otherwise.
         """
@@ -189,13 +189,14 @@ class _MiniMaxStrategy(ABC):
         (maximizing or minimizing). This method should be implemented by subclasses to update 
         the optimal rating and determine if the current rating is better than the previously 
         found optimal rating.
-        
+
         Parameters:
         rating: The rating to be checked.
-        
+
         Returns:
         True if the rating is optimal, False otherwise.
         """
+
 
 class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
     """
@@ -218,7 +219,7 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
         def is_maximizing(self) -> bool:
             """
             Indicates that this strategy is maximizing.
-            
+
             Returns:
             True, as this strategy is maximizing.
             """
@@ -229,10 +230,7 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
             Checks if the given rating is optimal based on the maximizing strategy. Updates 
             the optimal rating if the current rating is better than the previously found 
             optimal rating.
-            
-            Parameters:
-            rating: The rating to be checked.
-            
+
             Returns:
             True if the rating is optimal, False otherwise.
             """
@@ -258,7 +256,7 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
         def is_maximizing(self) -> bool:
             """
             Indicates that this strategy is minimizing.
-            
+
             Returns:
             False, as this strategy is minimizing.
             """
@@ -269,10 +267,7 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
             Checks if the given rating is optimal based on the minimizing strategy. Updates 
             the optimal rating if the current rating is better than the previously found 
             optimal rating.
-            
-            Parameters:
-            rating: The rating to be checked.
-            
+
             Returns:
             True if the rating is optimal, False otherwise.
             """
@@ -293,13 +288,8 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
 
     def select_move(self, game_state: ShiftagoExpress) -> Move:
         """
-        Selects the best move for the AI based on the current game state using the Alpha-Beta pruning algorithm.
-        
-        Parameters:
-        game_state (ShiftagoExpress): The current state of the game.
-        
-        Returns:
-        The selected move.
+        Selects the best move for the AI based on the current game state using the Alpha-Beta
+        pruning algorithm.
         """
         # Ensure the game involves exactly two players
         assert len(game_state.colours) == 2
@@ -319,12 +309,12 @@ class AlphaBetaPruning(AIEngine[ShiftagoExpress]):
             -> Tuple[Move, _Rating]:
         """
         Recursively applies the Alpha-Beta pruning algorithm to evaluate and select the optimal move.
-        
+
         Parameters:
         game_state: The current state of the game.
         depth: The current depth in the game tree.
         alpha_beta: The current alpha and beta values for pruning.
-        
+
         Returns:
         The optimal move and its corresponding rating.
         """

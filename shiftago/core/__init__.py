@@ -16,9 +16,9 @@ class Colour(Enum):
     Colour is an enumeration representing the different colours of marbles used in the game.
 
     Attributes:
-    BLUE (str): Represents the blue colour marble.
-    GREEN (str): Represents the green colour marble.
-    ORANGE (str): Represents the orange colour marble.
+    BLUE: Represents the blue colour marble.
+    GREEN: Represents the green colour marble.
+    ORANGE: Represents the orange colour marble.
     """
 
     BLUE = 'B'
@@ -68,18 +68,36 @@ class Side(Enum):
 
     @property
     def position(self) -> int:
+        """
+        Returns the position of the side on the game board.
+        """
         return self._position
 
     @property
     def is_horizontal(self) -> bool:
+        """
+        Returns whether the side is horizontal.
+
+        Returns:
+        True if the side is horizontal, False otherwise.
+        """
         return self._is_horizontal
 
     @property
     def is_vertical(self) -> bool:
+        """
+        Returns whether the side is vertical.
+
+        Returns:
+        True if the side is vertical, False otherwise.
+        """
         return not self._is_horizontal
 
     @property
     def shift_direction(self) -> int:
+        """
+        Returns the shift direction of the side.
+        """
         return self._shift_direction
 
     @property
@@ -163,10 +181,10 @@ class LineOrientation(Enum):
     It defines four orientations: HORIZONTAL, VERTICAL, ASCENDING, and DESCENDING.
 
     Attributes:
-    HORIZONTAL (int): Represents a horizontal line orientation.
-    VERTICAL (int): Represents a vertical line orientation.
-    ASCENDING (int): Represents an ascending diagonal line orientation.
-    DESCENDING (int): Represents a descending diagonal line orientation.
+    HORIZONTAL: Represents a horizontal line orientation.
+    VERTICAL: Represents a vertical line orientation.
+    ASCENDING: Represents an ascending diagonal line orientation.
+    DESCENDING: Represents a descending diagonal line orientation.
     """
 
     HORIZONTAL = 0
@@ -194,6 +212,10 @@ class SlotsInLine:
     """
 
     def __init__(self, orientation: LineOrientation, num_slots: int, start_slot: Slot) -> None:
+        """
+        Initializes a SlotsInLine instance with the given orientation, number of slots
+        and starting slot.
+        """
         self._orientation = orientation
 
         def generate_line():
@@ -267,7 +289,7 @@ class Move(namedtuple('Move', 'side position')):
     and the position along that side. It is used to encapsulate the details of a move.
 
     Attributes:
-    side (Side): The side of the board from which the move is made (LEFT, RIGHT, TOP, BOTTOM).
+    side (Side): The side of the board from which the move is made.
     position (int): The position along the specified side where the move is made.
     """
 
@@ -306,11 +328,15 @@ class MoveObserver:
 
 class GameOverCondition:
     """
-    GameOverCondition represents the condition of the game when it is over. It indicates whether 
-    there is a winner or if the game ended in a draw.
+    GameOverCondition represents the condition of the game when it is over. It
+    indicates whether there is a winner or if the game ended in a draw.
     """
 
     def __init__(self, winner: Optional[Colour] = None) -> None:
+        """
+        Initializes a GameOverCondition instance with an optional winner (winning colour).
+        If the game ended in a draw, the winner is None.
+        """
         self._winner = winner
 
     def __str__(self) -> str:
@@ -332,12 +358,12 @@ class JSONEncoder(json.JSONEncoder):
     It provides methods to convert Colour objects and the game board state into a JSON-compatible format.
 
     Attributes:
-    KEY_COLOURS (str): The key used to store the colours in the JSON representation.
-    KEY_BOARD (str): The key used to store the board state in the JSON representation.
+    KEY_COLOURS: The key used to store the colours in the JSON representation.
+    KEY_BOARD: The key used to store the board state in the JSON representation.
     """
 
     KEY_COLOURS = 'colours'
-    KEY_BOARD = "board"
+    KEY_BOARD = 'board'
 
     def default(self, o):
         if isinstance(o, Colour):
@@ -347,7 +373,7 @@ class JSONEncoder(json.JSONEncoder):
                                         for ver_pos in range(NUM_SLOTS_PER_SIDE)]}
 
 
-_S = TypeVar("_S", bound='Shiftago')
+_S = TypeVar('_S', bound='Shiftago')
 
 
 class ShiftagoDeser(Generic[_S]):
@@ -388,7 +414,7 @@ class ShiftagoDeser(Generic[_S]):
         Deserializes the Shiftago game state from an input stream.
 
         Returns:
-        _S: An instance of the Shiftago game deserialized from the input stream.
+        An instance of the Shiftago game deserialized from the input stream.
         """
         def object_hook(json_dict: Dict) -> 'Shiftago':
             return self._type(colours=self._deserialize_colours(json_dict),
@@ -460,6 +486,9 @@ class Shiftago(ABC):
         return string_io.getvalue()
 
     def serialize(self, output_stream: TextIO):
+        """
+        Serializes the current game state to a JSON output stream.
+        """
         json.dump(self, output_stream, indent=4, cls=JSONEncoder)
 
     @property
@@ -540,8 +569,8 @@ class Shiftago(ABC):
         This method must be implemented by subclasses to define the specific behavior of applying a move.
 
         Parameters:
-        move (Move): The move to be applied.
-        observer (MoveObserver): An observer to be notified of move events (default is _DEFAULT_MOVE_OBSERVER).
+        move: The move to be applied.
+        observer: An observer to be notified of move events (default is _DEFAULT_MOVE_OBSERVER).
 
         Returns:
         The condition of the game after the move is applied, or None if the game is not over.
@@ -580,8 +609,8 @@ class Shiftago(ABC):
         Finds the first empty slot in the specified column or row where a marble can be inserted.
         If no empty slot is available, it returns None.
         Parameters:
-        side (Side): The side of the board from which the marble is to be inserted (LEFT, RIGHT, TOP, BOTTOM).
-        insert_pos (int): The position along the specified side to check for the first empty slot.
+        side: The side of the board from which the marble is to be inserted.
+        insert_pos: The position along the specified side to check for the first empty slot.
 
         Returns:
         The first empty Slot object if found, else None.
@@ -643,10 +672,10 @@ class SkillLevel(Enum):
     It defines four levels of difficulty: ROOKIE, ADVANCED, EXPERT, and GRANDMASTER.
 
     Attributes:
-    ROOKIE (int): Represents the rookie skill level, suitable for beginners.
-    ADVANCED (int): Represents the advanced skill level, suitable for intermediate players.
-    EXPERT (int): Represents the expert skill level, suitable for experienced players.
-    GRANDMASTER (int): Represents the grandmaster skill level, suitable for highly skilled players.
+    ROOKIE: Represents the rookie skill level, suitable for beginners.
+    ADVANCED: Represents the advanced skill level, suitable for intermediate players.
+    EXPERT: Represents the expert skill level, suitable for experienced players.
+    GRANDMASTER: Represents the grandmaster skill level, suitable for highly skilled players.
     """
 
     ROOKIE = 0
@@ -662,6 +691,9 @@ class AIEngine(ABC, Generic[_S]):
     """
 
     def __init__(self, skill_level: SkillLevel) -> None:
+        """
+        Initializes the AIEngine with the given skill level.
+        """
         self._skill_level = skill_level
 
     @property
@@ -677,7 +709,7 @@ class AIEngine(ABC, Generic[_S]):
         Selects the best move for the AI based on the current game state.
 
         Parameters:
-        game_state (_S): The current state of the game.
+        game_state: The current state of the game.
 
         Returns:
         The selected move.
