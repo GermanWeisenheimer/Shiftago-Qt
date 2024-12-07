@@ -178,7 +178,8 @@ class _MainWindowController(Controller):
     @handle_event.register
     def _(self, _: ExitRequestedEvent) -> bool:
         """
-        Handles the ExitRequestedEvent. Confirms the exit and closes the application if confirmed.
+        Handles the ExitRequestedEvent. Asks the user to confirm the exit and closes the application
+        if he does so.
         """
         if self.model.count_occupied_slots() > 0:
             if self._main_window.confirm_exit():
