@@ -420,7 +420,7 @@ class ShiftagoDeser(Generic[ShiftagoT]):
         Returns:
         An instance of the Shiftago game deserialized from the input stream.
         """
-        def object_hook(json_dict: Dict) -> 'Shiftago':
+        def object_hook(json_dict: Dict) -> ShiftagoT:
             return self._type(colours=self._deserialize_colours(json_dict),
                               board=self._deserialize_board(json_dict))
         return json.load(input_stream, object_hook=object_hook)
@@ -579,7 +579,6 @@ class Shiftago(ABC):
         Returns:
         The condition of the game after the move is applied, or None if the game is not over.
         """
-        raise NotImplementedError
 
     def _insert_marble(self, side: Side, position: int, observer: MoveObserver) -> None:
         """
@@ -713,4 +712,3 @@ class AIEngine(ABC, Generic[ShiftagoT]):
         Returns:
         The selected move.
         """
-        raise NotImplementedError

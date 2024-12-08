@@ -93,4 +93,3 @@ class Controller(ABC):
         Returns:
         True if the event was handled, False otherwise.
         """
-        raise NotImplementedError
