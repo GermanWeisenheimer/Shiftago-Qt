@@ -7,8 +7,9 @@ The board looks like this: ![board_sample_image.jpg](board_sample_image.jpg)
 ## Features
 
 - Play against sophisticated AI with different skill levels (Rookie, Advanced, Expert, Grandmaster)
-- Screenshot function
+- Config file
 - Log file
+- Screenshot function
 
 ## Getting Started
 
