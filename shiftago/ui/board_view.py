@@ -37,9 +37,9 @@ class _AnimationManager:
         Performs the given animation. If another animation is already running, the new animation is queued.
 
         Parameters:
-        animation (QPropertyAnimation): The animation to be performed.
-        end_value (Any): The end value of the animation.
-        duration (int): The duration of the animation in milliseconds.
+        animation: The animation to be performed.
+        end_value: The end value of the animation.
+        duration: The duration of the animation in milliseconds.
         """
         animation.setEndValue(end_value)
         animation.setDuration(duration)
@@ -357,9 +357,8 @@ class BoardView(AppEventEmitter, QGraphicsView):
         """
         Determines the side and insert position for a move based on the cursor position.
         Returns:
-        tuple[Optional[Side], Optional[int]]: A tuple containing the side of the board and the insert
-                                    position, or (None, None) if the cursor is not near a valid insert
-                                    position.
+        A tuple containing the side of the board and the insert position, or (None, None)
+        if the cursor is not near a valid insert position.
         """
         side = self.BoardScene.determine_side(ev_pos)
         if side is not None:
