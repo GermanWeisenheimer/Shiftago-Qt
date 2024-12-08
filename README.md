@@ -60,16 +60,6 @@ This will create a standalone executable in the `dist/pyinstaller/<arc>` directo
 - Use the mouse to insert a marble at one of the four sides of the board. If the slot where you
   want to insert it is occupied the occupying marble and its neighbours are automatically shifted.
 
-## Contributing
-
-Contributions are welcome! Please follow these steps to contribute:
-
-1. Fork the repository.
-2. Create a new branch (`git checkout -b feature-branch`).
-3. Make your changes and commit them (`git commit -m 'Add new feature'`).
-4. Push to the branch (`git push origin feature-branch`).
-5. Create a new Pull Request.
-
 ## License
 
 This project is licensed under the GNU General Public License. See the [LICENSE.txt](LICENSE.txt) file for details.
