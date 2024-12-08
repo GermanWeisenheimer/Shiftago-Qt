@@ -143,7 +143,7 @@ class _MainWindowController(Controller):
         _: AppEvent: The event to be handled.
 
         Returns:
-        bool: always False.
+        True if the event has been handled, False otherwise.
         """
         return False
 
