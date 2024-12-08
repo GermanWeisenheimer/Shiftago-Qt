@@ -664,11 +664,6 @@ class Shiftago(ABC):
                 results.append(Move(Side.RIGHT, ver_pos))
         return results
 
-    @classmethod
-    def deserialize(cls, input_stream: TextIO) -> 'Shiftago':
-        """Deserializes a JSON input stream to a Shiftago instance"""
-        return ShiftagoDeser(cls).deserialize(input_stream)
-
 
 class SkillLevel(Enum):
     """
