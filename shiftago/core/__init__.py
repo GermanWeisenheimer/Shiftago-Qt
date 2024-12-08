@@ -373,20 +373,24 @@ class JSONEncoder(json.JSONEncoder):
                                         for ver_pos in range(NUM_SLOTS_PER_SIDE)]}
 
 
-_S = TypeVar('_S', bound='Shiftago')
+ShiftagoT = TypeVar('ShiftagoT', bound='Shiftago')
+"""
+ShiftagoT is a type variable that is bound to the Shiftago class.
+It is used to specify the type of Shiftago game being deserialized.
+"""
 
 
-class ShiftagoDeser(Generic[_S]):
+class ShiftagoDeser(Generic[ShiftagoT]):
     """
     ShiftagoDeser is a generic class responsible for deserializing the game state of a Shiftago game 
     from a JSON representation. It provides methods to deserialize the colours and the board state.
     """
 
-    def __init__(self, stype: Type[_S]) -> None:
+    def __init__(self, stype: Type[ShiftagoT]) -> None:
         self._type = stype
 
     @property
-    def type(self) -> Type[_S]:
+    def type(self) -> Type[ShiftagoT]:
         """
         Returns the type of the Shiftago game to be deserialized.
         """
@@ -409,7 +413,7 @@ class ShiftagoDeser(Generic[_S]):
                     board[Slot(hor_pos, ver_pos)] = Colour(colour_symbol)
         return board
 
-    def deserialize(self, input_stream: TextIO) -> _S:
+    def deserialize(self, input_stream: TextIO) -> ShiftagoT:
         """
         Deserializes the Shiftago game state from an input stream.
 
@@ -684,7 +688,7 @@ class SkillLevel(Enum):
     GRANDMASTER = 3
 
 
-class AIEngine(ABC, Generic[_S]):
+class AIEngine(ABC, Generic[ShiftagoT]):
     """
     AIEngine is an abstract base class representing the AI engine for the game. It defines the 
     interface and common functionality for AI implementations at different skill levels.
@@ -704,7 +708,7 @@ class AIEngine(ABC, Generic[_S]):
         return self._skill_level
 
     @abstractmethod
-    def select_move(self, game_state: _S) -> Move:
+    def select_move(self, game_state: ShiftagoT) -> Move:
         """
         Selects the best move for the AI based on the current game state.
 
