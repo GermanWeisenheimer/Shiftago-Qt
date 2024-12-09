@@ -165,9 +165,9 @@ class BoardController(Controller):
         """
         return self._view
 
-    def start_match(self) -> None:
+    def start_game(self) -> None:
         """
-        Start match by informing the user about the starting player.
+        Start game by informing the user about the starting player.
         """
         self._view.show_starting_player()
 

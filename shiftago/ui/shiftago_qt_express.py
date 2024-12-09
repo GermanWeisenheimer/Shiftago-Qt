@@ -45,17 +45,20 @@ class _MainWindow(AppEventEmitter, QMainWindow):
         self._board_view = BoardView(self._model, self.TITLE)
         self.setCentralWidget(self._board_view)
         menu_bar = self.menuBar()
-        file_menu = menu_bar.addMenu('File')
-        file_menu.addAction('About', lambda: self.emit(AppInfoRequestedEvent()))
-        file_menu.addAction('New game', lambda: self.emit(NewGameRequestedEvent()))
+        game_menu = menu_bar.addMenu('&Game')
+        game_menu.addAction('New game', lambda: self.emit(NewGameRequestedEvent()))
 
         screenshot_action = QAction(QIcon(load_image('screenshot-icon.png')), '&Screenshot', self)
         screenshot_action.triggered.connect(lambda: self.emit(ScreenshotRequestedEvent()))
-        file_menu.addAction(screenshot_action)
+        game_menu.addAction(screenshot_action)
+
+        about_action = QAction(QIcon(load_image('info-icon.png')), '&About', self)
+        about_action.triggered.connect(lambda: self.emit(AppInfoRequestedEvent()))
+        game_menu.addAction(about_action)
 
         exit_action = QAction(QIcon(load_image('exit-icon.png')), '&Exit', self)
         exit_action.triggered.connect(lambda: self.emit(ExitRequestedEvent()))
-        file_menu.addAction(exit_action)
+        game_menu.addAction(exit_action)
 
         self._exit_confirmed = False
 
@@ -68,12 +71,17 @@ class _MainWindow(AppEventEmitter, QMainWindow):
             event.ignore()
             self.emit(ExitRequestedEvent())
 
-    def confirm_abort(self) -> bool:
+    def confirm_new_game(self) -> bool:
         """
-        Displays a confirmation dialog to confirm aborting the current game.
-        Returns True if the user confirms the abort, False otherwise.
+        Displays a question dialog to confirm starting a new game.
+
+        Returns:
+        True if the user confirms starting a new game, False otherwise.
         """
-        reply = QMessageBox.question(self, self.TITLE, 'Are you sure you want to abort the current game?',
+        message = "Are you sure you want to abort the current game and start a new one?" \
+            if self.model.game_over_condition is None else \
+            "Are you sure you want to clear the board and start a new game?"
+        reply = QMessageBox.question(self, self.TITLE, message,
                                      QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
                                      QMessageBox.StandardButton.No)
         return reply == QMessageBox.StandardButton.Yes
@@ -126,7 +134,7 @@ class _MainWindowController(Controller):
         self._board_controller = BoardController(self, main_window.model, main_window.board_view)
         self._main_window = main_window
         self._main_window.show()
-        self._board_controller.start_match()
+        self._board_controller.start_game()
 
     @property
     def model(self) -> ShiftagoExpressModel:
@@ -162,16 +170,16 @@ class _MainWindowController(Controller):
     @handle_event.register
     def _(self, _: NewGameRequestedEvent) -> bool:
         """
-        Handles the NewGameRequestedEvent. Resets the board controller and starts a new match.
+        Handles the NewGameRequestedEvent. Resets the board controller and starts a new game.
         """
-        if self.model.count_occupied_slots() > 0 and self.model.game_over_condition is None:
-            if self._main_window.confirm_abort():
-                _logger.info("Current match aborted!")
-            else:
-                return True
-        _logger.info("Starting new match.")
+        if self._main_window.confirm_new_game():
+            if self.model.game_over_condition is None:
+                _logger.info("Current game aborted!")
+        else:
+            return True
+        _logger.info("Starting new game.")
         self._board_controller.reset()
-        self._board_controller.start_match()
+        self._board_controller.start_game()
         return True
 
     @handle_event.register
@@ -193,12 +201,11 @@ class _MainWindowController(Controller):
         Handles the ExitRequestedEvent. Asks the user to confirm the exit and closes the application
         if he does so.
         """
-        if self.model.count_occupied_slots() > 0:
-            if self._main_window.confirm_exit():
-                if self.model.game_over_condition is None:
-                    _logger.info("Current match aborted!")
-            else:
-                return True
+        if self._main_window.confirm_exit():
+            if self.model.game_over_condition is None:
+                _logger.info("Current game aborted!")
+        else:
+            return True
         QApplication.quit()
         return True
 
