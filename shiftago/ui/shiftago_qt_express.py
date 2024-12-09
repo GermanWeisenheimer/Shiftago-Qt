@@ -1,6 +1,7 @@
 import logging
 import os
 from datetime import datetime
+from importlib.metadata import version
 from functools import singledispatchmethod
 from typing import override
 from PySide6.QtCore import QSize
@@ -10,7 +11,7 @@ from shiftago.app_config import ShiftagoConfig
 from shiftago.core import Colour
 from shiftago.ui import load_image, Controller, AppEvent, AppEventEmitter
 from .board_view import BoardView, BOARD_VIEW_SIZE
-from .app_events import NewGameRequestedEvent, ScreenshotRequestedEvent, ExitRequestedEvent
+from .app_events import NewGameRequestedEvent, ScreenshotRequestedEvent, AppInfoRequestedEvent, ExitRequestedEvent
 from .game_model import ShiftagoExpressModel, PlayerNature, Player
 from .board_controller import BoardController
 
@@ -45,6 +46,7 @@ class _MainWindow(AppEventEmitter, QMainWindow):
         self.setCentralWidget(self._board_view)
         menu_bar = self.menuBar()
         file_menu = menu_bar.addMenu('File')
+        file_menu.addAction('About', lambda: self.emit(AppInfoRequestedEvent()))
         file_menu.addAction('New game', lambda: self.emit(NewGameRequestedEvent()))
 
         screenshot_action = QAction(QIcon(load_image('screenshot-icon.png')), '&Screenshot', self)
@@ -146,6 +148,16 @@ class _MainWindowController(Controller):
         True if the event has been handled, False otherwise.
         """
         return False
+
+    @handle_event.register
+    def _(self, _: AppInfoRequestedEvent) -> bool:
+        """
+        Handles the AppInfoRequestEvent. Open information dialog showing version and copyright.
+        """
+        QMessageBox.information(self._main_window, self._main_window.TITLE,
+                                f"Shiftago-Qt v{version('shiftago-qt')}\n\u00A9 2024 Thomas Schaper",
+                                QMessageBox.StandardButton.Ok)
+        return True
 
     @handle_event.register
     def _(self, _: NewGameRequestedEvent) -> bool:

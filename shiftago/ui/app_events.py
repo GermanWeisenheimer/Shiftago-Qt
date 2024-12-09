@@ -30,6 +30,10 @@ class ScreenshotRequestedEvent(AppEvent):
 
 
 @dataclass(frozen=True)
+class AppInfoRequestedEvent(AppEvent):
+    """Emitted by view when 'About' is selected."""
+
+@dataclass(frozen=True)
 class ExitRequestedEvent(AppEvent):
     """Emitted by view when exiting is requested."""
 
