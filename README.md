@@ -22,7 +22,7 @@ The board looks like this: ![board_sample_image.jpg](board_sample_image.jpg)
 
 1. Clone the repository:
     ```
-    git clone https://gitlab.com/Genius_magnus/shiftago-qt.git
+    git clone https://github.com/GermanWeisenheimer/Shiftago-Qt.git
     cd shiftago-qt
     ```
 
