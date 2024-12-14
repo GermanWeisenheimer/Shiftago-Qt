@@ -66,4 +66,4 @@ This project is licensed under the GNU General Public License. See the [LICENSE.
 
 ## Contact
 
-For any questions or feedback, please contact [genius.magnus@tuta.com](mailto:genius.magnus@tuta.com).
+For any questions or feedback, please contact [weisenheimer@tuta.com](mailto:weisenheimer@tuta.com).
