@@ -4,4 +4,3 @@ logs
 .venv
 build
 dist
-shiftago-qt.spec
