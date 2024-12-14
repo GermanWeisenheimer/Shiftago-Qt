@@ -2,7 +2,7 @@
 name = "shiftago-qt"
 version = "0.1.0"
 description = "Shiftago-Qt is a Qt-based implementation of the Shiftago board game."
-authors = ["Thomas Schaper <genius.magnus@tuta.com>"]
+authors = ["Thomas Schaper <weisenheimer@tuta.com>"]
 readme = "README.md"
 packages = [{include = "shiftago"}]
 
