@@ -47,15 +47,15 @@ class SlotTest(unittest.TestCase):
         self.assertEqual("[5,6]", str(Slot(5, 6)))
 
     def test__eq__(self):
-        slot_pos1 = Slot(4, 3)  # type: Slot
+        slot_pos1 = Slot(4, 3)
         self.assertEqual(4, slot_pos1.hor_pos)
         self.assertEqual(3, slot_pos1.ver_pos)
-        slot_pos2 = Slot(4, 3)  # type: Slot
+        slot_pos2 = Slot(4, 3)
         self.assertTrue(slot_pos1 is slot_pos2)
         self.assertEqual(slot_pos2, slot_pos1)
 
     def test__lt__(self):
-        slot_pos1 = Slot(4, 3)  # type: Slot
+        slot_pos1 = Slot(4, 3)
         self.assertTrue(Slot(3, 3) < slot_pos1)
         self.assertFalse(Slot(5, 3) < slot_pos1)
         self.assertTrue(Slot(5, 2) < slot_pos1)
